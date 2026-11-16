@@ -224,7 +224,7 @@ func TestExportPauseRefresh(t *testing.T) {
 	if !strings.HasPrefix(m.message, "exported ") {
 		t.Fatalf("export: %q", m.message)
 	}
-	p := strings.TrimPrefix(m.message, "exported ")
+	p := strings.TrimSuffix(strings.TrimPrefix(m.message, "exported "), " and .md")
 	if b, err := os.ReadFile(p); err != nil || !strings.Contains(string(b), `"schema_version": "1.0"`) {
 		t.Errorf("export file: %v", err)
 	}

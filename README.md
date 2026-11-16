@@ -69,6 +69,31 @@ second host running `tyr net-peer`. External engines (stress-ng, memtester,
 iperf3, mprime) are used when installed; the TUI's Stress tab installs the
 packaged ones with `i`.
 
+## Reports and history
+
+Every report can be written as Markdown and read with Tyr itself or with
+[glow](https://github.com/charmbracelet/glow), in GitLab or any editor:
+
+```bash
+tyr report --format markdown > host.md              # hardware + alerts of this host
+tyr report --format json > host.json                # the same as JSON (keep these for history)
+tyr report --from host.json --format markdown       # a saved snapshot or stress result as a report
+tyr history ./results/                              # history from saved JSON (Markdown)
+tyr history --format json --host db-01 ./results/   # the same as JSON
+tyr view host.json                                  # view a report in the terminal (scroll, / search)
+tyr view ./results/                                 # several files: their history
+```
+
+- **Hardware report:** status, alerts by severity, system, CPU, memory (DIMMs with serials and ECC counts), storage (disks with SMART, RAID, filesystems), network, GPU/NPU, the full inventory, and the data sources that could not be used and why.
+- **Stress result:** verdict and reasons, scope, metrics (min/avg/max), wrong results, counters that changed, new alerts, the log.
+- **History** of each host across any number of snapshots and stress results (a stress result adds its before/after snapshots): status over time, when each alert appeared and was resolved, counters that grew (with resets), sensor min/max/last against their limits, parts added, removed or replaced (serial changed) and firmware/BIOS/kernel/microcode updates, and every stress run.
+
+Tyr does not keep history on its own: collect the JSON you want (`tyr report
+--format json`, the TUI's `e` export, the stress result files) and pass files or
+directories; other JSON files are listed as skipped. In the TUI, `R` shows the
+current host's report (on a stress result: that result), and `e` writes both
+JSON and Markdown.
+
 ## Fixtures
 
 `make demo FIXTURE=server-degraded` runs the TUI against recorded data in

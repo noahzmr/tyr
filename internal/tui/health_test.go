@@ -2,10 +2,13 @@ package tui
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/noahzmr/tyr/internal/collector"
@@ -372,5 +375,48 @@ func TestSelectionFollowsIDAndReportsLoss(t *testing.T) {
 	m.Update(snapshotMsg{snap: snap})
 	if s := text(m); !strings.Contains(s, "P2-DIMMC1 no longer reported") {
 		t.Errorf("lost selection not reported\n%s", s)
+	}
+}
+
+func TestReportPageAndExport(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 120, 40)
+	run(m, "R")
+	if m.page == nil || !strings.Contains(text(m), "srv-degraded-01 · hardware report") || !strings.Contains(text(m), "R report") {
+		t.Fatalf("report page\n%s", text(m))
+	}
+	run(m, "/", "P", "2", "-", "D", "I", "M", "M", "B", "1", "enter")
+	if !strings.Contains(text(m), "match 1 of") {
+		t.Errorf("search in report\n%s", text(m))
+	}
+	run(m, "esc", "esc")
+	run(m, "e")
+	if !strings.Contains(m.message, ".json and .md") {
+		t.Errorf("export: %q", m.message)
+	}
+	files, _ := filepath.Glob(filepath.Join(m.opts.ExportDir, "*.md"))
+	if len(files) != 1 {
+		t.Fatalf("no markdown export: %v", files)
+	}
+	if b, _ := os.ReadFile(files[0]); !strings.Contains(string(b), "## Alerts") {
+		t.Errorf("markdown export\n%s", b)
+	}
+}
+
+func TestDocView(t *testing.T) {
+	d := &docView{title: "test", markdown: "# Hello\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\nfind me\n", dark: true, profile: colorprofile.TrueColor}
+	d.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	s := ansi.Strip(d.View().Content)
+	if !strings.Contains(s, "Hello") || !strings.Contains(s, "tyr view") || !strings.Contains(s, "q esc quit") {
+		t.Fatalf("doc view\n%s", s)
+	}
+	checkFits(t, "docview", d.View().Content, 80, 24)
+	for _, k := range []string{"/", "f", "i", "n", "d", "enter"} {
+		d.Update(press(k))
+	}
+	if s := ansi.Strip(d.View().Content); !strings.Contains(s, "match 1 of 1") {
+		t.Errorf("search\n%s", s)
+	}
+	if _, cmd := d.Update(press("q")); cmd == nil {
+		t.Error("q did not quit")
 	}
 }

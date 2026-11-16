@@ -4,12 +4,12 @@
   │ Navigation              Health                  Data · stress            │
   │ 1–0       switch tab    n         next problem  r         refresh now    │
 ▌✖│ tab ⇧tab  next / prev … !         problems only p         pause / resu…  │
- ▲│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON    │
+ ▲│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON …  │
  ▲│ ←→ hl     move / regio… v         switch view   c         copy serial    │
- ●│ pgup pgdn page          /         search        s         Stress tab     │
- ●│ g G       top / end     t         CPU load ↔ t… S         stress this    │
- ●│ enter     open / action a         empty DIMM s… F         full test      │
- ●│ esc       back · close  h         virtual NICs  q ctrl+c  quit · stop …  │
+ ●│ pgup pgdn page          /         search        R         report (Mark…  │
+ ●│ g G       top / end     t         CPU load ↔ t… s S F     stress tests   │
+ ●│ enter     open / action a         empty DIMM s… q ctrl+c  quit · stop …  │
+ ●│ esc       back · close  h         virtual NICs                           │
   │ This tab · Storage                                                       │
 sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
 Mo│ with SMART attributes, counters and / search · c copies the serial       │

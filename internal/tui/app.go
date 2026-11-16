@@ -20,6 +20,7 @@ import (
 
 	"github.com/noahzmr/tyr/internal/collector"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/report"
 	"github.com/noahzmr/tyr/internal/stress"
 )
 
@@ -350,6 +351,7 @@ var (
 	keyProblems = key.NewBinding(key.WithKeys("!"), key.WithHelp("!", "problems"))
 	keyOrder    = key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "order"))
 	keyCopy     = key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy serial"))
+	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "report"))
 )
 
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
@@ -384,6 +386,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		m.sess.prefs.problemsOnly = !m.sess.prefs.problemsOnly
 		m.flash(map[bool]string{true: "showing problems only (! to show all)", false: "showing all rows"}[m.sess.prefs.problemsOnly])
 		m.refreshTabs()
+		return nil
+	case key.Matches(msg, keyReport):
+		m.openReport()
 		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
@@ -494,12 +499,32 @@ func (m *Model) export() string {
 	if err != nil {
 		return "export failed: " + err.Error()
 	}
-	name := fmt.Sprintf("tyr-snapshot-%s-%s.json", m.snap.Hostname, time.Now().UTC().Format("20060102T150405Z"))
+	name := fmt.Sprintf("tyr-snapshot-%s-%s", m.snap.Hostname, time.Now().UTC().Format("20060102T150405Z"))
 	p := filepath.Join(m.opts.ExportDir, name)
-	if err := os.WriteFile(p, append(b, '\n'), 0o600); err != nil {
+	if err := os.WriteFile(p+".json", append(b, '\n'), 0o600); err != nil {
 		return "export failed: " + err.Error()
 	}
-	return "exported " + p
+	if err := os.WriteFile(p+".md", []byte(report.Snapshot(m.snap)), 0o600); err != nil {
+		return "exported " + p + ".json (report failed: " + err.Error() + ")"
+	}
+	return "exported " + p + ".json and .md"
+}
+
+// openReport shows the Markdown report as a page: the stress result on
+// the Stress tab's result view, else the current snapshot.
+func (m *Model) openReport() {
+	if m.snap == nil {
+		return
+	}
+	title, md := m.snap.Hostname+" report", report.Snapshot(m.snap)
+	if st, ok := m.tabs[m.active].(*stressTab); ok && st.state == stResult && len(st.results) > 0 {
+		var parts []string
+		for _, r := range st.results {
+			parts = append(parts, report.Run(r))
+		}
+		title, md = "stress result", strings.Join(parts, "\n---\n")
+	}
+	m.page = markdownPage(m.theme, "R report", title, md, m.width, m.contentHeight()+3)
 }
 
 // content area: header (1) + tabs (1) + rule (1) + footer (1 or more)

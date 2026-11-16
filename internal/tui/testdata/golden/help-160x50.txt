@@ -16,12 +16,12 @@ Model     ST4000NM000A-2HZ100   ╭─ Keys ────────────
 Serial    WJG0A004              │ Navigation                    Health                        Data · stress                    │
 Firmware  SN04                  │ 1–0        switch tab         n          next problem       r          refresh now           │
 Path      /dev/sdd · sata       │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │(2.3 y)
-                                │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON           │
+                                │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │
 Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions     v          switch view        c          copy serial           │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ pgup pgdn  page               /          search             s          Stress tab            │
- ✖ md1          md1 (raid5) degr│ g G        top / end          t          CPU load ↔ temp    S          stress this           │
- ✖ 0/0          RAID virtual dri│ enter      open / action      a          empty DIMM slots   F          full test             │
- ✖ 252:2        RAID physical dr│ esc        back · close       h          virtual NICs       q ctrl+c   quit · stop all       │
+ ✖ sdd          sdd: 2 I/O error│ pgup pgdn  page               /          search             R          report (Markdown)     │
+ ✖ md1          md1 (raid5) degr│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │
+ ✖ 0/0          RAID virtual dri│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │
+ ✖ 252:2        RAID physical dr│ esc        back · close       h          virtual NICs                                        │
  ✖ /data        /data (xfs) is m│                                                                                              │
  ✖ /data        /data 96% full  │ This tab · Storage                                                                           │
  ▲ nvme1n1      nvme1n1: 93% of │ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │

@@ -24,6 +24,7 @@ import (
 	"github.com/noahzmr/tyr/internal/collector/all"
 	"github.com/noahzmr/tyr/internal/fixture"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/report"
 	"github.com/noahzmr/tyr/internal/tui"
 )
 
@@ -34,6 +35,9 @@ Usage:
   tyr report [flags]     non-interactive health report (text or JSON)
   tyr stress [flags]     stress test: --component cpu|memory|storage|network|full
   tyr net-peer [flags]   far end for the network stress test (run on another host)
+  tyr history PATH...    history of hosts from saved JSON (snapshots, stress results)
+  tyr view PATH...       show a report in the terminal: a .md file, one JSON document,
+                         or several (their history), like glow
   tyr version
 
 Run "tyr <command> -h" for the flags of a command.
@@ -63,6 +67,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runStress(args, os.Stdin, stdout, stderr)
 	case "net-peer":
 		return runNetPeer(args, stdout, stderr)
+	case "history":
+		return runHistory(args, stdout, stderr)
+	case "view":
+		return runView(args, stdout, stderr)
 	case "help", "-h", "--help":
 		fmt.Fprint(stdout, usage)
 		return 0
@@ -164,7 +172,8 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	var c common
 	c.register(fs)
-	format := fs.String("format", "text", "output format: text or json")
+	format := fs.String("format", "text", "output format: text, json or markdown")
+	from := fs.String("from", "", "render a saved snapshot or stress result (JSON) instead of collecting from this host")
 	section := fs.String("section", "all", "comma-separated modules: all, cpu, memory, storage, power, network, accel, events")
 	fs.BoolVar(&c.opts.CoreTest, "core-test", false, "run the quick per-core test")
 	fs.DurationVar(&c.opts.CoreTestTimeout, "core-test-duration", 2*time.Second, "core test timeout")
@@ -175,9 +184,12 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 	if c.version {
 		return run([]string{"version"}, stdout, stderr)
 	}
-	if *format != "text" && *format != "json" {
+	if *format != "text" && *format != "json" && *format != "markdown" && *format != "md" {
 		fmt.Fprintf(stderr, "tyr report: unknown --format %q\n", *format)
 		return 3
+	}
+	if *from != "" {
+		return reportFrom(*from, *format, stdout, stderr)
 	}
 	cols, err := selectSections(*section)
 	if err != nil {
@@ -203,6 +215,10 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "tyr:", err)
 			return 3
 		}
+		return snap.Status.ExitCode()
+	}
+	if *format == "markdown" || *format == "md" {
+		fmt.Fprint(stdout, report.Snapshot(snap))
 		return snap.Status.ExitCode()
 	}
 	writeText(stdout, snap)
