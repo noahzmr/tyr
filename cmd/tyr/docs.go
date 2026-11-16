@@ -14,7 +14,7 @@ import (
 )
 
 // reportFrom renders a saved snapshot or stress result.
-func reportFrom(path, format string, stdout, stderr io.Writer) int {
+func reportFrom(path, format string, o report.Options, stdout, stderr io.Writer) int {
 	d, err := report.LoadOne(path)
 	if err != nil {
 		fmt.Fprintln(stderr, "tyr report:", err)
@@ -25,7 +25,7 @@ func reportFrom(path, format string, stdout, stderr io.Writer) int {
 		case "json":
 			return writeJSON(stdout, stderr, d.Run, d.Run.Verdict.ExitCode())
 		default: // text and markdown: the Markdown report
-			fmt.Fprint(stdout, report.Run(d.Run))
+			fmt.Fprint(stdout, report.RunWith(d.Run, o))
 		}
 		return d.Run.Verdict.ExitCode()
 	}
@@ -90,6 +90,7 @@ func runHistory(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	format := fs.String("format", "markdown", "output format: markdown or json")
 	host := fs.String("host", "", "only this host (default: every host in the files)")
+	charts := fs.String("charts", "mermaid", "charts: mermaid (GitLab, GitHub, Obsidian) or text (sparklines, for glow and terminals)")
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: tyr history [--format markdown|json] [--host NAME] PATH...\n\n"+
 			"History of hosts from saved JSON: snapshots (tyr report --format json, the TUI export)\n"+
@@ -110,7 +111,7 @@ func runHistory(args []string, stdout, stderr io.Writer) int {
 	case "json":
 		return writeJSON(stdout, stderr, hs, 0)
 	case "markdown", "md":
-		fmt.Fprint(stdout, report.HistoryMarkdown(hs, skipped))
+		fmt.Fprint(stdout, report.HistoryMarkdownWith(hs, skipped, report.Options{Terminal: *charts == "text"}))
 		return 0
 	}
 	fmt.Fprintf(stderr, "tyr history: unknown --format %q\n", *format)
@@ -150,7 +151,7 @@ func runView(args []string, stdout, stderr io.Writer) int {
 		}
 		switch {
 		case len(docs) == 1 && len(paths) == 1 && docs[0].Run != nil:
-			title, md = "stress result "+docs[0].Host(), report.Run(docs[0].Run)
+			title, md = "stress result "+docs[0].Host(), report.RunWith(docs[0].Run, report.Options{Terminal: true})
 		case len(docs) == 1 && len(paths) == 1:
 			title, md = docs[0].Host()+" report", report.Snapshot(docs[0].Snap)
 		default:
@@ -159,7 +160,7 @@ func runView(args []string, stdout, stderr io.Writer) int {
 			for i, h := range hs {
 				names[i] = h.Host
 			}
-			title, md = strings.Join(names, ", ")+" history", report.HistoryMarkdown(hs, skipped)
+			title, md = strings.Join(names, ", ")+" history", report.HistoryMarkdownWith(hs, skipped, report.Options{Terminal: true})
 		}
 	}
 	if !isTTY(os.Stdout) {

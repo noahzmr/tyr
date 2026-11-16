@@ -85,8 +85,13 @@ tyr view ./results/                                 # several files: their histo
 ```
 
 - **Hardware report:** status, alerts by severity, component health (every kind of component — CPU cores, packages, DIMMs, disks, RAID, filesystems, ports, transceivers, GPUs/NPUs, PSUs, fans — with OK/WARN/CRIT counts and which ones have problems), each logical CPU (state, clock, load, temperature, MCEs, throttling, core test), system, CPU, memory (DIMMs with serials and ECC counts), storage (disks with SMART, RAID, filesystems), network, GPU/NPU, the full inventory, and the data sources that could not be used and why.
-- **Stress result:** verdict and reasons, scope, metrics (min/avg/max), wrong results, counters that changed, new alerts, component health after the test (and each core after a CPU test), the log.
-- **History** of each host across any number of snapshots and stress results (a stress result adds its before/after snapshots): status over time, when each alert appeared and was resolved, counters that grew (with resets), sensor min/max/last against their limits, parts added, removed or replaced (serial changed) and firmware/BIOS/kernel/microcode updates, and every stress run.
+- **Stress result:** verdict and reasons, scope, charts of the metrics over time (Mermaid `xychart-beta` line charts: load, CPU temperature against its limit, verified throughput, clock …; the result JSON keeps up to 120 points per metric under `series`), metrics (min/avg/max), wrong results, counters that changed, new alerts, component health after the test (and each core after a CPU test), the log.
+- **History** of each host across any number of snapshots and stress results (a stress result adds its before/after snapshots): status over time, when each alert appeared and was resolved, counters that grew (with resets), sensor min/max/last against their limits, parts added, removed or replaced (serial changed) and firmware/BIOS/kernel/microcode updates, and every stress run (also as a Mermaid gantt timeline).
+
+Mermaid renders in GitLab, GitHub, Obsidian or mermaid.live. Terminal views
+(`tyr view`, the TUI, glow) cannot draw it, so there the charts are
+sparklines; `--charts text` gives the sparkline form in `tyr report --from`
+and `tyr history` output too, e.g. for `| glow -`.
 
 Tyr does not keep history on its own: collect the JSON you want (`tyr report
 --format json`, the TUI's `e` export, the stress result files) and pass files or

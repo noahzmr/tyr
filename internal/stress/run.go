@@ -83,6 +83,7 @@ type Run struct {
 
 	mu       sync.Mutex
 	metrics  map[string]*MetricSummary
+	samples  map[string][]sample // values over time, for the result's series
 	verify   []VerifyError
 	log      []string
 	closers  []io.Closer
@@ -154,6 +155,7 @@ func (rt runtime) Metric(name, unit string, v float64) {
 		rt.r.metrics[name] = m
 	}
 	m.add(v)
+	rt.r.samples[name] = addSample(rt.r.samples[name], sample{t: time.Since(rt.r.Start).Seconds(), v: v})
 	rt.r.mu.Unlock()
 	rt.r.emit(Event{Kind: EvMetric, Name: name, Unit: unit, Value: v}, false)
 }
@@ -251,7 +253,7 @@ func Start(ctx context.Context, env *Env, cfg Config, plan *Plan, t Test) (*Run,
 	cfg.DurationMS = cfg.Duration.Milliseconds()
 	ctx, cancel := context.WithCancelCause(ctx)
 	r := &Run{ID: runID(cfg), Cfg: cfg, Plan: plan, Start: time.Now(), events: make(chan Event, 4096), cancel: cancel,
-		done: make(chan struct{}), metrics: map[string]*MetricSummary{}}
+		done: make(chan struct{}), metrics: map[string]*MetricSummary{}, samples: map[string][]sample{}}
 	go r.run(ctx, env, t)
 	return r, nil
 }
@@ -492,6 +494,13 @@ func (r *Run) verdict(env *Env, base, after *model.Snapshot, baseCounters map[st
 		res.Metrics = append(res.Metrics, *m)
 	}
 	sort.Slice(res.Metrics, func(i, j int) bool { return res.Metrics[i].Name < res.Metrics[j].Name })
+	res.Series = map[string]MetricSeries{}
+	for name, ss := range r.samples {
+		if s, ok := resample(ss, res.EndedAt.Sub(r.Start).Seconds(), seriesPoints); ok {
+			s.Unit = r.metrics[name].Unit
+			res.Series[name] = s
+		}
+	}
 	baseKeys := map[string]bool{}
 	for _, f := range base.Findings() {
 		baseKeys[f.Key()] = true

@@ -173,28 +173,31 @@ type Aborted struct {
 
 // Result is the JSON result file (schema docs/DESIGN.md §4.2).
 type Result struct {
-	SchemaVersion string           `json:"schema_version"`
-	TyrVersion    string           `json:"tyr_version"`
-	Hostname      string           `json:"hostname"`
-	RunID         string           `json:"run_id"`
-	Component     Component        `json:"component"`
-	Engine        string           `json:"engine"`
-	Config        Config           `json:"config"`
-	Plan          *Plan            `json:"plan"`
-	StartedAt     time.Time        `json:"started_at"`
-	EndedAt       time.Time        `json:"ended_at"`
-	Verdict       Verdict          `json:"verdict"`
-	Aborted       *Aborted         `json:"aborted"`
-	Reasons       []string         `json:"reasons"`
-	Summary       string           `json:"summary"`
-	Metrics       []MetricSummary  `json:"metrics"`
-	VerifyErrors  []VerifyError    `json:"verify_errors"`
-	CounterDeltas map[string]int64 `json:"counter_deltas"`
-	NewFindings   []model.Finding  `json:"new_findings"`
-	Log           []string         `json:"log,omitempty"`
-	File          string           `json:"-"`
-	Baseline      *model.Snapshot  `json:"baseline"`
-	After         *model.Snapshot  `json:"after"`
+	SchemaVersion string          `json:"schema_version"`
+	TyrVersion    string          `json:"tyr_version"`
+	Hostname      string          `json:"hostname"`
+	RunID         string          `json:"run_id"`
+	Component     Component       `json:"component"`
+	Engine        string          `json:"engine"`
+	Config        Config          `json:"config"`
+	Plan          *Plan           `json:"plan"`
+	StartedAt     time.Time       `json:"started_at"`
+	EndedAt       time.Time       `json:"ended_at"`
+	Verdict       Verdict         `json:"verdict"`
+	Aborted       *Aborted        `json:"aborted"`
+	Reasons       []string        `json:"reasons"`
+	Summary       string          `json:"summary"`
+	Metrics       []MetricSummary `json:"metrics"`
+	VerifyErrors  []VerifyError   `json:"verify_errors"`
+	// Series are the metrics over time (charts in the report): values at
+	// even steps from the start, at most seriesPoints of them.
+	Series        map[string]MetricSeries `json:"series,omitempty"`
+	CounterDeltas map[string]int64        `json:"counter_deltas"`
+	NewFindings   []model.Finding         `json:"new_findings"`
+	Log           []string                `json:"log,omitempty"`
+	File          string                  `json:"-"`
+	Baseline      *model.Snapshot         `json:"baseline"`
+	After         *model.Snapshot         `json:"after"`
 }
 
 // SummaryLine is the one-line result ("cpu stress (builtin): PASS, 5m00s, ...").

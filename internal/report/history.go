@@ -94,6 +94,7 @@ type RunSummary struct {
 	WrongResults int       `json:"wrong_results"`
 	MaxCPUTempC  *float64  `json:"max_cpu_temp_celsius,omitempty"`
 	File         string    `json:"file"`
+	seconds      float64
 }
 
 // BuildHistory computes the history of every host in docs.
@@ -133,7 +134,7 @@ func buildHost(host string, docs []Doc) History {
 		add(r.Baseline, "before stress", d.Path)
 		add(r.After, "after stress", d.Path)
 		rs := RunSummary{Started: r.StartedAt, Test: compName(r.Component), Engine: r.Engine, Duration: dur(r.EndedAt.Sub(r.StartedAt)),
-			Verdict: string(r.Verdict), WrongResults: len(r.VerifyErrors), File: d.Path}
+			Verdict: string(r.Verdict), WrongResults: len(r.VerifyErrors), File: d.Path, seconds: r.EndedAt.Sub(r.StartedAt).Seconds()}
 		if len(r.Reasons) > 0 {
 			rs.Reason = r.Reasons[0]
 		}
@@ -410,11 +411,16 @@ func diffFirmware(a, b *model.Snapshot, at time.Time) []Change {
 	return out
 }
 
-// HistoryMarkdown renders the histories.
+// HistoryMarkdown renders the histories with Mermaid charts.
 func HistoryMarkdown(hs []History, skipped []Skipped) string {
+	return HistoryMarkdownWith(hs, skipped, Options{})
+}
+
+// HistoryMarkdownWith renders the histories.
+func HistoryMarkdownWith(hs []History, skipped []Skipped, o Options) string {
 	var parts []string
 	for _, h := range hs {
-		parts = append(parts, historyMD(h))
+		parts = append(parts, historyMD(h, o))
 	}
 	out := strings.Join(parts, "\n---\n")
 	if len(skipped) > 0 {
@@ -430,7 +436,7 @@ func HistoryMarkdown(hs []History, skipped []Skipped) string {
 	return out
 }
 
-func historyMD(h History) string {
+func historyMD(h History, o Options) string {
 	var m md
 	m.line("# %s · history", esc(h.Host))
 	m.line("")
@@ -522,6 +528,7 @@ func historyMD(h History) string {
 	if len(h.Runs) == 0 {
 		m.p("No stress results in these files.")
 	} else {
+		writeGantt(&m, h.Runs, o)
 		var rows [][]string
 		for _, r := range h.Runs {
 			t := ""

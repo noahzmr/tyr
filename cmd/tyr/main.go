@@ -174,6 +174,7 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 	c.register(fs)
 	format := fs.String("format", "text", "output format: text, json or markdown")
 	from := fs.String("from", "", "render a saved snapshot or stress result (JSON) instead of collecting from this host")
+	charts := fs.String("charts", "mermaid", "stress result charts in Markdown: mermaid (GitLab, GitHub, Obsidian) or text (sparklines, for glow)")
 	section := fs.String("section", "all", "comma-separated modules: all, cpu, memory, storage, power, network, accel, events")
 	fs.BoolVar(&c.opts.CoreTest, "core-test", false, "run the quick per-core test")
 	fs.DurationVar(&c.opts.CoreTestTimeout, "core-test-duration", 2*time.Second, "core test timeout")
@@ -189,7 +190,7 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 		return 3
 	}
 	if *from != "" {
-		return reportFrom(*from, *format, stdout, stderr)
+		return reportFrom(*from, *format, report.Options{Terminal: *charts == "text"}, stdout, stderr)
 	}
 	cols, err := selectSections(*section)
 	if err != nil {

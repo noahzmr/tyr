@@ -201,11 +201,13 @@ func (m *Model) reportFile(d *reportDialog) string {
 func (m *Model) generateReport() {
 	d := m.reports
 	d.err = ""
-	title, md, js, err := m.buildReport(d)
+	// saved Markdown carries Mermaid charts; the page shows sparklines
+	title, md, js, err := m.buildReport(d, report.Options{})
 	if err != nil {
 		d.err = err.Error()
 		return
 	}
+	_, termMD, _, _ := m.buildReport(d, report.Options{Terminal: true})
 	content := md
 	if d.format == 1 {
 		content = js
@@ -227,7 +229,7 @@ func (m *Model) generateReport() {
 		m.flash("saved " + saved)
 	}
 	if d.output != 1 {
-		view := md
+		view := termMD
 		if d.format == 1 { // JSON shown as a highlighted code block
 			view = "```json\n" + js + "\n```\n"
 		}
@@ -236,7 +238,7 @@ func (m *Model) generateReport() {
 }
 
 // buildReport returns the title, Markdown and JSON of the chosen report.
-func (m *Model) buildReport(d *reportDialog) (string, string, string, error) {
+func (m *Model) buildReport(d *reportDialog, o report.Options) (string, string, string, error) {
 	enc := func(v any) (string, error) {
 		b, err := json.MarshalIndent(v, "", "  ")
 		return string(b) + "\n", err
@@ -253,7 +255,7 @@ func (m *Model) buildReport(d *reportDialog) (string, string, string, error) {
 			}
 		}
 		js, err := enc(r)
-		return "stress result " + string(r.Component), report.Run(r), js, err
+		return "stress result " + string(r.Component), report.RunWith(r, o), js, err
 	case 2:
 		var paths []string
 		for _, p := range strings.Split(d.paths, ",") {
@@ -273,7 +275,7 @@ func (m *Model) buildReport(d *reportDialog) (string, string, string, error) {
 		}
 		hs := report.BuildHistory(docs)
 		js, err := enc(hs)
-		return "history", report.HistoryMarkdown(hs, skipped), js, err
+		return "history", report.HistoryMarkdownWith(hs, skipped, o), js, err
 	}
 	if m.snap == nil {
 		return "", "", "", fmt.Errorf("no snapshot yet")

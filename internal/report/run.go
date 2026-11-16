@@ -56,8 +56,11 @@ func rate(v float64, suffix string) string {
 	return fmt.Sprintf("%.0f %s", v, suffix)
 }
 
-// Run is the report of one stress test.
-func Run(r *stress.Result) string {
+// Run is the report of one stress test, charts as Mermaid.
+func Run(r *stress.Result) string { return RunWith(r, Options{}) }
+
+// RunWith is the report of one stress test.
+func RunWith(r *stress.Result, o Options) string {
 	var m md
 	m.line("# %s · %s stress test", esc(r.Hostname), compName(r.Component))
 	m.line("")
@@ -99,6 +102,7 @@ func Run(r *stress.Result) string {
 		}
 		m.table([]string{"Metric", ">Min", ">Avg", ">Max"}, rows)
 	}
+	writeCharts(&m, runCharts(r), o)
 	m.h(2, "Wrong results")
 	if len(r.VerifyErrors) == 0 {
 		m.p("● None: every checked result was correct.")
