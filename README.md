@@ -101,10 +101,13 @@ In the TUI, `R` opens the Reports dialog: choose the host report, a stress
 result (this session's or an earlier run) or the history of files and
 directories, Markdown or JSON, and view it (scroll, `/` search), save it, copy
 it to the clipboard, or a combination. On any report page (and in `tyr view`)
-`c` copies the report: Markdown with the Mermaid charts, or JSON. Copying uses
-OSC 52, so it reaches your local clipboard over SSH too; tmux needs
-`set -g set-clipboard on`, and some terminals cut very large copies (save
-those instead). `e` writes the current snapshot as JSON and Markdown.
+`c` copies the report: Markdown with the Mermaid charts, or JSON. Locally Tyr
+puts it on the desktop clipboard with `wl-copy`, `xclip` or `xsel` (install
+one of them; GNOME Terminal and Ptyxis cannot copy any other way) and also sends
+OSC 52. Over SSH only OSC 52 reaches your clipboard: it works in kitty,
+WezTerm, foot, iTerm2, Windows Terminal and tmux (`set -g set-clipboard on`),
+not in GNOME Terminal or Ptyxis, and some terminals cut very large copies;
+save the report there instead. `e` writes the current snapshot as JSON and Markdown.
 
 ## Contributing
 

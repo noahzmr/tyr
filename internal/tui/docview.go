@@ -96,16 +96,16 @@ func (d *docView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if text == "" {
 				text = d.markdown
 			}
-			d.message = "copied to the clipboard (" + sizeText(len(text)) + ", OSC 52)"
-			if len(text) > osc52Large {
-				d.message += " · large: some terminals cut it"
-			}
-			return d, tea.SetClipboard(text)
+			cmd, msg := copyCmd(text, "the document ("+sizeText(len(text))+")")
+			d.message = msg
+			return d, cmd
 		}
 		d.message = ""
 		if d.page.update(msg) {
 			return d, tea.Quit
 		}
+	case statusMsg: // result of the clipboard tool
+		d.message = string(msg)
 	case tea.MouseWheelMsg:
 		if d.page != nil {
 			d.page.vp, _ = d.page.vp.Update(msg)

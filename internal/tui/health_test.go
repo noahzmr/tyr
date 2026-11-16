@@ -426,7 +426,7 @@ func TestReportsDialog(t *testing.T) {
 	for m.reports.fields()[m.reports.field] != "generate" {
 		run(m, "down")
 	}
-	if _, cmd := m.Update(press("enter")); cmd == nil || m.page != nil || !strings.Contains(m.message, "copied the report to the clipboard (Markdown") {
+	if _, cmd := m.Update(press("enter")); cmd == nil || m.page != nil || !strings.Contains(m.message, "copied the report (Markdown") {
 		t.Fatalf("copy output: cmd %v page %v %q", cmd != nil, m.page != nil, m.message)
 	}
 	// c on a report page copies the report; on a component page the serial
@@ -521,7 +521,7 @@ func TestDocView(t *testing.T) {
 		t.Errorf("search\n%s", s)
 	}
 	d.Update(press("esc")) // leaves the search
-	if _, cmd := d.Update(press("c")); cmd == nil || !strings.Contains(ansi.Strip(d.View().Content), "copied to the clipboard") {
+	if _, cmd := d.Update(press("c")); cmd == nil || !strings.Contains(ansi.Strip(d.View().Content), "copied the document") {
 		t.Errorf("c in view\n%s", ansi.Strip(d.View().Content))
 	}
 	if _, cmd := d.Update(press("q")); cmd == nil {

@@ -29,8 +29,9 @@ func (m *Model) copySerial() tea.Cmd {
 		m.flash("no serial for " + name + serialHint(m))
 		return nil
 	}
-	m.flash("copied S/N " + sn + " (" + name + ")")
-	return tea.SetClipboard(sn)
+	cmd, msg := copyCmd(sn, "S/N "+sn+" ("+name+")")
+	m.flash(msg)
+	return cmd
 }
 
 func serialHint(m *Model) string {

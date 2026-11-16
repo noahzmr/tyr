@@ -247,15 +247,14 @@ func (m *Model) generateReport() tea.Cmd {
 // osc52Large is where some terminals start to cut OSC 52 clipboard writes.
 const osc52Large = 100 << 10
 
-// copyReport puts a report on the clipboard (OSC 52: works over SSH, no
-// external helper) and says what was copied.
+// copyReport puts a report on the clipboard (see copyCmd) and says how.
 func (m *Model) copyReport(content, kind string) tea.Cmd {
-	msg := fmt.Sprintf("copied the report to the clipboard (%s, %s)", kind, sizeText(len(content)))
-	if len(content) > osc52Large {
+	cmd, msg := copyCmd(content, fmt.Sprintf("the report (%s, %s)", kind, sizeText(len(content))))
+	if _, tool := localClipboardTool(); !tool && len(content) > osc52Large {
 		msg += " · large: some terminals cut OSC 52, save it if the paste is incomplete"
 	}
 	m.flash(msg)
-	return tea.SetClipboard(content)
+	return cmd
 }
 
 func sizeText(n int) string {
@@ -388,7 +387,7 @@ func (m *Model) reportsView(base string) string {
 		lines = append(lines, "", t.StatusText(model.StatusCrit, "✖ "+d.err))
 	}
 	if d.copy() {
-		lines = append(lines, strings.Repeat(" ", lw)+t.Sub.Render("copies with OSC 52 (works over SSH; tmux needs set-clipboard on)"))
+		lines = append(lines, strings.Repeat(" ", lw)+t.Sub.Render("copies to the desktop clipboard (wl-copy, xclip, xsel) and via OSC 52 (over SSH)"))
 	}
 	lines = append(lines, "", t.Sub.Render("↑↓ field · ←→ change · enter edit / generate · esc close"))
 	return overlay(t, base, t.Accent, "Reports", strings.Join(lines, "\n"), m.width, m.height)
