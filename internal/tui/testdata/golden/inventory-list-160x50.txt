@@ -1,12 +1,13 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
-1 Overview ✖36  2 CPU ✖4  3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
- ✖ CRIT  47 components · 13 with problems · serials visible                                                                                        v List · Tree
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  16 crit 21 warn   ✖ CRIT
+1 Overview ✖37  2 CPU ✖4  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
+ ✖ CRIT  48 components · 14 with problems · serials visible                                                                                        v List · Tree
 
-Search ╭─ / to search ────────╮  Category  all  system chassis board BMC CPU DIMM disk RAID RAID PD NIC xcvr GPU PSU FRU
+Search ╭─ / to search ────────╮  Category  all  system chassis board BMC CPU DIMM disk volume RAID RAID PD NIC xcvr GPU PSU FRU
 
    Type    Location           Vendor            Model                                 Part number          Serial                  Firmware
 ▌✖ DIMM    P2-DIMMB1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0012                –                           ┃
  ✖ disk    /dev/sdd           –                 ST4000NM000A-2HZ100                   –                    WJG0A004                SN04                        ┃
+ ✖ volume  /dev/sdf           IET               VIRTUAL-DISK                          –                    –                       0001                        ┃
  ✖ RAID    controller 0       –                 AVAGO MegaRAID SAS 9361-8i            –                    SK94012345              4.680.00-8527               ┃
  ✖ RAID PD c0 252:2           –                 ST2000NM0055-1V4104                   –                    ZFL4A002                SN05                        ┃
  ✖ NIC     ens1f1 4b:00.1     Intel             Ethernet Controller E810-XXV for SFP  K91258-006           B49691A00010            4.40 0x8001c967 1.3534.0    ┃
@@ -39,12 +40,11 @@ Search ╭─ / to search ────────╮  Category  all  system cha
  ● DIMM    P1-DIMMH1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F000E                –                           ┃
  ● DIMM    P2-DIMMA1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0010                –                           ┃
  ● DIMM    P2-DIMMD1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0016                –                           ┃
- ● DIMM    P2-DIMME1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0018                –                           ┃
+ ● DIMM    P2-DIMME1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0018                –                           │
  ● DIMM    P2-DIMMF1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001A                –                           │
  ● DIMM    P2-DIMMG1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001C                –                           │
  ● DIMM    P2-DIMMH1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001E                –                           │
  ● disk    /dev/nvme0n1       –                 SAMSUNG MZQL21T9HCJR-00A07            –                    S64GNE0R100001          GDC5602Q                    │
  ● disk    /dev/sda           –                 ST4000NM000A-2HZ100                   –                    WJG0A001                SN04                        │
- ● disk    /dev/sdb           –                 ST4000NM000A-2HZ100                   –                    WJG0A002                SN04                        │
 
 / search  f category  enter page  c copy serial  v tree  ! problems  q quit  ? help

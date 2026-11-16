@@ -85,11 +85,21 @@ BMC SEL memory events.
 
 Disks (SATA, SAS, NVMe) with SMART, wear and spare, I/O errors from the kernel
 log, md RAID (`/proc/mdstat`), MegaRAID / PERC controllers with virtual and
-physical drives and the battery, filesystems.
+physical drives and the battery, filesystems. iSCSI and Fibre Channel LUNs are
+listed as **network volumes**, not disks: their session or remote port, target,
+portal and state, and the kernel I/O errors on the path to the storage system.
+Their SMART belongs to the storage system and is not queried.
+
+SMART is read when Tyr starts and then every 5 minutes (`--smart-interval`);
+`r` in the TUI and the snapshots before and after a stress test always read it
+fresh, and the storage stress test reads it every 30 s.
 
 | Code | Status | When |
 |---|---|---|
-| SMART failed, `kernel_io_errors` | ✖ | the drive reports failure, I/O errors in the kernel log |
+| SMART failed, `kernel_io_errors` | ✖ | the drive reports failure, I/O errors in the kernel log (with the last line) |
+| `io_errors` | ▲ | SCSI command errors that are new since Tyr started and not caused by its own SMART queries |
+| `remote_io_errors` | ✖ | kernel I/O errors on an iSCSI / FC volume: the path to the storage system failed |
+| `iscsi_session`, `fc_port` | ✖ | the iSCSI session is not `LOGGED_IN`, the FC remote port not `Online` |
 | reallocated / pending sectors, media errors | ▲ | growing defect counters |
 | `wear`, `spare_low` | ▲ / ✖ | endurance used up, spare below threshold |
 | `md_degraded`, `md_inactive`, `md_member_failed` | ✖ | software RAID lost redundancy |
@@ -97,6 +107,44 @@ physical drives and the battery, filesystems.
 | `raid_controller` | ▲ / ✖ | hardware RAID: degraded VD, failed PD, battery |
 | `fs_read_only` | ✖ | a filesystem was remounted read-only |
 | `fs_full` | ▲ / ✖ | 85 / 95 % space or inodes |
+
+#### SCSI command errors (`ioerr_cnt`)
+
+`/sys/block/sdX/device/ioerr_cnt` counts every SCSI command that ended with an
+error since the driver loaded - also commands the drive or the controller
+merely rejects, above all SMART and ATA pass-through queries a RAID or SAS
+controller does not support. A large count that is the same on every disk
+behind one controller, with nothing in the kernel log, is that, not failing
+disks. Tyr therefore:
+
+- shows the count since boot, but does not raise a finding for it,
+- reads the counter before and after each of its own SMART queries and keeps
+  that part apart ("173 by Tyr's SMART reads"),
+- warns only about errors that are new since it started and that it did not
+  cause, and uses the same corrected counter for stress test verdicts.
+
+#### Troubleshooting storage
+
+```bash
+lsblk -S -o NAME,TRAN,VENDOR,MODEL,SIZE              # local (sas, sata, nvme) vs. iscsi / fc
+journalctl -k -b | grep -E '\bsd[a-z]+\b' | grep -iE 'I/O error|medium|reset|timeout' | tail
+# does a SMART query raise ioerr_cnt? (then the count is rejected commands)
+d=sda; b=$(printf '%d' "$(cat /sys/block/$d/device/ioerr_cnt)"); smartctl -x /dev/$d >/dev/null
+echo $(( $(printf '%d' "$(cat /sys/block/$d/device/ioerr_cnt)") - b ))
+# iSCSI path
+iscsiadm -m session -P 3 | grep -E 'Target:|Current Portal|Session State|Attached scsi disk'
+journalctl -k -b | grep -iE 'iscsi|connection[0-9]+:' | tail
+```
+
+- **Kernel I/O errors on a local disk**: look at pending and reallocated
+  sectors (the disk), CRC errors (cable, backplane, connector), and the kernel
+  log around the time of the last error the finding shows.
+- **CRC errors**: a few over the disk's life usually come from a hot-plug or a
+  reseat; if they grow, reseat the disk, then check the slot and cable.
+- **Kernel I/O errors on a network volume**: the session dropped or timed out;
+  check the session state, the network to the portal and the target's logs.
+- **Empty slots and disks hidden by the controller or the BMC** are not visible
+  to Linux; only the controller's tool or the BMC shows them.
 
 ### Network
 

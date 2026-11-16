@@ -1,4 +1,4 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
 esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ100 …  line 1–20 · 0 %
 
 Identity ───────────────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ Sensors ────────────────────────
 Temperature ━━━━━━─────╎──┃─ 36°C
             limits warn 55 · crit 65 (default)
 
-SMART health ────────────────────────────────────────────────────── via smartctl
+SMART health ────────────────────────────────────── via smartctl · read just now
 Overall    ● PASSED
 Self-test  no failure logged
 Power-on   19 832 h · 41 cycles

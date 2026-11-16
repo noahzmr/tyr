@@ -93,9 +93,9 @@ func TestEveryTabFits(t *testing.T) {
 func TestHeaderAndOverview(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
 	s := ansi.Strip(screen(m))
-	for _, want := range []string{"TYR", "srv-degraded-01", "Supermicro SYS-120U-TNR", "S/N S412345X3A01234", "✖ CRIT", "fixture", "14 crit 22 warn",
+	for _, want := range []string{"TYR", "srv-degraded-01", "Supermicro SYS-120U-TNR", "S/N S412345X3A01234", "✖ CRIT", "fixture", "16 crit 21 warn",
 		"63/64 online · max 96°C", "512 GB · 16/32 slots", "collector not implemente", "CRIT · 4", "Needs attention",
-		"Findings 14 ✖ · 22 ▲", "worst first", "▸ 1 core offline (cpu7)", "✖ CPU      cpu7", "/data 96% full", "6/6 fans OK"} {
+		"Findings 16 ✖ · 21 ▲", "worst first", "▸ 1 core offline (cpu7)", "✖ CPU      cpu7", "/data 96% full", "6/6 fans OK"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("overview missing %q\n%s", want, s)
 		}
@@ -300,7 +300,7 @@ func TestInventoryTabSearchAndFilter(t *testing.T) {
 	}
 	m.Update(press("enter"))
 	s = ansi.Strip(screen(m))
-	if !strings.Contains(s, "1 of 47 match") || !strings.Contains(s, "c0 252:2") {
+	if !strings.Contains(s, "1 of 48 match") || !strings.Contains(s, "c0 252:2") {
 		t.Errorf("search result\n%s", s)
 	}
 	m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
@@ -314,7 +314,7 @@ func TestInventoryTabSearchAndFilter(t *testing.T) {
 	}
 	m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	m.Update(press("f")) // first category: system
-	if s := ansi.Strip(screen(m)); !strings.Contains(s, "esc shows all categories") || !strings.Contains(s, "1 of 47 match") {
+	if s := ansi.Strip(screen(m)); !strings.Contains(s, "esc shows all categories") || !strings.Contains(s, "1 of 48 match") {
 		t.Errorf("filter\n%s", s)
 	}
 	// narrow terminal still shows serials

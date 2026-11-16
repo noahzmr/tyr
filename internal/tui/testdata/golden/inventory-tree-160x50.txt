@@ -1,6 +1,6 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
-1 Overview ✖36  2 CPU ✖4  3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
- ✖ CRIT  47 components · 13 with problems · serials visible                                                                                        v List · Tree
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  16 crit 21 warn   ✖ CRIT
+1 Overview ✖37  2 CPU ✖4  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
+ ✖ CRIT  48 components · 14 with problems · serials visible                                                                                        v List · Tree
 
    Component                                                                                 Serial             │ ✖ srv-degraded-01
 ▌  ▾ ✖ srv-degraded-01  Supermicro SYS-120U-TNR                                              S412345X3A01234  ┃ │ ──────────────────────────────────────────────
@@ -32,11 +32,11 @@
    │     ├─ ▾ ✖ Channel B                                                                                     ┃ │
    │     │  ├─ ✖ P2-DIMMB1  32 GB DDR4 Samsung M393A4K40EB3-CWE                              3A5F0012         ┃ │
    │     │  └─ ● P2-DIMMB2  empty                                                                             ┃ │
-   │     ├─ ▾ ▲ Channel C                                                                                     ┃ │
+   │     ├─ ▾ ▲ Channel C                                                                                     │ │
    │     │  ├─ ▲ P2-DIMMC1  32 GB DDR4 Samsung M393A4K40EB3-CWE                              3A5F0014         │ │
    │     │  └─ ● P2-DIMMC2  empty                                                                             │ │
    │     └─ ▸ ● Channel D–H  5 healthy                                                                        │ │
-   ├─ ▾ ✖ Storage  7 disks                                                                                    │ │
+   ├─ ▾ ✖ Storage  8 disks                                                                                    │ │
    │  ├─ ▾ ✖ RAID controller 0  AVAGO MegaRAID SAS 9361-8i                                   SK94012345       │ │
    │  │  ├─ ▾ ✖ VD 0/0  RAID5 Dgrd 5.457 TB                                                                   │ │
    │  │  │  ├─ ● PD 252:0  Onln ST2000NM0055-1V4104                                          ZFL4A000         │ │

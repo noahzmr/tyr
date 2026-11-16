@@ -1,6 +1,6 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
-1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
- ✖ CRIT  Stress test · machine has 14 critical findings, results may be affec…
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
+1✖37 2✖4 3✖9 4✖12 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
+ ✖ CRIT  Stress test · machine has 16 critical findings, results may be affec…
 
 New run ────────────────────────────────────────────────────────────────────────
 

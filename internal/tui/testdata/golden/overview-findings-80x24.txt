@@ -1,24 +1,24 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
- 1 Overview ✖36  2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○ 9 0                           ? help
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
+ 1 Overview ✖37  2✖4 3✖9 4✖12 5○ 6✖6 7✖6 8○ 9 0                           ? help
  ✖ CRIT  Needs attention  CPU Mem Stor Net GPU
 
 Modules ───────────────────────────────────────────────────────── enter open tab
  ✖ CPU      CRIT      4 1 core offline (cpu7)
  ✖ Memory   CRIT      9 1 memory event in BMC SEL, latest 2026-11-14 09:00: Un…
- ✖ Storage  CRIT     11 sdd: 2 I/O errors in kernel log
+ ✖ Storage  CRIT     12 sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:0…
  ○ Power    n/a         collector not implemented yet
  ✖ Network  CRIT      6 bond0 degraded: ens1f1 down (1/2 members up)
  ✖ GPU/NPU  CRIT      6 GPU1 ca:00.0: 2 uncorrectable ECC errors
  ○ Events   n/a         collector not implemented yet
  ● System   OK        – BIOS 1.4b · BMC 1.40
-Findings 14 ✖ · 22 ▲ ─────────────────────────────────── worst first · 1–8 of 36
+Findings 16 ✖ · 21 ▲ ─────────────────────────────────── worst first · 1–8 of 37
  ✖ CPU      1 core offline (cpu7)                                              ┃
 ▌✖ Memory   1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorr…        │
  ✖ Memory   4 kB of memory poisoned by the kernel (HardwareCorrupted)          │
  ✖ Memory   1 uncorrectable ECC error on P2-DIMMB1                             │
- ✖ Storage  sdd: 2 I/O errors in kernel log                                    │
+ ✖ Storage  sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00…        │
+ ✖ Storage  sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log -…        │
+ ✖ Storage  sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2…        │
  ✖ Storage  md1 (raid5) degraded: 3/4 devices, failed sdd1                     │
- ✖ Storage  RAID virtual drive 0/0 (RAID5 archive) state Dgrd                  │
- ✖ Storage  RAID physical drive 252:2 (ST2000NM0055-1V4104) state Fail…        │
 
 ←→↑↓ move  enter open  n next problem  o order  e export  S stress this  ? help

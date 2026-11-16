@@ -45,11 +45,31 @@ type Options struct {
 	SELAll          bool
 	CoreTest        bool
 	CoreTestTimeout time.Duration
+	// SMARTInterval is how long SMART data is reused before the drives are
+	// queried again. Queries are not free: every rejected command counts as
+	// a SCSI error on the device (ioerr_cnt), and some controllers log them.
+	SMARTInterval time.Duration
+}
+
+type smartAgeKey struct{}
+
+// WithSMARTMaxAge asks the storage collector for SMART data no older than
+// d (0: query the drives now) for collections under ctx.
+func WithSMARTMaxAge(ctx context.Context, d time.Duration) context.Context {
+	return context.WithValue(ctx, smartAgeKey{}, d)
+}
+
+// SMARTMaxAge is the age limit for ctx, else def.
+func SMARTMaxAge(ctx context.Context, def time.Duration) time.Duration {
+	if d, ok := ctx.Value(smartAgeKey{}).(time.Duration); ok {
+		return d
+	}
+	return def
 }
 
 // DefaultOptions returns the CLI defaults.
 func DefaultOptions() Options {
-	return Options{Thresholds: check.DefaultDefaults(), Timeout: 10 * time.Second, CoreTestTimeout: 2 * time.Second}
+	return Options{Thresholds: check.DefaultDefaults(), Timeout: 10 * time.Second, CoreTestTimeout: 2 * time.Second, SMARTInterval: 5 * time.Minute}
 }
 
 // Privileges describe what the process may access. They are probed with

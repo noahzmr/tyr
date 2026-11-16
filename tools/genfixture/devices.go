@@ -17,6 +17,7 @@ type faults struct {
 	DataFullPct  int
 	DataReadOnly bool
 	IOErrCnt     map[string]int
+	ISCSI        bool // an iSCSI LUN (sdf) whose session failed
 	MegaRAID     bool
 	MegaDegraded bool
 	// network
@@ -155,6 +156,9 @@ func (g *gen) storage(f faults) {
 		g.symlink("/sys/block/"+d.name, "../devices/pci0000:00/0000:00:17.0/"+fmt.Sprintf("ata%d/host%d/target%d:0:0/%d:0:0:0/block/%s", i+1, i, i, i, d.name))
 		g.symlink("/dev/disk/by-id/ata-"+d.model+"_"+d.serial, "../../"+d.name)
 		g.cmd([]string{"smartctl", "-j", "-x", "/dev/" + d.name}, smartATA(d, f.Realloc[d.name], f.Pending[d.name]), 0)
+	}
+	if f.ISCSI {
+		g.iscsiLUN()
 	}
 	// virtual md block devices (skipped as disks, used for holders)
 	g.write("/sys/devices/virtual/block/md0/size", "3749707776\n")
@@ -739,4 +743,26 @@ func vpd(name, pn, sn string) string {
 	b = append(b, r...)
 	b = append(b, 0x78)
 	return string(b)
+}
+
+// iscsiLUN adds sdf: a 43 GB volume of an iSCSI target whose session
+// failed (kernel log write errors), with SCSI command errors since boot.
+func (g *gen) iscsiLUN() {
+	scsi := "/sys/devices/platform/host9/session1/target9:0:0/9:0:0:1"
+	g.write(scsi+"/vendor", "IET     \n")
+	g.write(scsi+"/model", "VIRTUAL-DISK    \n")
+	g.write(scsi+"/rev", "0001\n")
+	g.write(scsi+"/ioerr_cnt", "0x1d1\n")
+	g.write(scsi+"/wwid", "t10.IET     VIRTUAL-DISK    00020001\n")
+	blk := scsi + "/block/sdf"
+	g.write(blk+"/size", fmt.Sprintf("%d\n", 43*1000*1000*1000/512))
+	g.write(blk+"/ro", "0\n")
+	g.write(blk+"/removable", "0\n")
+	g.write(blk+"/queue/rotational", "1\n")
+	g.symlink(blk+"/device", "../../../9:0:0:1")
+	g.symlink("/sys/block/sdf", "../devices/platform/host9/session1/target9:0:0/9:0:0:1/block/sdf")
+	g.write("/sys/class/iscsi_session/session1/targetname", "iqn.2024-01.net.example:backup.vol2\n")
+	g.write("/sys/class/iscsi_session/session1/state", "FAILED\n")
+	g.write("/sys/class/iscsi_connection/connection1:0/persistent_address", "10.16.40.20\n")
+	g.write("/sys/class/iscsi_connection/connection1:0/persistent_port", "3260\n")
 }

@@ -1,12 +1,12 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
- 1 Overview ✖36   2 CPU ✖4  3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  16 crit 21 warn   ✖ CRIT
+ 1 Overview ✖37   2 CPU ✖4  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
  ✖ CRIT  Needs attention  CPU · Memory · Storage · Network · GPU/NPU
 
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
-│ ✖ CPU                      CRIT · 4 │ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 11 │ │ ○ Power                 unavailable │
-│ 63/64 online · max 96°C             │ │ 512 GB · 16/32 slots                │ │ 7 disks · md1 degraded              │ │ collector not implemented yet       │
-│ ▸ 1 core offline (cpu7)             │ │ ▸ 1 memory event in BMC SEL, latest │ │ ▸ sdd: 2 I/O errors in kernel log   │ │                                     │
-│                                     │ │   2026-11-14 09:00: Uncorrectable … │ │                                     │ │                                     │
+│ ✖ CPU                      CRIT · 4 │ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 12 │ │ ○ Power                 unavailable │
+│ 63/64 online · max 96°C             │ │ 512 GB · 16/32 slots                │ │ 8 disks · md1 degraded              │ │ collector not implemented yet       │
+│ ▸ 1 core offline (cpu7)             │ │ ▸ 1 memory event in BMC SEL, latest │ │ ▸ sdd: 2 I/O errors in kernel log,  │ │                                     │
+│                                     │ │   2026-11-14 09:00: Uncorrectable … │ │   last: 2026-11-15 12:00:00 I/O er… │ │                                     │
 │                                     │ │                                     │ │                                     │ │                                     │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
@@ -17,12 +17,14 @@
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 
-Findings 14 ✖ · 22 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── worst first · 1–28 of 36
+Findings 16 ✖ · 21 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── worst first · 1–28 of 37
  ✖ CPU      cpu7          1 core offline (cpu7)                                                                                                   10:00        ┃
 ▌✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(CPU2)                                     10:00        ┃
  ✖ Memory   memory        4 kB of memory poisoned by the kernel (HardwareCorrupted)                                                               10:00        ┃
  ✖ Memory   P2-DIMMB1     1 uncorrectable ECC error on P2-DIMMB1                                                                                  10:00        ┃
- ✖ Storage  sdd           sdd: 2 I/O errors in kernel log                                                                                         10:00        ┃
+ ✖ Storage  sdd           sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0… 10:00        ┃
+ ✖ Storage  sdf           sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to the storage system failed; check the ses… 10:00        ┃
+ ✖ Storage  sdf           sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2 is FAILED                                                    10:00        ┃
  ✖ Storage  md1           md1 (raid5) degraded: 3/4 devices, failed sdd1                                                                          10:00        ┃
  ✖ Storage  0/0           RAID virtual drive 0/0 (RAID5 archive) state Dgrd                                                                       10:00        ┃
  ✖ Storage  252:2         RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed                                                            10:00        ┃
@@ -37,14 +39,12 @@ Findings 14 ✖ · 22 ▲ ──────────────────
  ▲ CPU      CPU1 Core 4   CPU1 Core 4 at 96°C (warn 90°C)                                                                                         10:00        ┃
  ▲ Memory   P2-DIMMC1 Te… P2-DIMMC1 Temp at 82°C                                                                                                  10:00        ┃
  ▲ Memory   sel           1 memory event in BMC SEL, latest 2026-11-11 09:00: Correctable ECC @DIMMC1(CPU2)                                       10:00        ┃
- ▲ Memory   P2-DIMMC1     14 correctable ECC errors on P2-DIMMC1                                                                                  10:00        ┃
- ▲ Memory   memory        512 GB installed, OS sees 480 GB                                                                                        10:00        ┃
+ ▲ Memory   P2-DIMMC1     14 correctable ECC errors on P2-DIMMC1                                                                                  10:00        │
+ ▲ Memory   memory        512 GB installed, OS sees 480 GB                                                                                        10:00        │
  ▲ Memory   P1-DIMMD1     DIMMs run at different speeds: P1-DIMMD1 at 2933 MT/s, others up to 3200 MT/s                                           10:00        │
  ▲ Memory   node1         NUMA node 1 has 220 GB, largest node has 252 GB                                                                         10:00        │
  ▲ Storage  nvme1n1       nvme1n1: 93% of rated endurance used                                                                                    10:00        │
  ▲ Storage  nvme1n1       nvme1n1: 3 media/data integrity errors                                                                                  10:00        │
  ▲ Storage  sdc           sdc: 8 pending sectors                                                                                                  10:00        │
- ▲ Storage  sdc           sdc: 24 reallocated sectors                                                                                             10:00        │
- ▲ Storage  sdd           sdd: 31 I/O errors (ioerr_cnt)                                                                                          10:00        │
 
 ←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help

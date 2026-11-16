@@ -139,13 +139,20 @@ func (m *Model) Init() tea.Cmd {
 // clockTick re-renders once a second so "updated Ns ago" stays current.
 func clockTick() tea.Cmd { return tea.Tick(time.Second, func(time.Time) tea.Msg { return clockMsg{} }) }
 
-func (m *Model) collect() tea.Cmd {
+func (m *Model) collect() tea.Cmd { return m.collectWith(m.ctx) }
+
+// collectFresh is r: also re-reads SMART instead of using the cached data.
+func (m *Model) collectFresh() tea.Cmd {
+	return m.collectWith(collector.WithSMARTMaxAge(m.ctx, 0))
+}
+
+func (m *Model) collectWith(ctx context.Context) tea.Cmd {
 	if m.collecting {
 		return nil
 	}
 	m.collecting = true
 	prev := m.snap
-	env, cols, ctx := m.env, m.cols, m.ctx
+	env, cols := m.env, m.cols
 	return func() tea.Msg {
 		start := time.Now()
 		s := collector.Collect(ctx, env, cols, prev)
@@ -450,7 +457,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 			return nil
 		}
 		m.flash("refreshing…")
-		return tea.Batch(m.collect(), m.spin.Tick)
+		return tea.Batch(m.collectFresh(), m.spin.Tick)
 	case key.Matches(msg, k.Pause):
 		m.paused = !m.paused
 		if m.paused {

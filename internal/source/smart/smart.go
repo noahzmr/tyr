@@ -41,7 +41,8 @@ type ctlAttr struct {
 	Thresh     int    `json:"thresh"`
 	WhenFailed string `json:"when_failed"`
 	Raw        struct {
-		Value uint64 `json:"value"`
+		Value  uint64 `json:"value"`
+		String string `json:"string"`
 	} `json:"raw"`
 }
 
@@ -154,7 +155,7 @@ func ParseSmartctl(data []byte) (*Info, error) {
 		for _, a := range j.ATAAttrs.Table {
 			raw := a.Raw.Value
 			s.Attributes = append(s.Attributes, model.SMARTAttr{ID: a.ID, Name: a.Name, Value: a.Value, Worst: a.Worst,
-				Thresh: a.Thresh, Raw: raw, WhenFailed: a.WhenFailed})
+				Thresh: a.Thresh, Raw: raw, RawString: strings.TrimSpace(a.Raw.String), WhenFailed: a.WhenFailed})
 			switch a.ID {
 			case 5:
 				s.Reallocated = u(raw & 0xffffffff) // some vendors pack extra data in high bytes

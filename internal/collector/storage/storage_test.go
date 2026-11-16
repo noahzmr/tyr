@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/noahzmr/tyr/internal/collector"
@@ -55,7 +56,7 @@ func TestHealthy(t *testing.T) {
 	if len(s.Filesystems) != 3 || s.Filesystems[0].Mountpoint != "/" || s.Filesystems[2].FSType != "xfs" {
 		t.Errorf("filesystems %+v", s.Filesystems)
 	}
-	if st, _ := s.Source("smart"); st.State != model.AvailOK || st.Reason != "via smartctl" {
+	if st, _ := s.Source("smart"); st.State != model.AvailOK || st.Reason != "via smartctl; read every 5m0s" {
 		t.Errorf("smart source %+v", st)
 	}
 }
@@ -72,10 +73,16 @@ func TestDegraded(t *testing.T) {
 		"fs_full":          "/data 96% full",
 		"raid_vd":          "RAID virtual drive 0/0 (RAID5 archive) state Dgrd",
 		"raid_pd":          "RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed",
-		"kernel_io_errors": "sdd: 2 I/O errors in kernel log",
+		"kernel_io_errors": "sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0",
 		"pending_sectors":  "sdc: 8 pending sectors",
 		"wear":             "nvme1n1: 93% of rated endurance used",
-		"io_errors":        "sdd: 31 I/O errors (ioerr_cnt)",
+	}
+	// 31 command errors since boot, none new: no finding, the count is shown
+	if len(c["io_errors"]) != 0 {
+		t.Errorf("ioerr_cnt since boot alone must not be a finding: %+v", c["io_errors"])
+	}
+	if d := disk(s, "sdd"); d.IOErrors == nil || *d.IOErrors != 31 || d.IOErrorsNew == nil || *d.IOErrorsNew != 0 {
+		t.Errorf("sdd io errors %+v", d)
 	}
 	for code, msg := range want {
 		if len(c[code]) != 1 || c[code][0].Message != msg {
@@ -85,10 +92,23 @@ func TestDegraded(t *testing.T) {
 	if d := disk(s, "sdd"); d.Status != model.StatusCrit || d.KernelErrors != 2 {
 		t.Errorf("sdd %+v", d)
 	}
+	// sdf is an iSCSI volume whose session failed: not a disk, no SMART,
+	// its kernel I/O errors are a path problem
+	if d := disk(s, "sdf"); d == nil || d.Kind != "iscsi" || d.Local() || d.SMART != nil || d.Remote.Target != "iqn.2024-01.net.example:backup.vol2" ||
+		d.Remote.Portal != "10.16.40.20:3260" || d.Remote.State != "FAILED" || d.KernelErrors != 2 || !strings.Contains(d.KernelLast, "dev sdf, sector 4096") {
+		t.Errorf("sdf %+v remote %+v", d, d.Remote)
+	}
+	if len(c["remote_io_errors"]) != 1 || !strings.HasPrefix(c["remote_io_errors"][0].Message, "sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log") ||
+		len(c["iscsi_session"]) != 1 || c["iscsi_session"][0].Message != "sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2 is FAILED" {
+		t.Errorf("iSCSI findings %+v %+v", c["remote_io_errors"], c["iscsi_session"])
+	}
+	if !strings.Contains(s.Summary, "0/1 network volumes OK") {
+		t.Errorf("summary %q", s.Summary)
+	}
 	if d := disk(s, "sde"); d.SMART != nil || d.Model != "MR9361-8i" || d.Vendor != "AVAGO" {
 		t.Errorf("sde (RAID VD) %+v", d)
 	}
-	if st, _ := s.Source("smart"); st.State != model.AvailOK || st.Reason == "via smartctl" {
+	if st, _ := s.Source("smart"); st.State != model.AvailOK || !strings.Contains(st.Reason, "disks:") {
 		t.Errorf("smart source must mention the disk without SMART: %+v", st)
 	}
 	if len(s.Controllers) != 1 || s.Controllers[0].Status != model.StatusCrit {

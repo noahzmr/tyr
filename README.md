@@ -109,7 +109,7 @@ guard that keeps it safe, and gives a verdict you can trust.
 |---|---|
 | CPU | online cores, per-core temperature and clock, throttling, machine checks, microcode, an optional per-core compute test |
 | Memory | DIMMs per slot, ECC corrected / uncorrected (EDAC), poisoned pages, DIMM temperatures, memory the OS cannot see |
-| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors in the kernel log, md RAID, MegaRAID/PERC, filesystems |
+| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors in the kernel log, md RAID, MegaRAID/PERC, filesystems; iSCSI / FC volumes with their session and path |
 | Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, transceiver optics, LLDP neighbours, BMC LAN |
 | GPU/NPU | PCIe link width and speed, temperatures, power, ECC, retired/remapped rows, driver errors (Xid) |
 | System | identity, BIOS, BMC, PSU inventory, fans and chassis temperatures |
@@ -325,6 +325,7 @@ and cron work unchanged.
 |---|---|---|
 | `--crit-temp`, `--warn-temp` | 90, 75 | limits for sensors without their own; given explicitly they also replace the built-in AMD CPU limits |
 | `--no-ipmi`, `--no-dmidecode`, `--no-smart` | off | skip a source |
+| `--smart-interval` | 5m | reuse SMART data this long (`r` and stress snapshots always read fresh) |
 | `--nic-all` | off | include virtual interfaces |
 | `--sel-all` | off | all SEL entries, not only warnings and errors |
 | `--timeout` | 10s | per collector |

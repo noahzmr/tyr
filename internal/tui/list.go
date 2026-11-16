@@ -297,6 +297,10 @@ func listHeight(avail, listRows, findWant int) int {
 // bytesSI formats disk capacities in decimal units like drive vendors do.
 func bytesSI(b uint64) string {
 	switch {
+	case b >= 1e15:
+		return fmt.Sprintf("%.1f PB", float64(b)/1e15)
+	case b >= 100e12:
+		return fmt.Sprintf("%.0f TB", float64(b)/1e12)
 	case b >= 1e12:
 		return fmt.Sprintf("%.2g TB", float64(b)/1e12)
 	case b >= 1e9:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
 
 // Storage is the storage module section.
@@ -25,19 +26,27 @@ type Disk struct {
 	WWN           string      `json:"wwn,omitempty"`
 	Firmware      string      `json:"firmware,omitempty"`
 	SizeBytes     uint64      `json:"size_bytes"`
-	Kind          string      `json:"kind"`      // nvme, ssd, hdd, virtual, usb, unknown
+	Kind          string      `json:"kind"`      // nvme, ssd, hdd, virtual, usb, iscsi, fc, unknown
 	Interface     string      `json:"interface"` // nvme, sata, sas, usb, virtio, scsi, mmc
 	RotationRPM   *int        `json:"rotation_rpm"`
 	Removable     bool        `json:"removable"`
 	ReadOnly      bool        `json:"read_only"`
 	TempCelsius   *float64    `json:"temp_celsius"`
 	TempThreshold *Thresholds `json:"temp_thresholds,omitempty"`
-	IOErrors      *uint64     `json:"io_errors"` // SCSI ioerr_cnt
-	KernelErrors  int         `json:"kernel_log_errors"`
-	Holders       []string    `json:"holders,omitempty"` // md/dm devices using it
-	Mounted       []string    `json:"mountpoints,omitempty"`
-	SMART         *SMART      `json:"smart,omitempty"`
-	Status        Status      `json:"status"`
+	IOErrors      *uint64     `json:"io_errors"` // SCSI ioerr_cnt: commands that failed or were rejected since boot
+	// IOErrorsTyr is the part of IOErrors this Tyr process caused itself:
+	// SMART queries the device or controller rejects. IOErrorsNew are the
+	// errors that appeared since Tyr started without its queries.
+	IOErrorsTyr  *uint64     `json:"io_errors_tyr,omitempty"`
+	IOErrorsNew  *uint64     `json:"io_errors_new,omitempty"`
+	KernelErrors int         `json:"kernel_log_errors"`
+	KernelLast   string      `json:"kernel_log_last,omitempty"` // the latest kernel I/O error line
+	Remote       *RemoteDisk `json:"remote,omitempty"`          // iSCSI / FC volume of a storage system
+	SMARTAt      time.Time   `json:"smart_at,omitzero"`         // when SMART was read (it is cached)
+	Holders      []string    `json:"holders,omitempty"`         // md/dm devices using it
+	Mounted      []string    `json:"mountpoints,omitempty"`
+	SMART        *SMART      `json:"smart,omitempty"`
+	Status       Status      `json:"status"`
 }
 
 // SMART is drive self-monitoring data (ATA attributes or NVMe health log).
@@ -76,6 +85,7 @@ type SMARTAttr struct {
 	Worst      int    `json:"worst"`
 	Thresh     int    `json:"thresh"`
 	Raw        uint64 `json:"raw"`
+	RawString  string `json:"raw_string,omitempty"` // as smartctl prints it ("21 (Min/Max 18/40)")
 	WhenFailed string `json:"when_failed,omitempty"`
 }
 
@@ -164,11 +174,27 @@ type Filesystem struct {
 	Status            Status   `json:"status"`
 }
 
+// RemoteDisk is the path to a network block device.
+type RemoteDisk struct {
+	Transport string `json:"transport"`         // iscsi, fc
+	Target    string `json:"target,omitempty"`  // iSCSI IQN, FC WWPN
+	Portal    string `json:"portal,omitempty"`  // iSCSI address:port
+	Session   string `json:"session,omitempty"` // session3, rport-2:0-1
+	State     string `json:"state,omitempty"`   // LOGGED_IN / FAILED (iSCSI), Online / Blocked (FC)
+}
+
+// Local reports a disk in this host (not an iSCSI or FC volume).
+func (d Disk) Local() bool { return d.Remote == nil }
+
 func (s *Storage) counters(c map[string]uint64) {
 	for _, d := range s.Disks {
 		p := "disk." + d.Name + "."
-		if d.IOErrors != nil {
-			c[p+"io_errors"] = *d.IOErrors
+		if d.IOErrors != nil { // without the errors Tyr's own SMART queries caused
+			v := *d.IOErrors
+			if d.IOErrorsTyr != nil {
+				v -= min(v, *d.IOErrorsTyr)
+			}
+			c[p+"io_errors"] = v
 		}
 		c[p+"kernel_errors"] = uint64(d.KernelErrors)
 		if m := d.SMART; m != nil {

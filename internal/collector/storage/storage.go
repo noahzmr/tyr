@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -31,11 +32,34 @@ const (
 	fsCrit = 95.0
 )
 
-// Collector is the storage collector.
-type Collector struct{}
+// Collector is the storage collector. It keeps SMART results between
+// collections (see collector.Options.SMARTInterval) and the SCSI command
+// errors its own SMART queries caused, so they are not reported as disk
+// errors.
+type Collector struct {
+	mu    sync.Mutex
+	smart map[string]smartCache
+	ioerr map[string]*ioState
+}
+
+// smartCache is one disk's last SMART read (also a failed one).
+type smartCache struct {
+	info     *smart.Info
+	src, why string
+	serial   string
+	at       time.Time
+}
+
+// ioState tracks a disk's ioerr_cnt over this process: the value when Tyr
+// first saw it, and how much of the growth Tyr's own queries caused.
+type ioState struct {
+	first, tyr uint64
+}
 
 // New returns a storage collector.
-func New() *Collector { return &Collector{} }
+func New() *Collector {
+	return &Collector{smart: map[string]smartCache{}, ioerr: map[string]*ioState{}}
+}
 
 func (*Collector) ID() model.ModuleID { return model.ModStorage }
 
@@ -58,13 +82,27 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	klog, kst := env.KernelLog(ctx)
 	h.Sources = append(h.Sources, kst)
 	ioErrs := kernelIOErrors(klog, devs)
+	c.mu.Lock()
+	for _, b := range devs {
+		if b.IOErrors == nil {
+			continue
+		}
+		st := c.ioerr[b.Name]
+		if st == nil || *b.IOErrors < st.first+st.tyr { // first sight, or the counter was reset (reboot, driver reload)
+			c.ioerr[b.Name] = &ioState{first: *b.IOErrors}
+		}
+	}
+	c.mu.Unlock()
 	for _, b := range devs {
 		d := model.Disk{
 			Name: b.Name, Path: "/dev/" + b.Name, Model: b.Model, Vendor: b.Vendor, Serial: b.Serial, WWN: b.WWN, Firmware: b.Firmware,
 			SizeBytes: b.SizeBytes, Interface: b.Interface, Removable: b.Removable, ReadOnly: b.ReadOnly,
-			IOErrors: b.IOErrors, KernelErrors: ioErrs[b.Name], Holders: b.Holders,
+			IOErrors: b.IOErrors, KernelErrors: ioErrs[b.Name].n, KernelLast: ioErrs[b.Name].last, Holders: b.Holders,
 		}
 		d.Kind = diskKind(b)
+		if r := b.Remote; r != nil {
+			d.Remote = &model.RemoteDisk{Transport: r.Transport, Target: r.Target, Portal: r.Portal, Session: r.Session, State: r.State}
+		}
 		for _, m := range mounts {
 			src := strings.TrimPrefix(m.Source, "/dev/")
 			if src == b.Name || slices.Contains(b.Partitions, src) {
@@ -75,6 +113,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		out.Disks = append(out.Disks, d)
 	}
 	c.smartAll(ctx, env, out, devs)
+	c.ioErrorAccounting(f, out)
 	for i := range out.Disks {
 		diskFindings(h, &out.Disks[i], env.Opts.Thresholds)
 	}
@@ -129,6 +168,8 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 
 func diskKind(b sysfs.BlockDev) string {
 	switch {
+	case b.Remote != nil:
+		return b.Remote.Transport
 	case strings.HasPrefix(b.Interface, "nvme"):
 		return "nvme"
 	case b.Interface == "virtio" || b.Interface == "xen":
@@ -165,8 +206,15 @@ func nvmeTemp(f hostfs.FS, b sysfs.BlockDev, d *model.Disk) {
 
 // kernelIOErrors counts kernel log I/O errors per disk (ataN is mapped to
 // the disk whose sysfs path contains it; partitions map to their disk).
-func kernelIOErrors(l *kernellog.Log, devs []sysfs.BlockDev) map[string]int {
-	out := map[string]int{}
+// kernelIO is a disk's I/O errors in the kernel log: how many, and the
+// latest line (with its time) for troubleshooting.
+type kernelIO struct {
+	n    int
+	last string
+}
+
+func kernelIOErrors(l *kernellog.Log, devs []sysfs.BlockDev) map[string]kernelIO {
+	out := map[string]kernelIO{}
 	if l == nil {
 		return out
 	}
@@ -177,7 +225,13 @@ func kernelIOErrors(l *kernellog.Log, devs []sysfs.BlockDev) map[string]int {
 		for _, b := range devs {
 			if e.Subject == b.Name || slices.Contains(b.Partitions, e.Subject) || e.Subject == b.NVMeCtrl ||
 				(strings.HasPrefix(e.Subject, "ata") && strings.Contains(b.SysPath, "/"+e.Subject+"/")) {
-				out[b.Name]++
+				k := out[b.Name]
+				k.n++
+				k.last = strings.TrimSpace(e.Message)
+				if !e.Time.IsZero() {
+					k.last = e.Time.UTC().Format("2006-01-02 15:04:05") + " " + k.last
+				}
+				out[b.Name] = k
 			}
 		}
 	}
@@ -198,20 +252,26 @@ func (c *Collector) smartAll(ctx context.Context, env *collector.Env, out *model
 	sem := make(chan struct{}, 8)
 	reasons := map[string]int{}
 	used := map[string]bool{}
+	maxAge := collector.SMARTMaxAge(ctx, env.Opts.SMARTInterval)
+	cached := 0
 	for i := range out.Disks {
 		d := &out.Disks[i]
 		b := devs[i]
-		if d.Kind == "virtual" || d.Kind == "mmc" {
-			continue
+		if d.Kind == "virtual" || d.Kind == "mmc" || !d.Local() {
+			continue // a volume's SMART belongs to the storage system
 		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			info, src, why := readSMART(ctx, env, b, ctlErr == nil, nvmeErr == nil)
+			info, src, why, at, fromCache := c.smartFor(ctx, env, b, maxAge, ctlErr == nil, nvmeErr == nil)
 			mu.Lock()
 			defer mu.Unlock()
+			if fromCache {
+				cached++
+			}
+			d.SMARTAt = at
 			if info == nil {
 				reasons[why]++
 				return
@@ -247,6 +307,12 @@ func (c *Collector) smartAll(ctx context.Context, env *collector.Env, out *model
 		for why, n := range reasons {
 			reason += fmt.Sprintf("; %d disks: %s", n, why)
 		}
+		if maxAge > 0 {
+			reason += fmt.Sprintf("; read every %s", maxAge)
+			if cached > 0 {
+				reason += fmt.Sprintf(" (%d disks from the last read)", cached)
+			}
+		}
 		h.SetSource("smart", model.AvailOK, reason)
 	case len(reasons) > 0:
 		var rs []string
@@ -257,6 +323,56 @@ func (c *Collector) smartAll(ctx context.Context, env *collector.Env, out *model
 		h.SetSource("smart", model.AvailUnavailable, strings.Join(rs, "; "))
 	case env.IsVM():
 		h.SetSource("smart", model.AvailNotApplicable, "virtual disks")
+	}
+}
+
+// smartFor returns a disk's SMART data: the cached read if it is younger
+// than maxAge and the disk is the same (serial), else a new read. Around a
+// new read it samples ioerr_cnt, so the SCSI errors the query itself
+// causes (commands the drive or controller rejects) are known.
+func (c *Collector) smartFor(ctx context.Context, env *collector.Env, b sysfs.BlockDev, maxAge time.Duration, haveCtl, haveNVMe bool) (*smart.Info, string, string, time.Time, bool) {
+	c.mu.Lock()
+	e, ok := c.smart[b.Name]
+	c.mu.Unlock()
+	if ok && maxAge > 0 && e.serial == b.Serial && env.Now().Sub(e.at) < maxAge {
+		return e.info, e.src, e.why, e.at, true
+	}
+	before, okB := sysfs.ReadIOErrCount(env.FS, b.Name)
+	info, src, why := readSMART(ctx, env, b, haveCtl, haveNVMe)
+	after, okA := sysfs.ReadIOErrCount(env.FS, b.Name)
+	at := env.Now()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if okB && okA && after > before {
+		if st := c.ioerr[b.Name]; st != nil {
+			st.tyr += after - before
+		}
+	}
+	c.smart[b.Name] = smartCache{info: info, src: src, why: why, serial: b.Serial, at: at}
+	return info, src, why, at, false
+}
+
+// ioErrorAccounting re-reads ioerr_cnt after the SMART queries and splits
+// it into what Tyr caused and what is new since Tyr started.
+func (c *Collector) ioErrorAccounting(f hostfs.FS, out *model.Storage) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for i := range out.Disks {
+		d := &out.Disks[i]
+		st := c.ioerr[d.Name]
+		if d.IOErrors == nil || st == nil {
+			continue
+		}
+		if v, ok := sysfs.ReadIOErrCount(f, d.Name); ok {
+			d.IOErrors = &v
+		}
+		tyr := st.tyr
+		d.IOErrorsTyr = &tyr
+		var fresh uint64
+		if *d.IOErrors > st.first+st.tyr {
+			fresh = *d.IOErrors - st.first - st.tyr
+		}
+		d.IOErrorsNew = &fresh
 	}
 }
 
@@ -348,12 +464,42 @@ func diskFindings(h *model.Header, d *model.Disk, def check.Defaults) {
 			add(model.StatusWarn, "grown_defects", fmt.Sprintf("%d grown defects", *s.GrownDefects))
 		}
 	}
-	if d.IOErrors != nil && *d.IOErrors > 0 {
-		add(model.StatusWarn, "io_errors", fmt.Sprintf("%d I/O errors (ioerr_cnt)", *d.IOErrors))
+	// ioerr_cnt also counts commands the device rejects - above all SMART
+	// queries a controller does not pass through - so the count since boot
+	// alone is no finding; growth Tyr did not cause is.
+	if d.IOErrorsNew != nil && *d.IOErrorsNew > 0 {
+		add(model.StatusWarn, "io_errors", fmt.Sprintf("%d new SCSI command errors since Tyr started (ioerr_cnt, not from its own SMART queries)", *d.IOErrorsNew))
 	}
-	if d.KernelErrors > 0 {
-		h.Find(model.StatusCrit, "kernel_io_errors", d.Name, "kernel_log", fmt.Sprintf("%s: %d I/O errors in kernel log", d.Name, d.KernelErrors))
+	last := ""
+	if d.KernelLast != "" {
+		last = ", last: " + clip(d.KernelLast, 140)
+	}
+	if d.KernelErrors > 0 && d.Local() {
+		h.Find(model.StatusCrit, "kernel_io_errors", d.Name, "kernel_log", fmt.Sprintf("%s: %d I/O errors in kernel log%s", d.Name, d.KernelErrors, last))
 		st = model.Worst(st, model.StatusCrit)
+	}
+	if r := d.Remote; r != nil {
+		where := strings.ToUpper(r.Transport)
+		if r.Transport == "iscsi" {
+			where = "iSCSI"
+		}
+		if r.Portal != "" {
+			where += " " + r.Portal
+		}
+		if d.KernelErrors > 0 {
+			h.Find(model.StatusCrit, "remote_io_errors", d.Name, "kernel_log", fmt.Sprintf(
+				"%s (%s): %d I/O errors in kernel log - reads or writes to the storage system failed; check the session, the network path and the target%s",
+				d.Name, where, d.KernelErrors, last))
+			st = model.Worst(st, model.StatusCrit)
+		}
+		switch {
+		case r.Transport == "iscsi" && r.State != "" && r.State != "LOGGED_IN":
+			h.Find(model.StatusCrit, "iscsi_session", d.Name, "sysfs", fmt.Sprintf("%s: iSCSI %s to %s is %s", d.Name, orStr(r.Session, "session"), orStr(r.Target, "the target"), r.State))
+			st = model.Worst(st, model.StatusCrit)
+		case r.Transport == "fc" && r.State != "" && r.State != "Online":
+			h.Find(model.StatusCrit, "fc_port", d.Name, "sysfs", fmt.Sprintf("%s: Fibre Channel port %s is %s", d.Name, orStr(r.Target, r.Session), r.State))
+			st = model.Worst(st, model.StatusCrit)
+		}
 	}
 	if d.TempCelsius != nil {
 		th := d.TempThreshold
@@ -561,13 +707,24 @@ func readDF(env *collector.Env) map[string]dfRow {
 }
 
 func summary(s *model.Storage) string {
-	ok := 0
+	ok, n, rok, rn := 0, 0, 0, 0
 	for _, d := range s.Disks {
+		if !d.Local() {
+			rn++
+			if d.Status == model.StatusOK {
+				rok++
+			}
+			continue
+		}
+		n++
 		if d.Status == model.StatusOK {
 			ok++
 		}
 	}
-	parts := []string{fmt.Sprintf("%d/%d disks OK", ok, len(s.Disks))}
+	parts := []string{fmt.Sprintf("%d/%d disks OK", ok, n)}
+	if rn > 0 {
+		parts = append(parts, fmt.Sprintf("%d/%d network volumes OK", rok, rn))
+	}
 	if n := len(s.MDArrays); n > 0 {
 		good := 0
 		for _, a := range s.MDArrays {
@@ -591,4 +748,18 @@ func summary(s *model.Storage) string {
 		parts = append(parts, fmt.Sprintf("fullest %s %.0f%%", worst.Mountpoint, *worst.UsedPercent))
 	}
 	return strings.Join(parts, ", ")
+}
+
+func clip(s string, n int) string {
+	if r := []rune(s); len(r) > n {
+		return string(r[:n-1]) + "…"
+	}
+	return s
+}
+
+func orStr(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
 }

@@ -22,11 +22,22 @@ type BlockDev struct {
 	Serial     string
 	WWN        string
 	Firmware   string
-	Interface  string // nvme, sata, sas, usb, virtio, scsi, mmc, xen
+	Interface  string // nvme, sata, sas, usb, virtio, scsi, mmc, xen, iscsi, fc
 	NVMeCtrl   string // nvme0 (controller of an NVMe namespace)
 	IOErrors   *uint64
+	Remote     *RemoteLink // iSCSI / Fibre Channel: a volume of a storage system, not a local disk
 	Holders    []string
 	Partitions []string
+}
+
+// RemoteLink is the path of a network block device: the iSCSI session or
+// the Fibre Channel remote port behind it.
+type RemoteLink struct {
+	Transport string // iscsi, fc
+	Session   string // session3, rport-2:0-1
+	Target    string // iSCSI target IQN, FC remote port WWPN
+	Portal    string // iSCSI portal address:port
+	State     string // LOGGED_IN, FAILED, FREE (iSCSI); Online, Blocked, … (FC)
 }
 
 // skipBlock lists device name prefixes that are not physical disks.
@@ -80,6 +91,12 @@ func ReadBlockDevs(f hostfs.FS) []BlockDev {
 			b.Vendor = hostfs.StringOr(f, dev+"/vendor", "")
 			b.Firmware = hostfs.StringOr(f, dev+"/rev", "")
 			switch p := b.SysPath; {
+			case strings.Contains(p, "/session"):
+				b.Interface = "iscsi"
+				b.Remote = iscsiLink(f, p)
+			case strings.Contains(p, "/rport-"):
+				b.Interface = "fc"
+				b.Remote = fcLink(f, p)
 			case strings.Contains(p, "/usb"):
 				b.Interface = "usb"
 			case strings.Contains(p, "/ata"):
@@ -91,10 +108,8 @@ func ReadBlockDevs(f hostfs.FS) []BlockDev {
 			default:
 				b.Interface = "scsi"
 			}
-			if s, err := hostfs.String(f, dev+"/ioerr_cnt"); err == nil {
-				if v, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 64); err == nil {
-					b.IOErrors = &v
-				}
+			if v, ok := ReadIOErrCount(f, name); ok {
+				b.IOErrors = &v
 			}
 		}
 		for _, p := range []string{d + "/wwid", dev + "/wwid"} {
@@ -222,4 +237,64 @@ func unescapeMount(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
+}
+
+// ReadIOErrCount reads a SCSI disk's ioerr_cnt: commands that completed
+// with any error since the driver loaded. That includes commands the device
+// rejects (unsupported SMART or pass-through queries), not only failed I/O.
+func ReadIOErrCount(f hostfs.FS, name string) (uint64, bool) {
+	s, err := hostfs.String(f, "/sys/block/"+name+"/device/ioerr_cnt")
+	if err != nil {
+		return 0, false
+	}
+	v, err := strconv.ParseUint(strings.TrimPrefix(strings.TrimSpace(s), "0x"), 16, 64)
+	return v, err == nil
+}
+
+// pathPart returns the path element starting with prefix ("session3").
+func pathPart(p, prefix string) string {
+	for _, e := range strings.Split(p, "/") {
+		if strings.HasPrefix(e, prefix) {
+			return e
+		}
+	}
+	return ""
+}
+
+// iscsiLink reads the session behind an iSCSI LUN: target IQN, state and
+// the portal of its first connection.
+func iscsiLink(f hostfs.FS, sysPath string) *RemoteLink {
+	sess := pathPart(sysPath, "session")
+	l := &RemoteLink{Transport: "iscsi", Session: sess}
+	if sess == "" {
+		return l
+	}
+	base := "/sys/class/iscsi_session/" + sess
+	l.Target = hostfs.StringOr(f, base+"/targetname", "")
+	l.State = hostfs.StringOr(f, base+"/state", "")
+	conns, _ := f.Glob("/sys/class/iscsi_connection/connection" + strings.TrimPrefix(sess, "session") + ":*")
+	sort.Strings(conns)
+	if len(conns) > 0 {
+		addr := hostfs.StringOr(f, conns[0]+"/persistent_address", hostfs.StringOr(f, conns[0]+"/address", ""))
+		port := hostfs.StringOr(f, conns[0]+"/persistent_port", hostfs.StringOr(f, conns[0]+"/port", ""))
+		if addr != "" {
+			l.Portal = addr
+			if port != "" {
+				l.Portal += ":" + port
+			}
+		}
+	}
+	return l
+}
+
+// fcLink reads the Fibre Channel remote port behind a LUN.
+func fcLink(f hostfs.FS, sysPath string) *RemoteLink {
+	rport := pathPart(sysPath, "rport-")
+	l := &RemoteLink{Transport: "fc", Session: rport}
+	if rport != "" {
+		base := "/sys/class/fc_remote_ports/" + rport
+		l.Target = hostfs.StringOr(f, base+"/port_name", "")
+		l.State = hostfs.StringOr(f, base+"/port_state", "")
+	}
+	return l
 }

@@ -116,11 +116,27 @@ func (s *storageTab) Strip(t *Theme, w int) string {
 		return unavailableStrip(t, "Storage", "not collected", w)
 	}
 	var total uint64
+	local, remote, down := 0, 0, 0
 	for _, d := range x.Disks {
+		if !d.Local() {
+			remote++
+			if r := d.Remote; r.State != "" && r.State != "LOGGED_IN" && r.State != "Online" {
+				down++
+			}
+			continue
+		}
+		local++
 		total += d.SizeBytes
 	}
-	bold := fmt.Sprintf("%s · %s", countLabel(len(x.Disks), "disk", "disks"), bytesSI(total))
+	bold := fmt.Sprintf("%s · %s", countLabel(local, "disk", "disks"), bytesSI(total))
 	var rest []string
+	if remote > 0 {
+		v := countLabel(remote, "network volume", "network volumes")
+		if down > 0 {
+			v += fmt.Sprintf(" (%d session down)", down)
+		}
+		rest = append(rest, v)
+	}
 	for _, a := range x.MDArrays {
 		if a.Degraded || a.Status >= model.StatusWarn {
 			rest = append(rest, a.Name+" "+map[bool]string{true: "degraded", false: strings.ToLower(a.State)}[a.Degraded])

@@ -1,14 +1,15 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
-1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○ 9  0 Inventory                            ? help
- ✖ CRIT  47 components · 13 with problems · serials visible        v List · Tree
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
+1✖37 2✖4 3✖9 4✖12 5○ 6✖6 7✖6 8○ 9  0 Inventory                            ? help
+ ✖ CRIT  48 components · 14 with problems · serials visible        v List · Tree
 
 Search ╭─ / to search ────────╮  Category  all  f cycles
 
    Type    Location           Model                   Serial
 ▌✖ DIMM    P2-DIMMB1          DDR4 DIMM               3A5F0012                 ┃
  ✖ disk    /dev/sdd           ST4000NM000A-2HZ100     WJG0A004                 ┃
+ ✖ volume  /dev/sdf           VIRTUAL-DISK            –                        ┃
  ✖ RAID    controller 0       AVAGO MegaRAID SAS 936… SK94012345               ┃
- ✖ RAID PD c0 252:2           ST2000NM0055-1V4104     ZFL4A002                 ┃
+ ✖ RAID PD c0 252:2           ST2000NM0055-1V4104     ZFL4A002                 │
  ✖ NIC     ens1f1 4b:00.1     Ethernet Controller E8… B49691A00010             │
  ✖ xcvr    ens1f1             25G Ethernet: 25G Base… X7A0B11                  │
  ✖ GPU     GPU1 ca:00.0       NVIDIA A100 80GB PCIe   1324420012346            │
@@ -19,6 +20,5 @@ Search ╭─ / to search ────────╮  Category  all  f cycles
  ▲ NIC     ens1f0 4b:00.0     Ethernet Controller E8… B49691A00010             │
  ▲ xcvr    ens1f0             25G Ethernet: 25G Base… X7A0B10                  │
  ● system  srv-degraded-01    SYS-120U-TNR            S412345X3A01234          │
- ● chassis Rack Mount Chassis –                       C1160LL12AB0123          │
 
 / search  f category  enter page  c copy serial  v tree  ! problems  ? help

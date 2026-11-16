@@ -19,7 +19,7 @@ type Component struct {
 }
 
 // InventoryCategories in display order.
-var InventoryCategories = []string{"system", "chassis", "board", "bmc", "cpu", "dimm", "disk", "raid_controller",
+var InventoryCategories = []string{"system", "chassis", "board", "bmc", "cpu", "dimm", "disk", "volume", "raid_controller",
 	"raid_drive", "nic", "transceiver", "gpu", "npu", "psu", "fru"}
 
 func gib(b uint64) string {
@@ -126,7 +126,12 @@ func BuildInventory(s *Snapshot) []Component {
 			if d.WWN != "" {
 				det += " " + d.WWN
 			}
-			add(Component{Category: "disk", Location: d.Path, Vendor: d.Vendor, Model: d.Model, Serial: d.Serial, Firmware: d.Firmware, Detail: det, Status: d.Status})
+			cat := "disk"
+			if r := d.Remote; r != nil { // a storage system's volume: where it comes from
+				cat = "volume"
+				det = strings.TrimSpace(strings.ToUpper(r.Transport) + " " + r.Target + " " + r.Portal)
+			}
+			add(Component{Category: cat, Location: d.Path, Vendor: d.Vendor, Model: d.Model, Serial: d.Serial, Firmware: d.Firmware, Detail: det, Status: d.Status})
 		}
 		for _, c := range x.Controllers {
 			add(Component{Category: "raid_controller", Location: fmt.Sprintf("controller %d", c.Index), Model: c.Model, Serial: c.Serial, Firmware: c.Firmware, Status: c.Status})

@@ -121,6 +121,9 @@ func scenarios() []scenario {
 			{8*24*time.Hour + 3*time.Hour + time.Millisecond, 3, "I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0"},
 			{8*24*time.Hour + 3*time.Hour + 2*time.Millisecond, 2, "md/raid:md1: Disk failure on sdd1, disabling device."},
 			{8*24*time.Hour + 4*time.Hour, 3, "XFS (md1): metadata I/O error in \"xfs_buf_ioend+0x1a0/0x380\" at daddr 0x2 len 1 error 5"},
+			{8*24*time.Hour + 4*time.Hour + 30*time.Minute, 3, " connection1:0: detected conn error (1020)"},
+			{8*24*time.Hour + 4*time.Hour + 31*time.Minute, 3, "I/O error, dev sdf, sector 2048 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0"},
+			{8*24*time.Hour + 4*time.Hour + 32*time.Minute, 3, "I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0"},
 			{8*24*time.Hour + 5*time.Hour, 6, "ice 0000:4b:00.1 ens1f1: NIC Link is Down"},
 			{8*24*time.Hour + 6*time.Hour, 3, "NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0."},
 		},
@@ -134,7 +137,7 @@ func scenarios() []scenario {
 		Faults: faults{
 			MDFailed: "sdd1", Realloc: map[string]int{"sdc": 24}, Pending: map[string]int{"sdc": 8},
 			NVMeWear: map[string]int{"nvme1n1": 93}, NVMeMedia: map[string]int{"nvme1n1": 3},
-			DataFullPct: 96, DataReadOnly: true, IOErrCnt: map[string]int{"sdd": 0x1f},
+			DataFullPct: 96, DataReadOnly: true, IOErrCnt: map[string]int{"sdd": 0x1f}, ISCSI: true,
 			MegaRAID: true, MegaDegraded: true,
 			BondMemberDown: "ens1f1", CRCErrors: map[string]int{"ens1f0": 1532}, CarrierChanges: map[string]int{"ens1f0": 35},
 			RxPowerDBm: map[string]float64{"ens1f0": -13.9}, MgmtSpeed: 100, MgmtHalf: true,

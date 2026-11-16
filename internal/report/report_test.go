@@ -46,7 +46,8 @@ func TestSnapshotReport(t *testing.T) {
 	for _, want := range []string{"# srv-degraded-01 · hardware report", "**Status: ✖ CRIT**", "## Alerts", "| ✖ CRIT | CPU | cpu7 |",
 		"## Memory", "P2-DIMMB1", "## Storage", "WJG0A004", "## Inventory",
 		"## Component health", "| CPU cores (logical) | ✖ CRIT | 64 |", "cpu7 ✖", "| Memory modules |", "P2-DIMMB1 ✖", "| Disks |", "| Transceivers |",
-		"### Cores", "| cpu7 |", "offline", "| Power supplies | ● OK | 2 |", "| Fans |"} {
+		"### Cores", "| cpu7 |", "offline", "| Power supplies | ● OK | 2 |", "| Fans |",
+		"### Network volumes", "| sdf | ISCSI | IET VIRTUAL-DISK |", "| Network volumes | ✖ CRIT | 1 |", "| Disks | ✖ CRIT | 7 |"} {
 		if !strings.Contains(md, want) {
 			t.Errorf("snapshot report missing %q", want)
 		}

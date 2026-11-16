@@ -202,7 +202,7 @@ func Prepare(ctx context.Context, env *Env, cfg Config) (*Plan, Test, error) {
 	}
 	env.prepVM, env.prepAt = readVM(env), time.Now()
 	if env.Baseline == nil {
-		env.Baseline = collector.Collect(ctx, env.Collector, env.Cols, nil)
+		env.Baseline = collector.Collect(collector.WithSMARTMaxAge(ctx, 0), env.Collector, env.Cols, nil)
 	}
 	p := t.Plan(cfg, env)
 	p.Component, p.Engine, p.Duration = cfg.Component, cfg.Engine, cfg.Duration
@@ -336,7 +336,7 @@ func (r *Run) run(ctx context.Context, env *Env, t Test) {
 	// Let sensors settle a moment, then take the after snapshot with a
 	// fresh context (the run context may be cancelled by the user).
 	actx, acancel := context.WithTimeout(context.Background(), 60*time.Second)
-	after := collector.Collect(actx, env.Collector, env.Cols, nil)
+	after := collector.Collect(collector.WithSMARTMaxAge(actx, 0), env.Collector, env.Cols, nil) // fresh SMART: compare against the baseline
 	acancel()
 
 	res := r.verdict(env, base, after, baseCounters, testErr, guardTrip)
@@ -381,6 +381,9 @@ func (r *Run) monitor(ctx context.Context, env *Env, base *model.Snapshot, baseC
 	for {
 		t0 := time.Now()
 		cctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		if r.Cfg.Component == CompStorage { // the SMART guard needs recent counters on the disks under load
+			cctx = collector.WithSMARTMaxAge(cctx, 30*time.Second)
+		}
 		snap := collector.Collect(cctx, env.Collector, env.Cols, prev)
 		cancel()
 		if ctx.Err() != nil {

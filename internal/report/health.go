@@ -71,9 +71,13 @@ func componentHealth(s *model.Snapshot) []*healthGroup {
 		}
 	}
 	if st := s.Storage; st != nil {
-		g := group("Disks")
+		g, gv := group("Disks"), group("Network volumes")
 		for _, d := range st.Disks {
-			g.add(d.Name, d.Status)
+			if d.Local() {
+				g.add(d.Name, d.Status)
+			} else {
+				gv.add(d.Name, d.Status)
+			}
 		}
 		if len(st.MDArrays) > 0 {
 			g = group("Software RAID arrays")

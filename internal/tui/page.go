@@ -404,7 +404,7 @@ func (d *doc) findings(fs []model.Finding) {
 }
 
 // counterNames are readable names for session counter keys.
-var counterNames = map[string]string{"io_errors": "SCSI I/O errors", "kernel_errors": "kernel log errors",
+var counterNames = map[string]string{"io_errors": "SCSI cmd errors (excl. Tyr)", "kernel_errors": "kernel log errors",
 	"smart.crc": "CRC errors", "smart.offline_uncorrectable": "offline uncorrectable", "smart.pending": "pending sectors",
 	"smart.reallocated": "reallocated sectors", "smart.reported_uncorrectable": "reported uncorrectable",
 	"smart.media_errors": "media errors", "smart.error_log": "error log entries", "smart.grown_defects": "grown defects",

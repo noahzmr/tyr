@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -152,7 +153,10 @@ func (s *storageTab) View(t *Theme) string {
 	return top + "\n\n" + findingsSection(t, "Storage", x.Findings, x.Sources, s.h-lipgloss.Height(top)-1, s.w)
 }
 
-// diskErrors sums SMART error counters; io adds kernel and SCSI I/O errors.
+// diskErrors sums SMART error counters; io adds kernel log I/O errors and
+// the SCSI command errors that are new since Tyr started (ioerr_cnt since
+// boot includes commands the device merely rejected, Tyr's own SMART
+// queries among them).
 func diskErrors(d model.Disk) (smart, io uint64) {
 	if m := d.SMART; m != nil {
 		for _, v := range []*uint64{m.Reallocated, m.Pending, m.OfflineUncorrect, m.MediaErrors, m.CRCErrors, m.UncorrectedErrors} {
@@ -162,10 +166,65 @@ func diskErrors(d model.Disk) (smart, io uint64) {
 		}
 	}
 	io = uint64(d.KernelErrors)
-	if d.IOErrors != nil {
-		io += *d.IOErrors
+	if d.IOErrorsNew != nil {
+		io += *d.IOErrorsNew
 	}
 	return smart, io
+}
+
+// cmdErrors is the SCSI command error breakdown: "0 new · 1106 since boot
+// (173 by Tyr's SMART reads)".
+func cmdErrors(t *Theme, d model.Disk) string {
+	if d.IOErrors == nil {
+		return ""
+	}
+	var nw, tyr uint64
+	if d.IOErrorsNew != nil {
+		nw = *d.IOErrorsNew
+	}
+	if d.IOErrorsTyr != nil {
+		tyr = *d.IOErrorsTyr
+	}
+	s := fmt.Sprintf("%d new", nw)
+	if nw > 0 {
+		s = t.StatusBold(model.StatusWarn, s)
+	}
+	rest := fmt.Sprintf(" · %s since boot", grouped(*d.IOErrors))
+	if tyr > 0 {
+		rest += fmt.Sprintf(" (%d by Tyr's SMART reads)", tyr)
+	}
+	return s + t.Sub.Render(rest)
+}
+
+// remoteState colours an iSCSI session / FC port state.
+func remoteState(t *Theme, r *model.RemoteDisk) string {
+	switch {
+	case r.State == "":
+		return ""
+	case r.State == "LOGGED_IN" || r.State == "Online":
+		return t.StatusText(model.StatusOK, r.State)
+	}
+	return t.StatusBold(model.StatusCrit, r.State)
+}
+
+func transportName(r *model.RemoteDisk) string {
+	if r.Transport == "iscsi" {
+		return "iSCSI"
+	}
+	return strings.ToUpper(r.Transport)
+}
+
+// ago is "3 min ago" for the SMART age, relative to the snapshot (a
+// saved or recorded one is not "now").
+func ago(at, now time.Time) string {
+	d := now.Sub(at)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return fmt.Sprintf("%d min ago", int(d.Minutes()))
+	}
+	return fmt.Sprintf("%d h ago", int(d.Hours()))
 }
 
 func diskType(d model.Disk) string {
@@ -174,6 +233,10 @@ func diskType(d model.Disk) string {
 		return "NVMe"
 	case "ssd", "hdd":
 		return strings.ToUpper(d.Kind)
+	case "iscsi":
+		return "iSCSI"
+	case "fc":
+		return "FC"
 	}
 	return d.Kind
 }
@@ -203,12 +266,12 @@ func why(fs []model.Finding, key string) string {
 
 func (s *storageTab) disks(t *Theme, maxRows int) string {
 	wide, narrow := s.w >= 150, s.w < 100
-	cols := []column{{"Disk", 8}, {"Type", 4}, {"Model", 0}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Err", 6}}
+	cols := []column{{"Disk", 8}, {"Type", 5}, {"Model", 0}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Err", 6}}
 	switch {
 	case narrow:
-		cols = []column{{"Disk", 8}, {"Type", 4}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Err", 6}}
+		cols = []column{{"Disk", 8}, {"Type", 5}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Err", 6}}
 	case wide:
-		cols = []column{{"Disk", 8}, {"Type", 4}, {"Model", 22}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Errors", 6}, {"Why", 0}}
+		cols = []column{{"Disk", 8}, {"Type", 5}, {"Model", 22}, {"Serial", -1}, {">Size", 7}, {">°C", 3}, {">Wear", 5}, {"SMART", 6}, {">Errors", 6}, {"Why", 0}}
 	}
 	byName := map[string]model.Disk{}
 	for _, d := range s.st.Disks {
@@ -291,12 +354,12 @@ func (s *storageTab) diskDetail(t *Theme) string {
 	if d.SMART != nil && d.SMART.Passed != nil && !*d.SMART.Passed {
 		smartLine = t.inlineStatus(model.StatusCrit, "FAILED")
 	}
-	ioTxt := fmt.Sprint(io)
-	if io > 0 {
+	ioTxt := fmt.Sprint(d.KernelErrors)
+	if d.KernelErrors > 0 {
 		ioTxt = t.StatusBold(model.StatusCrit, ioTxt)
-		if g := growth(t, "disk."+d.Name+"."); g != "" {
-			ioTxt += " " + g
-		}
+	}
+	if g := growth(t, "disk."+d.Name+"."); g != "" && io > 0 {
+		ioTxt += " " + g
 	}
 	u := func(v *uint64) string {
 		if v == nil {
@@ -315,6 +378,20 @@ func (s *storageTab) diskDetail(t *Theme) string {
 	if m.PowerOnHours != nil {
 		poh = fmt.Sprintf("%d h", *m.PowerOnHours) + t.Sub.Render(fmt.Sprintf(" (%.1f y)", float64(*m.PowerOnHours)/8766))
 	}
+	if r := d.Remote; r != nil { // a volume of a storage system: its path, not SMART
+		path := r.Session
+		if r.Portal != "" {
+			path += " via " + r.Portal
+		}
+		if s.w < 100 {
+			return head + "\n" + t.Dim.Render(transportName(r)+" ") + orDash(r.Target) + "\n" + t.Dim.Render("State ") + orDash(remoteState(t, r)) +
+				t.Dim.Render("  kernel I/O errors ") + ioTxt
+		}
+		c1 := kvBlock(t, []kvPair{{"Volume", strings.TrimSpace(d.Vendor + " " + d.Model)}, {"Size", bytesSI(d.SizeBytes)}, {"Path", d.Path + " · " + transportName(r)}}, "")
+		c2 := kvBlock(t, []kvPair{{"Target", r.Target}, {"Session", path}, {"State", remoteState(t, r)}}, "")
+		c3 := kvBlock(t, []kvPair{{"Kernel I/O", ioTxt}, {"SCSI cmds", cmdErrors(t, d)}, {"SMART", t.Sub.Render("on the storage system")}}, "")
+		return head + "\n" + kvColumns(s.w, c1, c2, c3)
+	}
 	if s.w < 100 {
 		l1 := t.Dim.Render("Model ") + orDash(d.Model) + t.Dim.Render("  S/N ") + t.Bold.Render(orDash(d.Serial)) + t.Dim.Render("  fw ") + orDash(d.Firmware)
 		l2 := t.Dim.Render("SMART ") + smartLine + t.Dim.Render("  realloc ") + orDash(stripStyle(u(m.Reallocated))) + t.Dim.Render("  I/O err ") + ioTxt
@@ -324,7 +401,7 @@ func (s *storageTab) diskDetail(t *Theme) string {
 	c1 := kvBlock(t, []kvPair{{"Model", strings.TrimSpace(d.Vendor + " " + d.Model)}, {"Serial", t.Bold.Render(d.Serial)},
 		{"Firmware", d.Firmware}, {"Path", d.Path + " · " + d.Interface}}, "")
 	c2 := kvBlock(t, []kvPair{{"Temp", temp}, {"Realloc", u(m.Reallocated)}, {"Pending", u(m.Pending)}, {"SMART", smartLine}}, "")
-	c3 := kvBlock(t, []kvPair{{"I/O errors", ioTxt}, {"SMART errors", fmt.Sprint(sm)}, {"CRC errors", u(m.CRCErrors)}, {"Power-on", poh}}, "")
+	c3 := kvBlock(t, []kvPair{{"Kernel I/O", ioTxt}, {"SCSI cmds", cmdErrors(t, d)}, {"SMART errors", fmt.Sprint(sm)}, {"CRC errors", u(m.CRCErrors)}, {"Power-on", poh}}, "")
 	return head + "\n" + kvColumns(s.w, c1, c2, c3)
 }
 
@@ -589,6 +666,11 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 	if len(flags) > 0 {
 		idRows = append(idRows, kvPair{"Flags", strings.Join(flags, ", ")})
 	}
+	if r := d.Remote; r != nil {
+		idRows[6] = kvPair{"Interface", transportName(r) + t.Sub.Render(" · a storage system's volume")}
+		idRows = append(idRows, kvPair{"Target", r.Target}, kvPair{"Portal", r.Portal},
+			kvPair{"Session", r.Session}, kvPair{"State", remoteState(t, r)})
+	}
 	left := t.Heading("Identity", "", lw) + "\n" + kvBlock(t, idRows, "")
 
 	// Sensors + SMART health
@@ -614,9 +696,17 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 	m := d.SMART
 	right = append(right, "")
 	if m == nil {
-		right = append(right, t.Heading("SMART health", "", rw), t.Sub.Render("no SMART data (needs root, or smartctl/nvme-cli for this device)"))
+		why := "no SMART data (needs root, or smartctl/nvme-cli for this device)"
+		if !d.Local() {
+			why = "a volume of a storage system: its disks are checked there"
+		}
+		right = append(right, t.Heading("SMART health", "", rw), t.Sub.Render(why))
 	} else {
-		right = append(right, t.HeadingRight("SMART health", "", "via "+m.Source, rw))
+		src := "via " + m.Source
+		if !d.SMARTAt.IsZero() {
+			src += " · read " + ago(d.SMARTAt, s.st.CollectedAt)
+		}
+		right = append(right, t.HeadingRight("SMART health", "", src, rw))
 		overall := ""
 		if m.Passed != nil {
 			overall = t.StatusBold(model.StatusOK, "● PASSED")
@@ -743,12 +833,13 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 				name = t.Bold.Render(name)
 			}
 			rows = append(rows, row{cells: []string{fmt.Sprint(a.ID), name, fmt.Sprint(a.Value), fmt.Sprint(a.Worst), fmt.Sprint(a.Thresh),
-				grouped(a.Raw), delta, note}, status: st})
+				rawText(a), delta, note}, status: st})
 		}
 		cols := []column{{">ID", 4}, {"Attribute", 26}, {">Value", 6}, {">Worst", 6}, {">Thresh", 7}, {">Raw", 14}, {">Δ session", 10}, {"", 0}}
 		doc.add("", t.HeadingRight("SMART attributes", "", countLabel(len(attrs), "attribute", "attributes"), w))
 		doc.add(renderList(t, cols, rows, -1, w, len(rows)+1))
 	}
+	ioErrorsSection(doc, d)
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "disk."+d.Name+".") }), "disk."+d.Name+".")
 	doc.findings(relatedFindings(s.st.Findings, d.Name))
 	return doc.String()
@@ -814,3 +905,51 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 }
 
 func checkEval(v *float64, th *model.Thresholds) model.Status { return check.Eval(v, th) }
+
+// rawText is a SMART raw value as smartctl prints it ("21 (Min/Max 18/40)"),
+// else the number.
+func rawText(a model.SMARTAttr) string {
+	if a.RawString != "" {
+		return a.RawString
+	}
+	return grouped(a.Raw)
+}
+
+// ioErrorsSection explains the two error sources on a disk page: the
+// kernel log (failed reads and writes) and the SCSI command error counter
+// (which also counts rejected commands, Tyr's SMART queries among them).
+func ioErrorsSection(doc *doc, d model.Disk) {
+	t := doc.t
+	if d.IOErrors == nil && d.KernelErrors == 0 {
+		return
+	}
+	doc.section("I/O errors", t.Dim.Render("what failed, and where to look"))
+	kern := fmt.Sprint(d.KernelErrors)
+	if d.KernelErrors > 0 {
+		kern = t.StatusBold(model.StatusCrit, kern)
+	}
+	rows := [][2]string{{"Kernel log", kern + t.Dim.Render(" failed reads and writes")}}
+	if d.KernelLast != "" {
+		rows = append(rows, [2]string{"Last", d.KernelLast})
+	}
+	if d.IOErrors != nil {
+		rows = append(rows, [2]string{"SCSI commands", cmdErrors(t, d)})
+	}
+	doc.kv(rows...)
+	var hints []string
+	if d.IOErrors != nil {
+		hints = append(hints, "SCSI command errors (ioerr_cnt) count every command that ended with an error - also commands the drive "+
+			"or controller rejects, such as SMART queries it does not pass through. Only new errors Tyr did not cause are a finding.")
+	}
+	switch {
+	case !d.Local():
+		hints = append(hints, "Kernel I/O errors on a volume mean the path to the storage system failed: check the session "+
+			"(iscsiadm -m session -P 3), the network to the portal, and the target's own logs.")
+	case d.KernelErrors > 0:
+		hints = append(hints, "Kernel I/O errors are reads or writes the disk could not complete: check SMART (pending and reallocated "+
+			"sectors), the cable or backplane (CRC errors), and journalctl -k for the disk.")
+	}
+	for _, h := range hints {
+		doc.add(lipgloss.NewStyle().Width(max(40, doc.w-2)).Render(t.Sub.Render(h)))
+	}
+}

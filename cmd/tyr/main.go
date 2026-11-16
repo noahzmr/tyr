@@ -110,6 +110,7 @@ func (c *common) register(fs *flag.FlagSet) {
 	fs.BoolVar(&c.opts.NoIPMI, "no-ipmi", false, "do not query the BMC")
 	fs.BoolVar(&c.opts.NoDMI, "no-dmidecode", false, "do not run dmidecode")
 	fs.BoolVar(&c.opts.NoSMART, "no-smart", false, "do not run smartctl/nvme")
+	fs.DurationVar(&c.opts.SMARTInterval, "smart-interval", c.opts.SMARTInterval, "reuse SMART data this long before querying the drives again (r in the TUI and stress snapshots always read fresh)")
 	fs.BoolVar(&c.opts.NICAll, "nic-all", false, "include virtual network interfaces")
 	fs.BoolVar(&c.opts.SELAll, "sel-all", false, "show all SEL entries, not only warnings and errors")
 	fs.Float64Var(&c.warn, "warn-temp", c.opts.Thresholds.WarnTempC, "default warning temperature (°C) when a sensor has no own limit")

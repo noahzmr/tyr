@@ -60,7 +60,11 @@ func TestFindingJumpsToComponent(t *testing.T) {
 	// a storage finding selects the filesystem
 	m = newLoaded(t, "server-degraded", 120, 40)
 	run(m, "n")
-	for range 9 { // "/data 96% full"
+	ov := m.tabs[0].(*overviewTab)
+	for range 40 { // down to "/data 96% full"
+		if it, _ := ov.finds.current(); strings.Contains(it.key, "fs_full") {
+			break
+		}
 		run(m, "down")
 	}
 	run(m, "enter")
@@ -93,7 +97,7 @@ func TestProblemsOnlyAndOrder(t *testing.T) {
 	}
 	// "n" jumps to the next problem row in device order
 	run(m, "n")
-	if it, _ := m.tabs[3].(*storageTab).lists[0].current(); it.key != "nvme1n1" {
+	if it, _ := m.tabs[3].(*storageTab).lists[0].current(); it.key != "sdf" { // after sdd: the iSCSI volume
 		t.Errorf("next problem selected %q", it.key)
 	}
 }
@@ -258,7 +262,7 @@ func TestTreeSlotMapHelpMouse(t *testing.T) {
 
 func TestWindowTitleShowsStatus(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
-	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (14 crit, 22 warn)") {
+	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (16 crit, 21 warn)") {
 		t.Errorf("title %q", title)
 	}
 }
@@ -526,5 +530,25 @@ func TestDocView(t *testing.T) {
 	}
 	if _, cmd := d.Update(press("q")); cmd == nil {
 		t.Error("q did not quit")
+	}
+}
+
+func TestISCSIVolumeShown(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 140, 50)
+	focus(t, m, "4", "sdf")
+	s := text(m)
+	for _, want := range []string{"7 disks", "1 network volume (1 session down)", "sdf      iSCSI IET VIRTUAL-DISK", "iqn.2024-01.net.example:backup.vol2",
+		"session1 via 10.16.40.20:3260", "FAILED", "on the storage system"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("storage tab missing %q\n%s", want, s)
+		}
+	}
+	run(m, "enter")
+	p := text(m)
+	for _, want := range []string{"Interface  iSCSI", "Portal     10.16.40.20:3260", "a volume of a storage system", "I/O errors", "iscsiadm -m session -P 3",
+		"0 new · 465 since boot"} {
+		if !strings.Contains(p, want) {
+			t.Errorf("volume page missing %q\n%s", want, p)
+		}
 	}
 }

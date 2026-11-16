@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
-1✖36 2✖4 3✖9 4✖11  5 Power ○  6✖6 7✖6 8○ 9 0                              ? help
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
+1✖37 2✖4 3✖9 4✖12  5 Power ○  6✖6 7✖6 8○ 9 0                              ? help
 ○ Power collector not implemented yet · inventory only: 2 PSUs · 2400 W rated ·…
 
 Power supplies ─────────────────────────────── SMBIOS type 39 · no live readings

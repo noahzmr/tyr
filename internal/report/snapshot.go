@@ -222,8 +222,13 @@ func storageSection(m *md, x *model.Storage) {
 		return
 	}
 	m.h(2, "Storage")
-	var rows [][]string
+	var rows, vols [][]string
 	for _, d := range x.Disks {
+		if r := d.Remote; r != nil {
+			vols = append(vols, []string{d.Name, strings.ToUpper(r.Transport), strings.TrimSpace(d.Vendor + " " + d.Model), bytesSI(d.SizeBytes),
+				r.Target, r.Portal, r.State, fmt.Sprint(d.KernelErrors), status(d.Status)})
+			continue
+		}
 		smart, poh, realloc, pending := "", "", "", ""
 		if s := d.SMART; s != nil {
 			if s.Passed != nil {
@@ -231,10 +236,26 @@ func storageSection(m *md, x *model.Storage) {
 			}
 			poh, realloc, pending = u(s.PowerOnHours), u(s.Reallocated), u(s.Pending)
 		}
+		cmd := ""
+		if d.IOErrors != nil {
+			cmd = fmt.Sprint(*d.IOErrors)
+			if d.IOErrorsNew != nil && *d.IOErrorsNew > 0 {
+				cmd += fmt.Sprintf(" (+%d new)", *d.IOErrorsNew)
+			}
+		}
 		rows = append(rows, []string{d.Name, strings.TrimSpace(d.Vendor + " " + d.Model), d.Serial, bytesSI(d.SizeBytes), strings.ToUpper(d.Kind),
-			f0(d.TempCelsius, " °C"), smart, poh, realloc, pending, status(d.Status)})
+			f0(d.TempCelsius, " °C"), smart, poh, realloc, pending, fmt.Sprint(d.KernelErrors), cmd, status(d.Status)})
 	}
-	m.table([]string{"Disk", "Model", "Serial", ">Size", "Type", ">Temp", "SMART", ">Power-on h", ">Realloc", ">Pending", "Status"}, rows)
+	m.table([]string{"Disk", "Model", "Serial", ">Size", "Type", ">Temp", "SMART", ">Power-on h", ">Realloc", ">Pending", ">Kernel I/O", ">SCSI cmd errors", "Status"}, rows)
+	if len(rows) > 0 {
+		m.p("_Kernel I/O: failed reads and writes in the kernel log. SCSI cmd errors (ioerr_cnt) since boot also count commands a drive or " +
+			"controller rejects, such as SMART queries it does not pass through; only new ones Tyr did not cause are an alert._")
+	}
+	if len(vols) > 0 {
+		m.h(3, "Network volumes")
+		m.table([]string{"Device", "Transport", "Volume", ">Size", "Target", "Portal", "State", ">Kernel I/O", "Status"}, vols)
+		m.p("_Volumes of a storage system: their disks are checked there. Kernel I/O errors here mean the path to the storage system failed._")
+	}
 	if len(x.MDArrays) > 0 {
 		m.h(3, "Software RAID")
 		var rows [][]string

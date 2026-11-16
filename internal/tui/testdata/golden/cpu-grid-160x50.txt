@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
-1 Overview ✖36   2 CPU ✖4   3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  16 crit 21 warn   ✖ CRIT
+1 Overview ✖37   2 CPU ✖4   3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
  ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · hottest 96°C                                                                        v Grid · Cores · Details
 
 Model      Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz                           Frequency  2.4 base · 3.4 max GHz intel_pstate

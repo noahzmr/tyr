@@ -13,5 +13,8 @@
 3,1012,702000001000,-;I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
 2,1013,702000002000,-;md/raid:md1: Disk failure on sdd1, disabling device.
 3,1014,705600000000,-;XFS (md1): metadata I/O error in "xfs_buf_ioend+0x1a0/0x380" at daddr 0x2 len 1 error 5
-6,1015,709200000000,-;ice 0000:4b:00.1 ens1f1: NIC Link is Down
-3,1016,712800000000,-;NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0.
+3,1015,707400000000,-; connection1:0: detected conn error (1020)
+3,1016,707460000000,-;I/O error, dev sdf, sector 2048 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
+3,1017,707520000000,-;I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
+6,1018,709200000000,-;ice 0000:4b:00.1 ens1f1: NIC Link is Down
+3,1019,712800000000,-;NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0.

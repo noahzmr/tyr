@@ -1,24 +1,24 @@
- TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
-1✖36 2✖4 3✖9  4 Storage ✖11  5○ 6✖6 7✖6 8○ 9 0                            ? help
+ TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
+1✖37 2✖4 3✖9  4 Storage ✖12  5○ 6✖6 7✖6 8○ 9 0                            ? help
  ✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮ms
   │ Navigation              Health                  Data · stress            │
   │ 1–0       switch tab    n         next problem  r         refresh now    │
 ▌✖│ tab ⇧tab  next / prev … !         problems only p         pause / resu…  │
- ▲│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON …  │
+ ✖│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON …  │
  ▲│ ←→ hl     move / regio… v         switch view   c         copy serial/…  │
- ●│ pgup pgdn page          /         search        R         reports        │
+ ▲│ pgup pgdn page          /         search        R         reports        │
  ●│ g G       top / end     t         CPU load ↔ t… s S F     stress tests   │
  ●│ enter     open / action a         empty DIMM s… q ctrl+c  quit · stop …  │
  ●│ esc       back · close  h         virtual NICs                           │
-  │ This tab · Storage                                                       │
-sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
-Mo│ with SMART attributes, counters and / search · c copies the serial       │
-SM│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
-Te│ applicable                                                               │
-  │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │
-Fi│ this session                                                             │en
- ✖│ Any key closes this window.                                              │
- ✖╰──────────────────────────────────────────────────────────────────────────╯
- ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
-   … 8 more · enter on a row opens its page
+ ●│ This tab · Storage                                                       │
+  │ v Disks · RAID · Filesystems · n next problem · enter opens the page     │
+sd│ with SMART attributes, counters and / search · c copies the serial       │ge
+Mo│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
+SM│ applicable                                                               │
+Te│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │
+  │ this session                                                             │
+Fi│ Any key closes this window.                                              │en
+ ✖╰──────────────────────────────────────────────────────────────────────────╯…
+ ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - rea…
+   … 10 more · enter on a row opens its page
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help
