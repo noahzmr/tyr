@@ -37,4 +37,4 @@ Findings 16 ✖ · 21 ▲ ──────────────────
  ▲ CPU      CPU1 Core 4   CPU1 Core 4 at 96°C (warn 90°C)                                                 10:00        │
  ▲ Memory   P2-DIMMC1 Te… P2-DIMMC1 Temp at 82°C                                                          10:00        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help
+←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help

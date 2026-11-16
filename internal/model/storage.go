@@ -40,10 +40,12 @@ type Disk struct {
 	IOErrorsTyr  *uint64     `json:"io_errors_tyr,omitempty"`
 	IOErrorsNew  *uint64     `json:"io_errors_new,omitempty"`
 	KernelErrors int         `json:"kernel_log_errors"`
-	KernelLast   string      `json:"kernel_log_last,omitempty"` // the latest kernel I/O error line
-	Remote       *RemoteDisk `json:"remote,omitempty"`          // iSCSI / FC volume of a storage system
-	SMARTAt      time.Time   `json:"smart_at,omitzero"`         // when SMART was read (it is cached)
-	Holders      []string    `json:"holders,omitempty"`         // md/dm devices using it
+	KernelLast   string      `json:"kernel_log_last,omitempty"`  // the latest kernel I/O error line
+	Remote       *RemoteDisk `json:"remote,omitempty"`           // iSCSI / FC volume of a storage system
+	Location     string      `json:"location,omitempty"`         // controller (driver) · port · bay
+	KernelLines  []string    `json:"kernel_log_lines,omitempty"` // the latest kernel log lines that name the disk (or its session)
+	SMARTAt      time.Time   `json:"smart_at,omitzero"`          // when SMART was read (it is cached)
+	Holders      []string    `json:"holders,omitempty"`          // md/dm devices using it
 	Mounted      []string    `json:"mountpoints,omitempty"`
 	SMART        *SMART      `json:"smart,omitempty"`
 	Status       Status      `json:"status"`

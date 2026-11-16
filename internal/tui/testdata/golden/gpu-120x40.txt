@@ -17,7 +17,8 @@ Driver    nvidia 550.127.05                                                     
 
 Findings · GPU/NPU 2 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
  ✖ 0000:ca:00.0 GPU1 ca:00.0: 2 uncorrectable ECC errors
- ✖ 0000:ca:00.0 GPU1 ca:00.0: 1 driver error in kernel log, last: NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=pyth…
+ ✖ 0000:ca:00.0 GPU1 ca:00.0: 1 driver error in kernel log, last: NVRM: Xid (PCI:0000:ca:00): 48, pid=48211,
+                name=python3, An uncorrectable double…
  ▲ 0000:ca:00.0 GPU1 ca:00.0: GPU temperature 88°C
  ▲ 0000:ca:00.0 GPU1 ca:00.0: Memory temperature 92°C
  ▲ 0000:ca:00.0 GPU1 ca:00.0: memory row remap/retirement pending (reset the GPU)
@@ -25,7 +26,6 @@ Findings · GPU/NPU 2 ✖ · 4 ▲ ───────────────
 
 NPU ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  · not applicable: no NPU found (checked /sys/class/accel, amdxdna, intel_vpu)
-
 
 
 

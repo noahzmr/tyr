@@ -20,5 +20,5 @@ Failed  sdd1
 Sync    none
 
 Findings · Storage 8 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
-   … 12 more · enter on a row opens its page
+ ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

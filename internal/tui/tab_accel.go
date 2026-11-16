@@ -381,7 +381,7 @@ func (a *accelTab) Detail(t *Theme, w int) (string, string) {
 		[2]string{"Retired pages", optU(x.RetiredPages)}, [2]string{"Row remapping", remap},
 		[2]string{"Throttle reasons", strings.Join(x.ThrottleReasons, ", ")}, [2]string{"Driver errors (kernel log)", fmt.Sprint(x.KernelErrors)})
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "accel."+x.PCIAddress+".") }), "accel."+x.PCIAddress+".")
-	doc.findings(relatedFindings(a.acc.Findings, x.PCIAddress))
+	doc.findings(model.ModAccel, relatedFindings(a.acc.Findings, x.PCIAddress))
 	return name + " " + shortPCI(x.PCIAddress), doc.String()
 }
 

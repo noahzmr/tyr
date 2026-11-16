@@ -11,29 +11,29 @@
  ● sda      HDD   ST4000NM000A-2HZ100    WJG0A001          4 TB  33     – PASSED      0 –
  ● sdb      HDD   ST4000NM000A-2HZ100    WJG0A002          4 TB  34     – PASSED      0 –
  ● sde      HDD   AVAGO MR9361-8i        –                 6 TB   –     – –           0 –
-
-sdd ────────────────────────────╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮1 member · enter full SMART page
-Model     ST4000NM000A-2HZ100   │ Navigation                    Health                        Data · stress                    │
-Serial    WJG0A004              │ 1–0        switch tab         n          next problem       r          refresh now           │31 since boot
-Firmware  SN04                  │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │
-Path      /dev/sdd · sata       │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │
-                                │ ←→ hl      move / regions     v          switch view        c          copy serial/report    │(2.3 y)
-                                │ pgup pgdn  page               /          search             R          reports               │
-Findings · Storage 8 ✖ · 4 ▲ ───│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │lags 0x80700 phys_seg 1 prio c…
- ✖ sdf          sdf (iSCSI 10.16│ esc        back · close       h          virtual NICs                                        │he session, the network path a…
- ✖ sdf          sdf: iSCSI sessi│                                                                                              │
- ✖ md1          md1 (raid5) degr│ This tab · Storage                                                                           │
- ✖ 0/0          RAID virtual dri│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
- ✖ 252:2        RAID physical dr│ counters and / search · c copies the serial                                                  │
- ✖ /data        /data (xfs) is m│ ↑↓ move  enter open  v view  n next problem                                                  │
- ✖ /data        /data 96% full  │                                                                                              │
- ▲ nvme1n1      nvme1n1: 93% of │ Status                                                                                       │
- ▲ nvme1n1      nvme1n1: 3 media│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ▲ sdc          sdc: 8 pending s│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ▲ sdc          sdc: 24 realloca│                                                                                              │
-                                │ Any key closes this window.                                                                  │
-                                ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+                                ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮
+sdd ────────────────────────────│ Navigation                    Health                        Data · stress                    │1 member · enter full SMART page
+Model     ST4000NM000A-2HZ100   │ 1–0        switch tab         n          next problem       r          refresh now           │
+Serial    WJG0A004              │ tab ⇧tab   next / prev tab    i          explain alert      p          pause / resume        │31 since boot
+Firmware  SN04                  │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │
+Path      /dev/sdd · sata       │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
+                                │ pgup pgdn  page               v          switch view        R          reports               │(2.3 y)
+                                │ g G        top / end          /          search             A          alert reference       │
+Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    s S F      stress tests          │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   q ctrl+c   quit · stop all       │lags 0x80700 phys_seg 1 prio
+                class 0         │                               h          virtual NICs                                        │
+ ✖ sdf          sdf (iSCSI 10.16│                                                                                              │he session, the network path
+                and the target, │ This tab · Storage                                                                           │prio class 0
+ ✖ sdf          sdf: iSCSI sessi│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
+ ✖ md1          md1 (raid5) degr│ counters and / search · c copies the serial                                                  │
+ ✖ 0/0          RAID virtual dri│ ↑↓ move  enter open  v view  n next problem                                                  │
+ ✖ 252:2        RAID physical dr│                                                                                              │
+ ✖ /data        /data (xfs) is m│ Status                                                                                       │
+ ✖ /data        /data 96% full  │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ▲ nvme1n1      nvme1n1: 93% of │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ▲ nvme1n1      nvme1n1: 3 media│                                                                                              │
+ ▲ sdc          sdc: 8 pending s│ Any key closes this window.                                                                  │
+ ▲ sdc          sdc: 24 realloca╰──────────────────────────────────────────────────────────────────────────────────────────────╯
 
 
 

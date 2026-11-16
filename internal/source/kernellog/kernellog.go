@@ -34,7 +34,13 @@ type Log struct {
 	Source  string // "kmsg", "journalctl", "dmesg"
 	Entries []Entry
 	Total   int // number of messages scanned
+	// Recent are the last messages of any kind (up to maxRecent), so a
+	// component's surroundings - a RAID member failing, a session dropping -
+	// can be shown next to its classified errors.
+	Recent []Entry
 }
+
+const maxRecent = 5000
 
 // ByCategory returns entries of one category.
 func (l *Log) ByCategory(c Category) []Entry {
@@ -206,8 +212,14 @@ func (l *Log) add(m rawMsg) {
 		return
 	}
 	l.Total++
+	e := Entry{Time: m.t, Priority: m.pri, Message: m.msg}
 	if c := Classify(m.msg); c.Category != "" {
-		l.Entries = append(l.Entries, Entry{Time: m.t, Priority: m.pri, Message: m.msg, Class: c})
+		e.Class = c
+		l.Entries = append(l.Entries, e)
+	}
+	l.Recent = append(l.Recent, e)
+	if len(l.Recent) > 2*maxRecent { // trim in batches
+		l.Recent = append([]Entry(nil), l.Recent[len(l.Recent)-maxRecent:]...)
 	}
 }
 

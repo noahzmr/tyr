@@ -99,6 +99,46 @@ func pad(s string, w int) string {
 	return s + strings.Repeat(" ", w-lipgloss.Width(s))
 }
 
+// hang wraps body to w cells after prefix; continuation lines are indented
+// to the width of prefix (a hanging indent), so long entries stay readable.
+// style, if given, is applied to each wrapped line of a plain body.
+func hang(prefix, body string, w int, style ...func(...string) string) string {
+	pw := lipgloss.Width(prefix)
+	bw := max(20, w-pw)
+	lines := []string{body}
+	if lipgloss.Width(body) > bw {
+		lines = strings.Split(ansi.Wrap(body, bw, ""), "\n")
+	}
+	for i := range lines {
+		lines[i] = strings.TrimRight(lines[i], " ")
+		if i > 0 {
+			lines[i] = strings.TrimLeft(lines[i], " ")
+		}
+		if len(style) > 0 {
+			lines[i] = style[0](lines[i])
+		}
+		if i == 0 {
+			lines[i] = prefix + lines[i]
+		} else {
+			lines[i] = strings.Repeat(" ", pw) + lines[i]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// kvWrap is kv with values wrapped to w cells under their column.
+func kvWrap(t *Theme, rows [][2]string, w int) string {
+	lw := 0
+	for _, r := range rows {
+		lw = max(lw, lipgloss.Width(r[0]))
+	}
+	var b []string
+	for _, r := range rows {
+		b = append(b, hang(t.Dim.Render(pad(r[0], lw))+"  ", r[1], w))
+	}
+	return strings.Join(b, "\n")
+}
+
 // kv renders "label  value" lines with aligned labels.
 func kv(t *Theme, rows [][2]string) string {
 	lw := 0
@@ -135,11 +175,18 @@ func findingsSection(t *Theme, module string, fs []model.Finding, ss []model.Sou
 		if f.Status == model.StatusOK {
 			continue
 		}
-		if shown == room-1 && n > room {
+		row := strings.Split(findingRow(t, f, w), "\n")
+		if len(lines)+len(row) > room || (len(lines)+len(row) == room && shown < n-1) {
+			if len(lines) == 0 { // one tall row: show what fits
+				lines = append(lines, row[:max(1, min(len(row), room-1))]...)
+				if shown++; shown == n {
+					break
+				}
+			}
 			lines = append(lines, t.Sub.Render(fmt.Sprintf("   … %d more · enter on a row opens its page", n-shown)))
 			break
 		}
-		lines = append(lines, findingRow(t, f, w))
+		lines = append(lines, row...)
 		shown++
 	}
 	if n == 0 {
@@ -158,10 +205,11 @@ func findingRow(t *Theme, f model.Finding, w int) string {
 	if t.sess.isNew(f) {
 		tag = t.NewTag()
 	}
-	left := " " + t.Dot(f.Status) + " " + t.Bold.Render(pad(f.Subject, 12)) + " " + f.Message
-	room := w - lipgloss.Width(tag) - 1
-	left = padCell(left, room, false)
-	return left + " " + tag
+	prefix := " " + t.Dot(f.Status) + " " + t.Bold.Render(pad(f.Subject, 12)) + " "
+	if tag != "" {
+		prefix += tag + " "
+	}
+	return hang(prefix, f.Message, w-1)
 }
 
 // sortFindings returns a copy, most severe first (stable).
@@ -177,11 +225,10 @@ func findingLine(t *Theme, f model.Finding, module string, w int) string {
 	if module != "" {
 		s += t.Dim.Render(pad(module, 8)) + " "
 	}
-	tag := ""
 	if t.sess.isNew(f) {
-		tag = " " + t.NewTag()
+		s += t.NewTag() + " "
 	}
-	return padCell(s+f.Message, w-lipgloss.Width(tag), false) + tag
+	return hang(s, f.Message, w-1)
 }
 
 func countNonOK(fs []model.Finding) int {

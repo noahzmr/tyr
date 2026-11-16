@@ -12,6 +12,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 
 	"github.com/noahzmr/tyr/internal/check"
+	"github.com/noahzmr/tyr/internal/explain"
 	"github.com/noahzmr/tyr/internal/model"
 )
 
@@ -109,13 +110,19 @@ func (p *detailPage) update(msg tea.KeyPressMsg) bool {
 		p.search.Focus()
 	case "n":
 		if p.matches > 0 {
+			top := p.vp.YOffset()
 			p.vp.HighlightNext()
+			p.vp.SetYOffset(top)
 			p.cur = (p.cur + 1) % p.matches
+			p.showMatch()
 		}
 	case "N":
 		if p.matches > 0 {
+			top := p.vp.YOffset()
 			p.vp.HighlightPrevious()
+			p.vp.SetYOffset(top)
 			p.cur = (p.cur - 1 + p.matches) % p.matches
+			p.showMatch()
 		}
 	case "g", "home":
 		p.vp.GotoTop()
@@ -167,6 +174,20 @@ func (p *detailPage) applySearch() {
 			}
 		}
 		p.vp.SetHighlights(keep)
+		p.vp.SetYOffset(top) // undo the viewport's own scroll (see showMatch)
+		p.showMatch()
+	}
+}
+
+// showMatch scrolls the current match into view. The viewport maps match
+// offsets to lines itself, which drifts on styled content; p.lines is exact.
+func (p *detailPage) showMatch() {
+	if p.cur >= len(p.lines) {
+		return
+	}
+	l, top, h := p.lines[p.cur], p.vp.YOffset(), max(1, p.vp.Height())
+	if l < top || l >= top+h {
+		p.vp.SetYOffset(max(0, l-h/3))
 	}
 }
 
@@ -257,7 +278,7 @@ func (d *doc) kv(rows ...[2]string) {
 		}
 	}
 	if len(keep) > 0 {
-		d.add(kv(d.t, keep))
+		d.add(kvWrap(d.t, keep, d.w))
 	}
 }
 
@@ -387,8 +408,11 @@ func heatColor(t *Theme, x float64) color.Color {
 	return ramp[i]
 }
 
-// findings adds related findings (most severe first) with NEW markers.
-func (d *doc) findings(fs []model.Finding) {
+// findings adds related findings (most severe first) with NEW markers,
+// then what each kind of alert means and how to check it (the alert
+// reference, filled in for this component).
+func (d *doc) findings(mod model.ModuleID, fs []model.Finding) {
+	defer d.about(mod, fs)
 	d.section("Findings", d.t.Counts(fs))
 	n := 0
 	for _, f := range sortFindings(fs) {
@@ -401,6 +425,44 @@ func (d *doc) findings(fs []model.Finding) {
 	if n == 0 {
 		d.add(d.t.StatusText(model.StatusOK, "● no problems found"))
 	}
+}
+
+// about adds "About these alerts": per kind of alert its meaning, usual
+// causes and the commands to check this component.
+func (d *doc) about(mod model.ModuleID, fs []model.Finding) {
+	t := d.t
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range sortFindings(fs) {
+		if f.Status == model.StatusOK || seen[f.Code] {
+			continue
+		}
+		seen[f.Code] = true
+		e, ok := explain.For(mod, f.Code)
+		if !ok {
+			continue
+		}
+		para := func(label, text string) {
+			out = append(out, hang("   "+t.Dim.Render(pad(label, 8)), text, d.w-1))
+		}
+		out = append(out, "", " "+t.Dot(f.Status)+" "+t.Bold.Render(e.Title)+t.Dim.Render("  "+string(mod)+"/"+f.Code))
+		para("Means", e.Meaning)
+		if len(e.Causes) > 0 {
+			para("Causes", strings.Join(e.Causes, "; "))
+		}
+		for i, c := range e.Commands(f.Subject) {
+			label := ""
+			if i == 0 {
+				label = "Check"
+			}
+			out = append(out, hang("   "+t.Dim.Render(pad(label, 8)), c, d.w-1, t.Key.Render))
+		}
+	}
+	if len(out) == 0 {
+		return
+	}
+	d.section("About these alerts", t.Dim.Render("A all alerts"))
+	d.add(out[1:]...)
 }
 
 // counterNames are readable names for session counter keys.

@@ -490,6 +490,6 @@ func (n *networkTab) Detail(t *Theme, w int) (string, string) {
 		}
 	}
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "net."+x.Name+".") }), "net."+x.Name+".")
-	doc.findings(relatedFindings(n.net.Findings, x.Name))
+	doc.findings(model.ModNetwork, relatedFindings(n.net.Findings, x.Name))
 	return "Interface " + x.Name, doc.String()
 }

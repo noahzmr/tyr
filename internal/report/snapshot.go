@@ -69,6 +69,7 @@ func Snapshot(s *model.Snapshot) string {
 	networkSection(&m, s.Network)
 	accelSection(&m, s.Accel)
 	inventorySection(&m, s.Inventory)
+	explainSection(&m, s, alertsFrom(s))
 	sourcesSection(&m, s)
 	return m.String()
 }

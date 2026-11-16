@@ -120,6 +120,9 @@ guard that keeps it safe, and gives a verdict you can trust.
   transceiver, AMD's Tjmax per CPU family), else a configurable default.
 - Data sources that could not be used are listed with the reason - nothing is
   silently missing.
+- An alert reference (`A`): every alert with what it means, the usual causes
+  and the commands to check. `i` explains one alert with where it happens:
+  controller, port and bay of a disk, and the kernel log lines naming it.
 
 ### Stress tests
 
@@ -357,6 +360,7 @@ Net peer: `--listen`, `--token`, `--idle`.
 | `↑↓` `jk` | move | `o` | worst first ↔ physical | `e` | export JSON + Markdown |
 | `←→` `hl` | move / regions | `v` | switch view | `c` | copy serial / report |
 | `pgup` `pgdn` | page | `/` | search | `R` | reports |
+| | | `i` | explain the selected alert | `A` | alert reference |
 | `g` `G` | top / end | `t` | CPU load ↔ temperature | `s` `S` `F` | Stress tab, stress this, full test |
 | `enter` | open | `a` | empty DIMM slots | `q` | quit |
 | `esc` | back | `h` | virtual NICs | `?` | help with this tab's keys |

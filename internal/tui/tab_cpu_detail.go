@@ -651,6 +651,6 @@ func (c *cpuTab) Detail(t *Theme, w int) (string, string) {
 		doc.table([]string{"State", "Description", "Exit latency", "Entries", "Residency", ""}, rows, nil)
 	}
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasSuffix(k, "."+id) }), "")
-	doc.findings(relatedFindings(c.cpu.Findings, id))
+	doc.findings(model.ModCPU, relatedFindings(c.cpu.Findings, id))
 	return "Logical CPU " + id, doc.String()
 }

@@ -39,6 +39,24 @@ flowchart LR
 `--warn-temp` and `--crit-temp` set the defaults; given explicitly they also
 replace the AMD table.
 
+## Alert reference
+
+Every finding has a code (`storage/crc_errors`, `network/link_down`, ...).
+Tyr keeps a catalog of them: what the alert means, the usual causes and the
+commands to check, with the component filled in.
+
+| Where | What |
+|---|---|
+| TUI `A` | the whole catalog, searchable with `/` |
+| TUI `i` on an Overview finding | that alert: where (location, kernel log lines), meaning, causes, commands |
+| component pages | **About these alerts** for the alerts on that component |
+| host report | **What the alerts mean**, one block per kind of alert with the affected components |
+
+For disks "where" is the controller's PCI address and driver, the SATA port or
+SAS phy, the enclosure bay when the kernel knows it (`enclosure_device`, HPE
+`hpsa` / `smartpqi` `path_info`), and the last kernel log lines naming the
+disk, its partitions, its ATA link or its iSCSI connection.
+
 ## Modules
 
 ### System
@@ -145,6 +163,10 @@ journalctl -k -b | grep -iE 'iscsi|connection[0-9]+:' | tail
   check the session state, the network to the portal and the target's logs.
 - **Empty slots and disks hidden by the controller or the BMC** are not visible
   to Linux; only the controller's tool or the BMC shows them.
+- **Where is it?** The disk page shows the controller, port and bay, and the
+  kernel log lines that name the disk (`ata4.00: exception`, `I/O error, dev
+  sdd`, `md1: Disk failure on sdd1`). `i` on the finding shows the same with
+  the commands to run next.
 
 ### Network
 

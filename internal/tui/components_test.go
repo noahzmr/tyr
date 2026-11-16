@@ -162,3 +162,44 @@ func TestOverlayFooterBadges(t *testing.T) {
 		t.Errorf("badge %q", b)
 	}
 }
+
+func TestHangWrapsWithIndent(t *testing.T) {
+	got := hang("Last  ", strings.Repeat("word ", 20), 40)
+	lines := strings.Split(got, "\n")
+	if len(lines) < 3 {
+		t.Fatalf("not wrapped: %q", got)
+	}
+	for i, l := range lines {
+		if lipgloss.Width(l) > 40 {
+			t.Errorf("line %d too wide: %q", i, l)
+		}
+		if i > 0 && !strings.HasPrefix(l, "      word") {
+			t.Errorf("line %d not indented under the value: %q", i, l)
+		}
+	}
+	if hang("a ", "short", 40) != "a short" {
+		t.Error("short text changed")
+	}
+}
+
+func TestAlertKeys(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 100, 40)
+	run(m, "A")
+	if m.page == nil || m.page.title != "Alert reference" || !strings.Contains(m.page.copyText, "storage/crc_errors") {
+		t.Fatalf("A did not open the alert reference")
+	}
+	run(m, "esc")
+	run(m, "1", "n", "i")
+	if m.page == nil || !strings.Contains(m.page.copyText, "## What it means") {
+		t.Fatalf("i on a finding did not open its explanation")
+	}
+	// A also works from a component page (its "About these alerts" hint)
+	run(m, "esc", "4", "enter")
+	if m.page == nil || !strings.Contains(ansi.Strip(m.page.vp.GetContent()), "About these alerts") {
+		t.Fatalf("disk page lacks About these alerts")
+	}
+	run(m, "A")
+	if m.page == nil || m.page.title != "Alert reference" {
+		t.Fatalf("A from a page did not open the reference")
+	}
+}

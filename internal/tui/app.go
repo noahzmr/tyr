@@ -55,6 +55,8 @@ type (
 		subject string // select this component in the target tab
 	}
 	statusMsg string
+	// explainMsg opens the explanation page of one alert.
+	explainMsg struct{ alert report.Alert }
 )
 
 // Model is the root model.
@@ -263,6 +265,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spin, cmd = m.spin.Update(msg)
 		return m, cmd
 
+	case explainMsg:
+		m.openExplain(msg.alert)
+		return m, nil
 	case switchTabMsg:
 		for i, t := range m.tabs {
 			if t.Module() == msg.module && (i > 0 || msg.module != model.ModSystem) {
@@ -360,7 +365,28 @@ var (
 	keyOrder    = key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "order"))
 	keyCopy     = key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy serial"))
 	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "reports"))
+	keyAlerts   = key.NewBinding(key.WithKeys("A", "shift+a"), key.WithHelp("A", "alert reference"))
+	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
+
+// openAlertReference shows every kind of alert Tyr raises: what it means,
+// the usual causes and how to check.
+func (m *Model) openAlertReference() {
+	md := report.AlertReference()
+	m.page = markdownPage(m.theme, "A alerts", "Alert reference", md, m.width, m.contentHeight()+3)
+	m.page.copyText, m.page.copyKind = md, "alert reference"
+}
+
+// openExplain shows one alert: where it happens, what it means, the usual
+// causes and the commands to check that component.
+func (m *Model) openExplain(a report.Alert) {
+	if m.snap == nil {
+		return
+	}
+	md := report.ExplainAlert(m.snap, a)
+	m.page = markdownPage(m.theme, "1 Overview", a.Subject+" · "+a.Code, md, m.width, m.contentHeight()+3)
+	m.page.copyText, m.page.copyKind = md, "explanation"
+}
 
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	k := m.keys
@@ -377,6 +403,10 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
 			return m.quit()
+		}
+		if !m.page.capturing() && key.Matches(msg, keyAlerts) && m.page.title != "Alert reference" {
+			m.openAlertReference()
+			return nil
 		}
 		if !m.page.capturing() && key.Matches(msg, keyCopy) {
 			if m.page.copyText != "" {
@@ -405,6 +435,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		if m.snap != nil {
 			m.openReports()
 		}
+		return nil
+	case key.Matches(msg, keyAlerts):
+		m.openAlertReference()
 		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)

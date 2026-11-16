@@ -6,35 +6,35 @@
 ▌✖ sdd      HDD   ST4000NM000A-2HZ100                                    WJG0A004          4 TB  36     – PASSED  2 I/O
  ✖ sdf      iSCSI IET VIRTUAL-DISK                                       –                43 GB   –     – –       2 I/O
  ▲ nvme1n1  NVMe  SAMSUNG MZQL21T9HCJR-00A07                             S64GNE0R100002  1.9 TB  42  93 % PASSED      3
- ▲ sdc      HDD   ST4000NM000A-2HZ100                                    WJG0A003          4 TB  35     – PASSED     32
- ● nvme0n1  ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮SSED      0
- ● sda      │ Navigation                    Health                        Data · stress                    │SSED      0
- ● sdb      │ 1–0        switch tab         n          next problem       r          refresh now           │SSED      0
- ● sde      │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │          0
-            │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │
-sdd ────────│ ←→ hl      move / regions     v          switch view        c          copy serial/report    │l SMART page
-Model     ST│ pgup pgdn  page               /          search             R          reports               │
-Serial    WJ│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │ce boot
-Firmware  SN│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │
-Path      /d│ esc        back · close       h          virtual NICs                                        │
+ ▲ sdc      ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮SSED     32
+ ● nvme0n1  │ Navigation                    Health                        Data · stress                    │SSED      0
+ ● sda      │ 1–0        switch tab         n          next problem       r          refresh now           │SSED      0
+ ● sdb      │ tab ⇧tab   next / prev tab    i          explain alert      p          pause / resume        │SSED      0
+ ● sde      │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │          0
+            │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
+sdd ────────│ pgup pgdn  page               v          switch view        R          reports               │l SMART page
+Model     ST│ g G        top / end          /          search             A          alert reference       │
+Serial    WJ│ enter      open / action      t          CPU load ↔ temp    s S F      stress tests          │ce boot
+Firmware  SN│ esc        back · close       a          empty DIMM slots   q ctrl+c   quit · stop all       │
+Path      /d│                               h          virtual NICs                                        │
             │                                                                                              │)
             │ This tab · Storage                                                                           │
 Findings · S│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │· enter open
- ✖ sdd      │ counters and / search · c copies the serial                                                  │5160 op 0x…
- ✖ sdf      │ ↑↓ move  enter open  v view  n next problem                                                  │stem faile…
- ✖ sdf      │                                                                                              │
- ✖ md1      │ Status                                                                                       │
- ✖ 0/0      │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ✖ 252:2    │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ✖ /data    │                                                                                              │
- ✖ /data    │ Any key closes this window.                                                                  │
- ▲ nvme1n1  ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+ ✖ sdd      │ counters and / search · c copies the serial                                                  │5160 op
+            │ ↑↓ move  enter open  v view  n next problem                                                  │
+ ✖ sdf      │                                                                                              │stem
+            │ Status                                                                                       │ror, dev
+            │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ✖ sdf      │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ✖ md1      │                                                                                              │
+ ✖ 0/0      │ Any key closes this window.                                                                  │
+ ✖ 252:2    ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+ ✖ /data        /data (xfs) is mounted read-only
+ ✖ /data        /data 96% full
+ ▲ nvme1n1      nvme1n1: 93% of rated endurance used
  ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
  ▲ sdc          sdc: 8 pending sectors
  ▲ sdc          sdc: 24 reallocated sectors
-
-
-
 
 
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help

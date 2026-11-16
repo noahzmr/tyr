@@ -11,7 +11,7 @@ Modules ────────────────────────
  ✖ GPU/NPU  CRIT      6 GPU1 ca:00.0: 2 uncorrectable ECC errors
  ○ Events   n/a         collector not implemented yet
  ● System   OK        – BIOS 1.4b · BMC 1.40
-Findings 16 ✖ · 21 ▲ ─────────────────────────────────── worst first · 1–8 of 37
+Findings 16 ✖ · 21 ▲ ─────────────────────── i explain · worst first · 1–8 of 37
  ✖ CPU      1 core offline (cpu7)                                              ┃
 ▌✖ Memory   1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorr…        │
  ✖ Memory   4 kB of memory poisoned by the kernel (HardwareCorrupted)          │
@@ -21,4 +21,4 @@ Findings 16 ✖ · 21 ▲ ──────────────────
  ✖ Storage  sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2…        │
  ✖ Storage  md1 (raid5) degraded: 3/4 devices, failed sdd1                     │
 
-←→↑↓ move  enter open  n next problem  o order  e export  S stress this  ? help
+←→↑↓ move  enter open  n next problem  i explain  o order  e export  ? help

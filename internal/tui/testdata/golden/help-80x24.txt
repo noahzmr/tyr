@@ -3,22 +3,22 @@
  ✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮ms
   │ Navigation              Health                  Data · stress            │
   │ 1–0       switch tab    n         next problem  r         refresh now    │
-▌✖│ tab ⇧tab  next / prev … !         problems only p         pause / resu…  │
- ✖│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON …  │
- ▲│ ←→ hl     move / regio… v         switch view   c         copy serial/…  │
- ▲│ pgup pgdn page          /         search        R         reports        │
- ●│ g G       top / end     t         CPU load ↔ t… s S F     stress tests   │
- ●│ enter     open / action a         empty DIMM s… q ctrl+c  quit · stop …  │
- ●│ esc       back · close  h         virtual NICs                           │
- ●│ This tab · Storage                                                       │
-  │ v Disks · RAID · Filesystems · n next problem · enter opens the page     │
-sd│ with SMART attributes, counters and / search · c copies the serial       │ge
-Mo│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
-SM│ applicable                                                               │
-Te│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │
-  │ this session                                                             │
-Fi│ Any key closes this window.                                              │en
- ✖╰──────────────────────────────────────────────────────────────────────────╯…
- ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - rea…
-   … 10 more · enter on a row opens its page
+▌✖│ tab ⇧tab  next / prev … i         explain alert p         pause / resu…  │
+ ✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
+ ▲│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
+ ▲│ pgup pgdn page          v         switch view   R         reports        │
+ ●│ g G       top / end     /         search        A         alert refere…  │
+ ●│ enter     open / action t         CPU load ↔ t… s S F     stress tests   │
+ ●│ esc       back · close  a         empty DIMM s… q ctrl+c  quit · stop …  │
+ ●│                         h         virtual NICs                           │
+  │ This tab · Storage                                                       │
+sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
+Mo│ with SMART attributes, counters and / search · c copies the serial       │
+SM│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
+Te│ applicable                                                               │
+  │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │
+Fi│ this session                                                             │en
+ ✖│ Any key closes this window.                                              │
+  ╰──────────────────────────────────────────────────────────────────────────╯
+   … 11 more · enter on a row opens its page
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

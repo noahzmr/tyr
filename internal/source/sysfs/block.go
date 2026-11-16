@@ -2,6 +2,7 @@ package sysfs
 
 import (
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,6 +27,7 @@ type BlockDev struct {
 	NVMeCtrl   string // nvme0 (controller of an NVMe namespace)
 	IOErrors   *uint64
 	Remote     *RemoteLink // iSCSI / Fibre Channel: a volume of a storage system, not a local disk
+	Location   DiskLocation
 	Holders    []string
 	Partitions []string
 }
@@ -38,6 +40,70 @@ type RemoteLink struct {
 	Target    string // iSCSI target IQN, FC remote port WWPN
 	Portal    string // iSCSI portal address:port
 	State     string // LOGGED_IN, FAILED, FREE (iSCSI); Online, Blocked, … (FC)
+}
+
+// DiskLocation is where a disk is attached: the controller (PCI address and
+// driver), the port, and the bay when the backplane (SES) or the controller
+// driver (HPE hpsa / smartpqi path_info) tells.
+type DiskLocation struct {
+	Controller string // 0000:00:17.0
+	Driver     string // ahci, mpt3sas, megaraid_sas, hpsa, smartpqi
+	Port       string // SATA port 4, SAS phy 3, port 1I
+	Slot       string // bay 3, Slot 03
+}
+
+var pciAddr = regexp.MustCompile(`^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]$`)
+var pathInfo = regexp.MustCompile(`PORT:\s*(\S+)\s+BOX:\s*(\S+)\s+BAY:\s*(\S+)`)
+
+// diskLocation derives the attachment from the sysfs device path.
+func diskLocation(f hostfs.FS, name, sysPath string) DiskLocation {
+	var l DiskLocation
+	for _, e := range strings.Split(sysPath, "/") {
+		switch {
+		case pciAddr.MatchString(e):
+			l.Controller = e // the last PCI device on the path is the controller
+		case strings.HasPrefix(e, "ata") && e[3:] != "" && strings.Trim(e[3:], "0123456789") == "":
+			l.Port = "SATA port " + e[3:]
+		case strings.HasPrefix(e, "phy-"):
+			l.Port = "SAS phy " + e[strings.LastIndex(e, ":")+1:]
+		case strings.HasPrefix(e, "port-") && l.Port == "":
+			l.Port = "SAS port " + e[strings.LastIndex(e, ":")+1:]
+		}
+	}
+	if l.Controller != "" {
+		if p, err := f.EvalSymlinks("/sys/bus/pci/devices/" + l.Controller + "/driver"); err == nil {
+			l.Driver = path.Base(p)
+		}
+	}
+	dev := "/sys/block/" + name + "/device"
+	if encl, _ := f.Glob(dev + "/enclosure_device:*"); len(encl) > 0 {
+		l.Slot = strings.TrimPrefix(path.Base(encl[0]), "enclosure_device:")
+	}
+	if m := pathInfo.FindStringSubmatch(hostfs.StringOr(f, dev+"/path_info", "")); m != nil {
+		l.Port = "port " + m[1]
+		if l.Slot == "" {
+			l.Slot = "box " + m[2] + " bay " + m[3]
+		}
+	}
+	return l
+}
+
+// String is "0000:00:17.0 (ahci) · SATA port 4 · bay 3".
+func (l DiskLocation) String() string {
+	var parts []string
+	if l.Controller != "" {
+		c := l.Controller
+		if l.Driver != "" {
+			c += " (" + l.Driver + ")"
+		}
+		parts = append(parts, c)
+	}
+	for _, p := range []string{l.Port, l.Slot} {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	return strings.Join(parts, " · ")
 }
 
 // skipBlock lists device name prefixes that are not physical disks.
@@ -68,6 +134,7 @@ func ReadBlockDevs(f hostfs.FS) []BlockDev {
 			b.SysPath = p
 		}
 		dev := d + "/device"
+		b.Location = diskLocation(f, name, b.SysPath)
 		switch {
 		case strings.HasPrefix(name, "nvme"):
 			b.Interface = "nvme"

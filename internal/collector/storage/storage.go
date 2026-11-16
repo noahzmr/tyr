@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -103,6 +104,8 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		if r := b.Remote; r != nil {
 			d.Remote = &model.RemoteDisk{Transport: r.Transport, Target: r.Target, Portal: r.Portal, Session: r.Session, State: r.State}
 		}
+		d.Location = b.Location.String()
+		d.KernelLines = kernelLines(klog, b)
 		for _, m := range mounts {
 			src := strings.TrimPrefix(m.Source, "/dev/")
 			if src == b.Name || slices.Contains(b.Partitions, src) {
@@ -762,4 +765,44 @@ func orStr(s, def string) string {
 		return def
 	}
 	return s
+}
+
+// maxKernelLines is how many of a disk's latest kernel log lines are kept.
+const maxKernelLines = 30
+
+// kernelLines returns the latest kernel log lines that name the disk, its
+// partitions, its SATA port, its NVMe controller or (iSCSI) its session's
+// connection - where to look when a disk reports errors.
+func kernelLines(l *kernellog.Log, b sysfs.BlockDev) []string {
+	if l == nil {
+		return nil
+	}
+	alts := []string{regexp.QuoteMeta(b.Name) + `p?\d*`}
+	if b.NVMeCtrl != "" {
+		alts = append(alts, regexp.QuoteMeta(b.NVMeCtrl))
+	}
+	for _, e := range strings.Split(b.SysPath, "/") {
+		if strings.HasPrefix(e, "ata") && e[3:] != "" && strings.Trim(e[3:], "0123456789") == "" {
+			alts = append(alts, e+`(?:\.\d+)?`)
+		}
+	}
+	if r := b.Remote; r != nil && strings.HasPrefix(r.Session, "session") {
+		alts = append(alts, "connection"+strings.TrimPrefix(r.Session, "session")+`:\d+`)
+	}
+	re := regexp.MustCompile(`(?:^|[^\w])(?:` + strings.Join(alts, "|") + `)(?:[^\w]|$)`)
+	var out []string
+	for _, e := range l.Recent {
+		if !re.MatchString(e.Message) {
+			continue
+		}
+		line := strings.TrimSpace(e.Message)
+		if !e.Time.IsZero() {
+			line = e.Time.UTC().Format("2006-01-02 15:04:05") + " " + line
+		}
+		out = append(out, line)
+	}
+	if len(out) > maxKernelLines {
+		out = out[len(out)-maxKernelLines:]
+	}
+	return out
 }

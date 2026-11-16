@@ -34,10 +34,10 @@ func (m *Model) helpOverlay(base string) string {
 	}
 	nav := col("Navigation", [][2]string{{"1–0", "switch tab"}, {"tab ⇧tab", "next / prev tab"}, {"↑↓ jk", "move"},
 		{"←→ hl", "move / regions"}, {"pgup pgdn", "page"}, {"g G", "top / end"}, {"enter", "open / action"}, {"esc", "back · close"}})
-	health := col("Health", [][2]string{{"n", "next problem"}, {"!", "problems only"}, {"o", "worst ↔ physical"},
+	health := col("Health", [][2]string{{"n", "next problem"}, {"i", "explain alert"}, {"!", "problems only"}, {"o", "worst ↔ physical"},
 		{"v", "switch view"}, {"/", "search"}, {"t", "CPU load ↔ temp"}, {"a", "empty DIMM slots"}, {"h", "virtual NICs"}})
 	data := col("Data · stress", [][2]string{{"r", "refresh now"}, {"p", "pause / resume"}, {"e", "export JSON + .md"}, {"c", "copy serial/report"},
-		{"R", "reports"}, {"s S F", "stress tests"}, {"q ctrl+c", "quit · stop all"}})
+		{"R", "reports"}, {"A", "alert reference"}, {"s S F", "stress tests"}, {"q ctrl+c", "quit · stop all"}})
 	keys := lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(colW).Render(nav),
 		lipgloss.NewStyle().Width(colW).Render(health), lipgloss.NewStyle().Width(colW).Render(data))
 
@@ -80,7 +80,7 @@ func (m *Model) helpOverlay(base string) string {
 }
 
 func (o *overviewTab) HelpText() string {
-	return "←→↑↓ cards · ↓ past the last row or n → Findings · enter opens the module tab with that component selected · esc in Findings returns to the cards"
+	return "←→↑↓ cards · ↓ past the last row or n → Findings · enter opens the module tab with that component selected · i explains the alert: where, meaning, causes, how to check · esc in Findings returns to the cards"
 }
 
 func (c *cpuTab) HelpText() string {

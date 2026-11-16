@@ -10,6 +10,7 @@ Firmware   SN04                                              Overall    ● PASS
 Capacity   4 TB · 7200 rpm                                   Self-test  no failure logged
 Interface  HDD over sata                                     Power-on   19 832 h · 41 cycles
 Used by    md1 member
+Location   0000:00:17.0 · SATA port 4
 
 SMART attributes ────────────────────────────────────────────────────────────────────────────────────────── 8 attributes
      ID Attribute                   Value  Worst  Thresh            Raw  Δ session
@@ -23,18 +24,17 @@ SMART attributes ─────────────────────
  ●  199 UDMA_CRC_Error_Count          200    200       0              0         +0
 
 I/O errors what failed, and where to look ──────────────────────────────────────────────────────────────────────────────
-Kernel log     2 failed reads and writes
-Last           2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio cla
+Kernel errors  2 failed reads and writes (lines below)
+Last           2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio
+               class 0
 SCSI commands  0 new · 31 since boot
 SCSI command errors (ioerr_cnt) count every command that ended with an error - also commands the drive or controller
 rejects, such as SMART queries it does not pass through. Only new errors Tyr did not cause are a finding.
 Kernel I/O errors are reads or writes the disk could not complete: check SMART (pending and reallocated sectors), the
 cable or backplane (CRC errors), and journalctl -k for the disk.
 
-Counters since boot · growth this session ──────────────────────────────────────────────────────────────────────────────
-   SCSI cmd errors (excl. Tyr)           31  unchanged
-   kernel log errors                      2  unchanged
-   CRC errors                             0  unchanged
-   offline uncorrectable                  0  unchanged
-   pending sectors                        0  unchanged
-↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  n N next/prev match  esc back  ? help  /realloc  match 1 of 3
+Kernel log last 3 lines naming sdd · newest last · journalctl -k -b | grep -w sdd ──────────────────────────────────────
+ 2026-11-15 12:00:00 ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 action 0x0
+ 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
+ 2026-11-15 12:00:00 md/raid:md1: Disk failure on sdd1, disabling device.
+↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  n N next/prev match  esc back  ? help  /realloc  match 1 of 4

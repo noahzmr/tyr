@@ -597,7 +597,7 @@ func (s *storageTab) Detail(t *Theme, w int) (string, string) {
 		doc.kv([2]string{"Device", f.Source}, [2]string{"Type", f.FSType}, [2]string{"Mode", ro},
 			[2]string{"Size", bytesGB(f.SizeBytes)}, [2]string{"Used", bytesGB(f.UsedBytes) + "  " + usageBar(t, f.UsedPercent, f.Status, 24)},
 			[2]string{"Inodes used", optF(f.InodesUsedPercent, "%.0f%%")})
-		doc.findings(relatedFindings(s.st.Findings, f.Mountpoint))
+		doc.findings(model.ModStorage, relatedFindings(s.st.Findings, f.Mountpoint))
 	}
 	return "Filesystem " + it.key, doc.String()
 }
@@ -662,7 +662,8 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 		flags = append(flags, t.StatusText(model.StatusCrit, "read-only"))
 	}
 	idRows := []kvPair{{"Device", d.Path}, {"Model", strings.TrimSpace(d.Vendor + " " + d.Model)}, {"Serial", t.Bold.Render(d.Serial)},
-		{"WWN", d.WWN}, {"Firmware", d.Firmware}, {"Capacity", capa}, {"Interface", iface}, {"Used by", strings.Join(where, " · ")}}
+		{"WWN", d.WWN}, {"Firmware", d.Firmware}, {"Capacity", capa}, {"Interface", iface}, {"Used by", strings.Join(where, " · ")},
+		{"Location", d.Location}}
 	if len(flags) > 0 {
 		idRows = append(idRows, kvPair{"Flags", strings.Join(flags, ", ")})
 	}
@@ -840,8 +841,9 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 		doc.add(renderList(t, cols, rows, -1, w, len(rows)+1))
 	}
 	ioErrorsSection(doc, d)
+	kernelLogSection(doc, d)
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "disk."+d.Name+".") }), "disk."+d.Name+".")
-	doc.findings(relatedFindings(s.st.Findings, d.Name))
+	doc.findings(model.ModStorage, relatedFindings(s.st.Findings, d.Name))
 	return doc.String()
 }
 
@@ -869,7 +871,7 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 			}
 			doc.add(t.Dot(st) + " " + pad(m.Device, 12) + t.StatusText(st, state))
 		}
-		doc.findings(relatedFindings(s.st.Findings, a.Name))
+		doc.findings(model.ModStorage, relatedFindings(s.st.Findings, a.Name))
 		return doc.String()
 	case it.ctrl != nil:
 		c := it.ctrl
@@ -899,7 +901,7 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 		if it.pd != nil {
 			keys = append(keys, it.pd.Slot)
 		}
-		doc.findings(relatedFindings(s.st.Findings, keys...))
+		doc.findings(model.ModStorage, relatedFindings(s.st.Findings, keys...))
 	}
 	return doc.String()
 }
@@ -918,6 +920,28 @@ func rawText(a model.SMARTAttr) string {
 // ioErrorsSection explains the two error sources on a disk page: the
 // kernel log (failed reads and writes) and the SCSI command error counter
 // (which also counts rejected commands, Tyr's SMART queries among them).
+// kernelLogSection lists the kernel log lines that name the disk (its
+// partitions, its ATA link, its NVMe controller or iSCSI connection),
+// wrapped so every entry is readable in full.
+func kernelLogSection(doc *doc, d model.Disk) {
+	if len(d.KernelLines) == 0 {
+		return
+	}
+	t := doc.t
+	doc.section("Kernel log", t.Dim.Render(fmt.Sprintf("last %d lines naming %s · newest last · journalctl -k -b | grep -w %s", len(d.KernelLines), d.Name, d.Name)))
+	for _, l := range d.KernelLines {
+		stamp, msg := "", l
+		if len(l) > 20 && l[4] == '-' && l[19] == ' ' {
+			stamp, msg = l[:19], l[20:]
+		}
+		st := t.Message.Render
+		if low := strings.ToLower(msg); strings.Contains(low, "error") || strings.Contains(low, "fail") || strings.Contains(low, "exception") {
+			st = lipgloss.NewStyle().Foreground(t.StatusColor(model.StatusWarn)).Render
+		}
+		doc.add(hang(" "+t.Dim.Render(stamp)+" ", msg, doc.w-1, st))
+	}
+}
+
 func ioErrorsSection(doc *doc, d model.Disk) {
 	t := doc.t
 	if d.IOErrors == nil && d.KernelErrors == 0 {
@@ -928,7 +952,7 @@ func ioErrorsSection(doc *doc, d model.Disk) {
 	if d.KernelErrors > 0 {
 		kern = t.StatusBold(model.StatusCrit, kern)
 	}
-	rows := [][2]string{{"Kernel log", kern + t.Dim.Render(" failed reads and writes")}}
+	rows := [][2]string{{"Kernel errors", kern + t.Dim.Render(" failed reads and writes (lines below)")}}
 	if d.KernelLast != "" {
 		rows = append(rows, [2]string{"Last", d.KernelLast})
 	}

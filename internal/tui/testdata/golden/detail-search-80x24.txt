@@ -1,24 +1,24 @@
  TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
-esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ100 …  line 1–20 · 0 %
+esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ10…  line 18–37 · 30 %
 
-Identity ───────────────────────────────────────────────────────────────────────
-Device     /dev/sdd
-Model      ST4000NM000A-2HZ100
-Serial     WJG0A004
-WWN        naa.5000c500e4a10004
-Firmware   SN04
-Capacity   4 TB · 7200 rpm
-Interface  HDD over sata
-Used by    md1 member
-
-Sensors ──────────────────────────────────────────────────────────────── session
-Temperature ━━━━━━─────╎──┃─ 36°C
-            limits warn 55 · crit 65 (default)
-
-SMART health ────────────────────────────────────── via smartctl · read just now
-Overall    ● PASSED
 Self-test  no failure logged
 Power-on   19 832 h · 41 cycles
 
 SMART attributes ────────────────────────────────────────────────── 8 attributes
-↑↓ pgup pgdn scroll  g G top/end  / search  ? help        /realloc  match 1 of 3
+     ID Attribute                   Value  Worst  Thresh            Raw  Δ sess…
+ ●    1 Raw_Read_Error_Rate            83     64      44      215098744        …
+ ●    5 Reallocated_Sector_Ct         100    100      10              0        …
+ ●    9 Power_On_Hours                 78     78       0          19832        …
+ ●  187 Reported_Uncorrect            100    100       0              0        …
+ ●  194 Temperature_Celsius            64     50       0 36 (0 19 0 0 …        …
+ ●  197 Current_Pending_Sector        100    100       0              0        …
+ ●  198 Offline_Uncorrectable         100    100       0              0        …
+ ●  199 UDMA_CRC_Error_Count          200    200       0              0        …
+
+I/O errors what failed, and where to look ──────────────────────────────────────
+Kernel errors  2 failed reads and writes (lines below)
+Last           2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op
+               0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
+SCSI commands  0 new · 31 since boot
+SCSI command errors (ioerr_cnt) count every command that ended with an error -
+↑↓ pgup pgdn scroll  g G top/end  / search  ? help        /realloc  match 1 of 4

@@ -485,6 +485,6 @@ func (m *memoryTab) Detail(t *Theme, w int) (string, string) {
 		}
 		return false
 	}), "edac.")
-	doc.findings(relatedFindings(m.mem.Findings, d.Locator, d.EDACLabel))
+	doc.findings(model.ModMemory, relatedFindings(m.mem.Findings, d.Locator, d.EDACLabel))
 	return "DIMM " + d.Locator, doc.String()
 }

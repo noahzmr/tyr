@@ -17,7 +17,7 @@
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 
-Findings 16 ✖ · 21 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── worst first · 1–28 of 37
+Findings 16 ✖ · 21 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────── i explain · worst first · 1–28 of 37
  ✖ CPU      cpu7          1 core offline (cpu7)                                                                                                   10:00        ┃
 ▌✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(CPU2)                                     10:00        ┃
  ✖ Memory   memory        4 kB of memory poisoned by the kernel (HardwareCorrupted)                                                               10:00        ┃
@@ -47,4 +47,4 @@ Findings 16 ✖ · 21 ▲ ──────────────────
  ▲ Storage  nvme1n1       nvme1n1: 3 media/data integrity errors                                                                                  10:00        │
  ▲ Storage  sdc           sdc: 8 pending sectors                                                                                                  10:00        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help
+←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help

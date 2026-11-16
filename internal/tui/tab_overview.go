@@ -11,6 +11,7 @@ import (
 
 	"github.com/noahzmr/tyr/internal/check"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/report"
 )
 
 var cardModules = []model.ModuleID{model.ModCPU, model.ModMemory, model.ModStorage, model.ModPower,
@@ -54,7 +55,7 @@ func (o *overviewTab) SetData(s *model.Snapshot) { o.snap = s; o.arrangeFindings
 func (o *overviewTab) SetSize(w, h int)          { o.w, o.h = w, h }
 func (o *overviewTab) Help() []key.Binding {
 	return []key.Binding{key.NewBinding(key.WithKeys("up"), key.WithHelp("←→↑↓", "move")), o.keys.Enter,
-		key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "next problem")), keyOrder,
+		key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "next problem")), keyExplain, keyOrder,
 		key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "export"))}
 }
 
@@ -133,6 +134,13 @@ func (o *overviewTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 			}
 			f, mod := o.finding(it.key)
 			return func() tea.Msg { return switchTabMsg{module: mod, subject: f.Subject} }
+		case key.Matches(msg, keyExplain):
+			it, ok := o.finds.current()
+			if !ok {
+				return nil
+			}
+			f, mod := o.finding(it.key)
+			return func() tea.Msg { return explainMsg{report.Alert{Module: mod, Finding: f}} }
 		case msg.String() == "n":
 			o.finds.setSel(o.finds.sel + 1)
 		default:
@@ -539,7 +547,7 @@ func (o *overviewTab) findingsList(t *Theme, w, h int) string {
 	}
 	head := t.HeadingRight("Findings", note, right, w)
 	if o.inFindings {
-		head = t.HeadingFocus("Findings", note, right, w)
+		head = t.HeadingFocus("Findings", note, "i explain · "+right, w)
 	}
 	if total == 0 {
 		return head + "\n" + t.StatusText(model.StatusOK, " ● no problems found")

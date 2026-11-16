@@ -10,6 +10,7 @@ Firmware   SN04
 Capacity   4 TB · 7200 rpm
 Interface  HDD over sata
 Used by    md1 member
+Location   0000:00:17.0 · SATA port 4
 
 Sensors ──────────────────────────────────────────────────────────────── session
 Temperature ━━━━━━─────╎──┃─ 36°C
@@ -20,5 +21,4 @@ Overall    ● PASSED
 Self-test  no failure logged
 Power-on   19 832 h · 41 cycles
 
-SMART attributes ────────────────────────────────────────────────── 8 attributes
 ↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  ? help

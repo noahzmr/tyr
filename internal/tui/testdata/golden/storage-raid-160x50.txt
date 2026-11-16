@@ -25,8 +25,10 @@ Failed  sdd1
 Sync    none
 
 Findings · Storage 8 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── n next · enter open
- ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio c…
- ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to the storage system failed; check the session, the network path a…
+ ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio
+                class 0
+ ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to the storage system failed; check the session, the network path
+                and the target, last: 2026-11-15 13:32:00 I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
  ✖ sdf          sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2 is FAILED
  ✖ md1          md1 (raid5) degraded: 3/4 devices, failed sdd1
  ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
@@ -37,8 +39,6 @@ Findings · Storage 8 ✖ · 4 ▲ ───────────────
  ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
  ▲ sdc          sdc: 8 pending sectors
  ▲ sdc          sdc: 24 reallocated sectors
-
-
 
 
 

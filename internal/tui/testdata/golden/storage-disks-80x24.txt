@@ -18,7 +18,7 @@ SMART PASSED  realloc 0  I/O err 2
 Temp  ━━━━━────╎──┃─ 36°C
 
 Findings · Storage 8 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
- ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O…
- ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - rea…
-   … 10 more · enter on a row opens its page
+ ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O
+                error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700
+   … 11 more · enter on a row opens its page
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

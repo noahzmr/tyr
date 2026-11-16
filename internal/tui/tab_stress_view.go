@@ -660,15 +660,21 @@ func (s *stressTab) liveView(t *Theme) string {
 	if len(s.verify) == 0 {
 		left = append(left, t.StatusText(model.StatusOK, "● none so far")+t.Sub.Render(" · every result is checked"))
 	}
-	for i := max(0, len(s.verify)-(rest-1)); i < len(s.verify); i++ {
+	// newest entries, wrapped in full, as many as fit (oldest dropped first)
+	var wrong []string
+	for i := len(s.verify) - 1; i >= 0 && len(wrong) < rest-1; i-- {
 		v := s.verify[i]
-		left = append(left, truncate(t.StatusText(model.StatusCrit, "✖ ")+t.Dim.Render(v.Time.Local().Format("15:04:05")+" ")+t.Bold.Render(v.Subject)+" "+
-			t.Dim.Render(v.Workload)+" "+strings.TrimSpace(v.Expected+" → "+v.Got+" "+v.Detail), lw))
+		e := strings.Split(hang(t.StatusText(model.StatusCrit, "✖ ")+t.Dim.Render(v.Time.Local().Format("15:04:05")+" "),
+			v.Subject+" "+v.Workload+" "+strings.TrimSpace(v.Expected+" → "+v.Got+" "+v.Detail), lw), "\n")
+		wrong = append(e, wrong...)
 	}
+	left = append(left, wrong[max(0, len(wrong)-(rest-1)):]...)
 	logs := []string{t.HeadingRight("Log", "", "newest last", rw)}
-	for i := max(0, len(s.logs)-(rest-1)); i < len(s.logs); i++ {
-		logs = append(logs, truncate(t.Dim.Render(s.logs[i]), rw))
+	var ll []string
+	for i := len(s.logs) - 1; i >= 0 && len(ll) < rest-1; i-- {
+		ll = append(strings.Split(hang("", s.logs[i], rw, t.Dim.Render), "\n"), ll...)
 	}
+	logs = append(logs, ll[max(0, len(ll)-(rest-1)):]...)
 	out = append(out, besideInspector(strings.Join(left, "\n"), lw+2, strings.Join(logs, "\n"), min(rest, max(len(left), len(logs)))))
 	return strings.Join(out, "\n")
 }
@@ -951,8 +957,8 @@ func (s *stressTab) resultView(t *Theme) string {
 	if len(ve) > 0 {
 		body = append(body, "", t.HeadingRight("Wrong results", "", t.StatusText(model.StatusCrit, fmt.Sprint(len(ve))), w))
 		for _, v := range ve {
-			body = append(body, truncate(t.StatusText(model.StatusCrit, "✖ ")+t.Dim.Render(v.Time.Local().Format("15:04:05")+" "+v.Workload+" ")+
-				t.Bold.Render(v.Subject)+"  "+strings.TrimSpace(v.Expected+" → "+v.Got+" "+v.Detail), w))
+			body = append(body, strings.Split(hang(t.StatusText(model.StatusCrit, "✖ ")+t.Dim.Render(v.Time.Local().Format("15:04:05")+" "+v.Workload+" ")+
+				t.Bold.Render(v.Subject)+"  ", strings.TrimSpace(v.Expected+" → "+v.Got+" "+v.Detail), w), "\n")...)
 		}
 	}
 	var files []string

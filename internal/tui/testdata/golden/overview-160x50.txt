@@ -47,4 +47,4 @@ Findings 16 ✖ · 21 ▲ ──────────────────
  ▲ Storage  nvme1n1       nvme1n1: 3 media/data integrity errors                                                                                  10:00        │
  ▲ Storage  sdc           sdc: 8 pending sectors                                                                                                  10:00        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help
+←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help

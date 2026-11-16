@@ -44,6 +44,8 @@ the serial.
 | `/` | search (Inventory, Events, pages) |
 | `c` | copy the selected serial, or the report on a report page |
 | `R` | Reports dialog |
+| `A` | alert reference: every alert with meaning, causes and how to check |
+| `i` | explain the selected Overview finding: where, what it means, causes, commands |
 | `e` | export the snapshot as JSON and Markdown |
 | `S` | stress the selected component |
 | `F` | full stress test |
@@ -52,6 +54,15 @@ the serial.
 | `?` | help |
 | `q` | quit (blocked while a stress test runs) |
 | `ctrl+c` | stop everything and quit |
+
+Long entries - findings, kernel log lines, page values, stress logs - wrap
+with a hanging indent instead of being cut off.
+
+Component pages end with **About these alerts**: per kind of alert on the
+component its meaning, usual causes and the commands to check it, filled in
+for that component. Disk pages also show where the disk is attached
+(controller, SATA/SAS port, enclosure bay) and the kernel log lines that name
+it.
 
 Tab-specific: `t` (CPU), `a` (Memory), `h` (Network), `f` `s` `space`
 (Events: severity, source, details), `f` (Inventory: category), `i`
