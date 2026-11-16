@@ -11,7 +11,10 @@ DIST        := dist
 
 export CGO_ENABLED=0
 
-.PHONY: all build run demo test test-short live lint fmt fixtures golden cross clean
+.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden cross diagrams clean
+
+PREFIX  ?= /usr/local
+ARCHIFY ?= $(HOME)/src/archify
 
 FIXTURE ?= server-degraded
 
@@ -21,6 +24,16 @@ build:
 	@mkdir -p $(DIST)
 	@if [ -d cmd/tyr ]; then go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o $(DIST)/$(BINARY) ./cmd/tyr; \
 	else echo "cmd/tyr not implemented yet (step 3)"; fi
+
+# Static binary into $(PREFIX)/bin (sudo asks for the password).
+install:
+	go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o $(BINARY) ./cmd/tyr
+	chmod +x $(BINARY)
+	sudo mv $(BINARY) $(PREFIX)/bin/
+	@echo "installed $(PREFIX)/bin/$(BINARY)"; $(PREFIX)/bin/$(BINARY) version
+
+uninstall:
+	sudo rm -f $(PREFIX)/bin/$(BINARY)
 
 # Live TUI on this machine (sudo for dmidecode, /dev/kmsg, IPMI).
 run: build
@@ -68,6 +81,18 @@ cross:
 		else GOOS=linux GOARCH=$$arch go build ./... || exit 1; fi; \
 	done
 	@cd $(DIST) && sha256sum $(BINARY)-linux-* > SHA256SUMS && cat SHA256SUMS
+
+# Re-render the archify diagrams (docs/diagrams/*.json → .html) and export
+# the dual-theme SVGs the docs embed. ARCHIFY points at an archify checkout
+# (https://github.com/tt-a1i/archify).
+diagrams:
+	@for f in docs/diagrams/*.json; do \
+		name=$$(basename $$f .json); type=$${name##*.}; base=$${name%.*}; \
+		node $(ARCHIFY)/bin/archify.mjs render $$type $$f docs/diagrams/$$base.html >/dev/null || exit 1; \
+		node $(ARCHIFY)/bin/archify.mjs check docs/diagrams/$$base.html >/dev/null || exit 1; \
+		python3 scripts/export-diagram.py docs/diagrams/$$base.html docs/images/$$base.svg || exit 1; \
+		echo "docs/images/$$base.svg"; \
+	done
 
 clean:
 	rm -rf $(DIST)

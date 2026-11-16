@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Reports",
+    "subtitle": "From saved JSON to Markdown, history and the clipboard",
+    "output": "reports.html"
+  },
+  "stages": [ { "label": "Sources" }, { "label": "Load" }, { "label": "Build" }, { "label": "Outputs" } ],
+  "nodes": [
+    { "id": "live", "type": "backend", "label": "Live host", "stage": 0, "row": 0, "sublabel": "tyr report" },
+    { "id": "snaps", "type": "database", "label": "Snapshots", "stage": 0, "row": 1, "sublabel": "report --format json" },
+    { "id": "runs", "type": "database", "label": "Stress results", "stage": 0, "row": 2, "sublabel": "runs/*.json" },
+    { "id": "load", "type": "backend", "label": "Loader", "stage": 1, "row": 1, "sublabel": "files + dirs", "tag": "skips other JSON" },
+    { "id": "host", "type": "backend", "label": "Host report", "stage": 2, "row": 0, "sublabel": "health · cores" },
+    { "id": "run", "type": "backend", "label": "Run report", "stage": 2, "row": 1, "sublabel": "charts · verdict" },
+    { "id": "hist", "type": "backend", "label": "History", "stage": 2, "row": 2, "sublabel": "timeline · trends" },
+    { "id": "md", "type": "cloud", "label": "Markdown", "stage": 3, "row": 0, "sublabel": "Mermaid charts" },
+    { "id": "term", "type": "frontend", "label": "Terminal", "stage": 3, "row": 1, "sublabel": "view · sparklines" },
+    { "id": "json", "type": "database", "label": "JSON", "stage": 3, "row": 2, "sublabel": "for tools" }
+  ],
+  "flows": [
+    { "from": "live", "to": "host", "label": "snapshot", "variant": "emphasis" },
+    { "from": "snaps", "to": "load", "label": "snapshots" },
+    { "from": "runs", "to": "load", "label": "results" },
+    { "from": "load", "to": "run", "label": "one run" },
+    { "from": "load", "to": "hist", "label": "per host" },
+    { "from": "host", "to": "md", "label": "report", "variant": "emphasis" },
+    { "from": "run", "to": "term", "label": "page" },
+    { "from": "hist", "to": "json", "label": "history", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Where", "items": ["CLI: report --from, history, view", "TUI: R opens the Reports dialog"] },
+    { "dot": "emerald", "title": "What", "items": ["Hardware, alerts, component and core health", "Stress verdict, charts, wrong results", "Alert timeline, trends, hardware changes"] },
+    { "dot": "amber", "title": "How", "items": ["Save, view (scroll, / search)", "Copy: desktop clipboard or OSC 52"] }
+  ]
+}

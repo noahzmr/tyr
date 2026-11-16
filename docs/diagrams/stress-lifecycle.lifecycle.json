@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Stress test",
+    "subtitle": "From the form to the verdict; the guard and esc can end a run early",
+    "output": "stress-lifecycle.html",
+    "viewBox": [
+      980,
+      660
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Run phases"
+    },
+    {
+      "id": "stops",
+      "label": "Early stops"
+    },
+    {
+      "id": "terminal",
+      "label": "Verdicts"
+    }
+  ],
+  "states": [
+    {
+      "id": "form",
+      "type": "start",
+      "label": "Plan",
+      "sublabel": "form, S, F, CLI",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "engine, size"
+    },
+    {
+      "id": "baseline",
+      "type": "active",
+      "label": "Baseline",
+      "sublabel": "snapshot before",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "type yes"
+    },
+    {
+      "id": "load",
+      "type": "active",
+      "label": "Load",
+      "sublabel": "workers + guard",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "1 s samples"
+    },
+    {
+      "id": "after",
+      "type": "active",
+      "label": "After",
+      "sublabel": "snapshot + diff",
+      "lane": "main",
+      "col": 3,
+      "step": "04",
+      "tag": "counters"
+    },
+    {
+      "id": "verdict",
+      "type": "decision",
+      "label": "Verdict",
+      "sublabel": "result JSON",
+      "lane": "main",
+      "col": 4,
+      "step": "05",
+      "tag": "report"
+    },
+    {
+      "id": "guard",
+      "type": "failure",
+      "label": "Guard trips",
+      "sublabel": "limit+5, MCE, UE",
+      "lane": "stops",
+      "col": 0,
+      "tag": "stop"
+    },
+    {
+      "id": "user",
+      "type": "waiting",
+      "label": "esc",
+      "sublabel": "user aborts",
+      "lane": "stops",
+      "col": 1,
+      "tag": "clean stop"
+    },
+    {
+      "id": "blocked",
+      "type": "waiting",
+      "label": "Blocked",
+      "sublabel": "no peer, too hot",
+      "lane": "stops",
+      "col": 2,
+      "tag": "not run"
+    },
+    {
+      "id": "pass",
+      "type": "success",
+      "label": "PASS / WARN",
+      "sublabel": "exit 0 / 1",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "verdict"
+    },
+    {
+      "id": "fail",
+      "type": "failure",
+      "label": "FAIL",
+      "sublabel": "exit 2",
+      "lane": "terminal",
+      "col": 0,
+      "tag": "wrong result"
+    },
+    {
+      "id": "aborted",
+      "type": "failure",
+      "label": "ABORTED",
+      "sublabel": "exit 3",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "incomplete"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "form",
+      "to": "baseline",
+      "variant": "emphasis"
+    },
+    {
+      "from": "baseline",
+      "to": "load",
+      "variant": "emphasis"
+    },
+    {
+      "from": "load",
+      "to": "after",
+      "variant": "emphasis"
+    },
+    {
+      "from": "after",
+      "to": "verdict",
+      "variant": "emphasis"
+    },
+    {
+      "from": "load",
+      "to": "guard",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "from": "guard",
+      "to": "fail",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "from": "user",
+      "to": "aborted",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "from": "blocked",
+      "to": "aborted",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Phases",
+      "items": [
+        "Confirmation shows scope, impact and warnings",
+        "Baseline and after snapshots bracket the load",
+        "Metrics are sampled every second into the result"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Guard",
+      "items": [
+        "CPU: 5 °C above its own limit (Tjmax)",
+        "Drives, DIMMs, GPUs: their CRIT temperature",
+        "New machine check or uncorrectable ECC",
+        "Memory: test pages in swap, thrashing, OOM"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Verdicts",
+      "items": [
+        "FAIL: wrong results, guard stop, new CRIT",
+        "WARN: CE growth, throttling, at the CPU limit",
+        "Result JSON goes to /var/lib/tyr/runs"
+      ]
+    }
+  ]
+}

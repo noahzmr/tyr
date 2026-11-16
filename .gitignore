@@ -1,2 +1,11 @@
 tyr-runs/
 dist/
+# build output
+/tyr
+/genfixture
+# exports the TUI writes into the working directory (e, R → Save)
+/tyr-snapshot-*.json
+/tyr-snapshot-*.md
+/tyr-report-*
+/tyr-stress-*
+/tyr-history-*

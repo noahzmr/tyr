@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Tyr",
+    "subtitle": "One static binary: collect, check, show, stress, report",
+    "output": "architecture.html"
+  },
+  "components": [
+    {
+      "id": "linux",
+      "type": "external",
+      "label": "Linux interfaces",
+      "sublabel": "sysfs · hwmon · procfs",
+      "pos": [
+        40,
+        120
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "tag": "first choice"
+    },
+    {
+      "id": "tools",
+      "type": "external",
+      "label": "Tools",
+      "sublabel": "dmidecode · smartctl",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "bmc",
+      "type": "external",
+      "label": "BMC",
+      "sublabel": "IPMI read-only",
+      "pos": [
+        40,
+        360
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "tag": "fallback"
+    },
+    {
+      "id": "collectors",
+      "type": "backend",
+      "label": "Collectors",
+      "sublabel": "6 modules, parallel",
+      "pos": [
+        270,
+        230
+      ],
+      "size": [
+        150,
+        80
+      ]
+    },
+    {
+      "id": "check",
+      "type": "security",
+      "label": "Thresholds",
+      "sublabel": "limits · Tjmax · SMART",
+      "pos": [
+        270,
+        400
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "snapshot",
+      "type": "database",
+      "label": "Snapshot",
+      "sublabel": "model · JSON",
+      "pos": [
+        500,
+        240
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "tui",
+      "type": "frontend",
+      "label": "TUI",
+      "sublabel": "Bubble Tea v2",
+      "pos": [
+        720,
+        90
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "CLI",
+      "sublabel": "report · history · view",
+      "pos": [
+        720,
+        200
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "stress",
+      "type": "backend",
+      "label": "Stress engine",
+      "sublabel": "baseline · guard · verdict",
+      "pos": [
+        720,
+        310
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "render",
+      "type": "backend",
+      "label": "Report renderer",
+      "sublabel": "Markdown · Mermaid",
+      "pos": [
+        720,
+        420
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "terminal",
+      "type": "frontend",
+      "label": "Terminal",
+      "sublabel": "glamour · clipboard",
+      "pos": [
+        950,
+        90
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "files",
+      "type": "database",
+      "label": "JSON files",
+      "sublabel": "snapshots · results",
+      "pos": [
+        950,
+        255
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "docs",
+      "type": "cloud",
+      "label": "Markdown",
+      "sublabel": "GitLab · glow",
+      "pos": [
+        950,
+        420
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "tyr binary (CGO-free, static)",
+      "wraps": [
+        "collectors",
+        "check",
+        "snapshot",
+        "tui",
+        "cli",
+        "stress",
+        "render"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "linux",
+      "to": "collectors",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "tools",
+      "to": "collectors",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "bmc",
+      "to": "collectors",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "collectors",
+      "to": "check",
+      "label": "readings",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 40
+    },
+    {
+      "from": "collectors",
+      "to": "snapshot",
+      "variant": "emphasis"
+    },
+    {
+      "from": "snapshot",
+      "to": "tui",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "left",
+      "route": "orthogonal-v"
+    },
+    {
+      "from": "snapshot",
+      "to": "cli",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "snapshot",
+      "to": "stress",
+      "label": "before / after",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "route": "orthogonal-v"
+    },
+    {
+      "from": "tui",
+      "to": "terminal",
+      "variant": "emphasis"
+    },
+    {
+      "from": "stress",
+      "to": "files",
+      "label": "result",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "cli",
+      "to": "files",
+      "label": "json",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "render",
+      "to": "docs",
+      "variant": "emphasis"
+    },
+    {
+      "from": "files",
+      "to": "render",
+      "label": "history",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "route": "orthogonal-v"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Sources",
+      "items": [
+        "Local Linux interfaces first",
+        "dmidecode, smartctl/nvme, storcli, nvidia-smi when present",
+        "IPMI only where Linux has no answer (PSUs, SEL)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Inside the binary",
+      "items": [
+        "Collectors fill one Snapshot",
+        "Thresholds turn readings into OK / WARN / CRIT",
+        "TUI, CLI and stress engine share the Snapshot"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Outputs",
+      "items": [
+        "Terminal: TUI, glow-style viewer",
+        "JSON: snapshots and stress results",
+        "Markdown with Mermaid charts"
+      ]
+    }
+  ]
+}
