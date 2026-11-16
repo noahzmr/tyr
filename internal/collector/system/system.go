@@ -171,7 +171,7 @@ func (c *Collector) identity(ctx context.Context, env *collector.Env, out *model
 		if frus, err := cl.FRUs(ctx); err == nil {
 			for _, f := range frus {
 				out.FRUs = append(out.FRUs, model.FRU{Name: f.Name, Manufacturer: f.Manufacturer, Product: f.Product,
-					PartNumber: f.PartNumber, Serial: f.Serial, ChassisSerial: f.ChassisSerial, ChassisPart: f.ChassisPart})
+					PartNumber: f.PartNumber, Serial: f.Serial, ChassisSerial: f.ChassisSerial, ChassisPart: f.ChassisPart, MfgDate: f.MfgDate})
 				fill(&out.ChassisSerial, f.ChassisSerial)
 			}
 			if len(frus) > 0 {

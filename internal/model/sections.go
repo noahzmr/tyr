@@ -60,4 +60,5 @@ type FRU struct {
 	Serial        string `json:"serial,omitempty"`
 	ChassisSerial string `json:"chassis_serial,omitempty"`
 	ChassisPart   string `json:"chassis_part_number,omitempty"`
+	MfgDate       string `json:"mfg_date,omitempty"` // YYYY-MM-DD (board manufacturing date)
 }

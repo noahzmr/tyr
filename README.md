@@ -136,8 +136,8 @@ guard that keeps it safe, and gives a verdict you can trust.
 
 ### Reports and history
 
-- Markdown reports (hardware, alerts, component and per-core health; stress
-  results with Mermaid charts), text and JSON.
+- Markdown reports (hardware, alerts, component and per-core health, age and
+  power state; stress results with Mermaid charts), text and JSON.
 - History across any number of saved snapshots and results: status over time,
   alert timeline, counter and sensor trends, hardware and firmware changes,
   every stress run as a Mermaid gantt.

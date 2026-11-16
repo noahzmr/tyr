@@ -61,6 +61,7 @@ func Snapshot(s *model.Snapshot) string {
 
 	alertsSection(&m, all)
 	healthSection(&m, s, "Component health")
+	ageSection(&m, s)
 	systemSection(&m, s.System)
 	cpuSection(&m, s.CPU)
 	memorySection(&m, s.Memory)

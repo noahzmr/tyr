@@ -371,6 +371,7 @@ func ParseModule(data []byte) *model.Transceiver {
 	}
 	t.Type = kv["transceiver type"]
 	t.Vendor, t.PartNumber, t.Serial, t.Wavelength = kv["vendor name"], kv["vendor pn"], kv["vendor sn"], kv["laser wavelength"]
+	t.DateCode = moduleDate(kv["date code"])
 
 	thr := func(prefix string, conv func(string) *float64) *model.Thresholds {
 		th := &model.Thresholds{Origin: "module",
@@ -529,4 +530,23 @@ func ParseIPMILan(data []byte) *model.BMCLan {
 	}
 	return &model.BMCLan{IPSource: kv["IP Address Source"], IP: kv["IP Address"], Netmask: kv["Subnet Mask"],
 		Gateway: kv["Default Gateway IP"], MAC: kv["MAC Address"], VLAN: kv["802.1q VLAN ID"]}
+}
+
+// moduleDate turns an SFF date code ("210314", optionally followed by a lot
+// code) into "2021-03-14".
+func moduleDate(v string) string {
+	v = strings.TrimSpace(v)
+	if len(v) < 6 {
+		return ""
+	}
+	for _, c := range v[:6] {
+		if c < '0' || c > '9' {
+			return ""
+		}
+	}
+	y, m, d := v[0:2], v[2:4], v[4:6]
+	if m < "01" || m > "12" || d < "01" || d > "31" {
+		return ""
+	}
+	return "20" + y + "-" + m + "-" + d
 }

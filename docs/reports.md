@@ -7,9 +7,27 @@ or from saved JSON:
 
 | Report | From | Contains |
 |---|---|---|
-| **Host report** | a snapshot | status, alerts by severity, component health, every logical CPU, system, CPU, memory, storage, network, GPU/NPU, the inventory with health, data sources not used |
+| **Host report** | a snapshot | status, alerts by severity, component health, age and power state, every logical CPU, system, CPU, memory, storage, network, GPU/NPU, the inventory with health, data sources not used |
 | **Stress result** | a result file | verdict and reasons, scope, charts of the metrics over time, min / avg / max, wrong results, counters that changed, new alerts, component health after the test (and every core after a CPU test), the log |
 | **History** | any number of snapshots and result files | per host: component health now, status over time, alert timeline, counter and sensor trends, hardware and firmware changes, the stress runs |
+
+## Age and power
+
+The host report lists, as far as the hardware reports it, how long each part
+has been in service, how often it was power-cycled, when it was made, and its
+power state now:
+
+| Component | In service | Power cycles | Manufactured | State |
+|---|---|---|---|---|
+| system | uptime | - | board FRU date (IPMI) | running; BIOS version and date |
+| disks | SMART power-on hours | SMART | - | notes: unsafe shutdowns, wear, data written |
+| transceivers | - | - | SFF date code (`ethtool -m`) | link up / no link |
+| GPUs, NPUs | - | - | - | PCI power state (D0, D3hot), runtime PM |
+| PSUs, CPUs | - | - | - | SMBIOS state; CPUs online |
+
+Linux does not report when CPUs and DIMMs were made (DIMM SPD data is not read)
+or the power-on time of CPUs, DIMMs, PSUs and fans. The dates are also in the
+JSON: `system.frus[].mfg_date`, `network.interfaces[].transceiver.date_code`.
 
 ## Commands
 

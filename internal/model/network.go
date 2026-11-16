@@ -89,7 +89,8 @@ type Transceiver struct {
 	PartNumber string   `json:"part_number,omitempty"`
 	Serial     string   `json:"serial,omitempty"`
 	Wavelength string   `json:"wavelength,omitempty"`
-	Sensors    []Sensor `json:"sensors"` // temperature, voltage, tx/rx power (dBm) per lane
+	DateCode   string   `json:"date_code,omitempty"` // manufacturing date, YYYY-MM-DD
+	Sensors    []Sensor `json:"sensors"`             // temperature, voltage, tx/rx power (dBm) per lane
 	Status     Status   `json:"status"`
 }
 

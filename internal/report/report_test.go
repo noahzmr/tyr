@@ -47,7 +47,8 @@ func TestSnapshotReport(t *testing.T) {
 		"## Memory", "P2-DIMMB1", "## Storage", "WJG0A004", "## Inventory",
 		"## Component health", "| CPU cores (logical) | ✖ CRIT | 64 |", "cpu7 ✖", "| Memory modules |", "P2-DIMMB1 ✖", "| Disks |", "| Transceivers |",
 		"### Cores", "| cpu7 |", "offline", "| Power supplies | ● OK | 2 |", "| Fans |",
-		"### Network volumes", "| sdf | ISCSI | IET VIRTUAL-DISK |", "| Network volumes | ✖ CRIT | 1 |", "| Disks | ✖ CRIT | 7 |"} {
+		"## Age and power", "| srv-degraded-01 | system | up 9d 0h | – | 2021-03-01 (board) | running |", "| nvme1n1 | nvme | 2.3 y · 19 830 h | 41 |",
+		"| ens1f0 transceiver | optics | – | – | 2021-03-14 | link up |", "| 0000:ca:00.0 | gpu | – | – | – | D0 active |", "### Network volumes", "| sdf | ISCSI | IET VIRTUAL-DISK |", "| Network volumes | ✖ CRIT | 1 |", "| Disks | ✖ CRIT | 7 |"} {
 		if !strings.Contains(md, want) {
 			t.Errorf("snapshot report missing %q", want)
 		}
