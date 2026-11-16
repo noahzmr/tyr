@@ -57,6 +57,10 @@ type Config struct {
 	Streams       int    `json:"streams,omitempty"`        // network
 	Reverse       bool   `json:"reverse,omitempty"`        // network: peer sends
 
+	// IncludeSuspect also loads online CPUs whose other thread is offline
+	// (a core someone took out of service); off by default.
+	IncludeSuspect bool `json:"include_suspect,omitempty"`
+
 	SimError bool `json:"sim_error,omitempty"` // fixtures: inject one verify error
 }
 

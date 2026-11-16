@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +34,8 @@ type scenario struct {
 	ThrottleCPUs map[int]int // cpu -> core_throttle_count
 	MCEExc       map[int]int // cpu -> MCE exceptions in /proc/interrupts
 	Kmsg         []kmsgLine
+	Journal      []journalLine     // kernel messages of earlier boots
+	Pstore       map[string]string // crash records: path -> content
 	Sim          map[string]any
 
 	// memory
@@ -61,6 +65,12 @@ type selRec struct {
 type dimmSpec struct {
 	Manufacturer, Part string
 	Speed, Configured  int
+}
+
+type journalLine struct {
+	At   time.Time
+	Boot string
+	Msg  string
 }
 
 type kmsgLine struct {
@@ -126,6 +136,27 @@ func scenarios() []scenario {
 			{8*24*time.Hour + 4*time.Hour + 32*time.Minute, 3, "I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0"},
 			{8*24*time.Hour + 5*time.Hour, 6, "ice 0000:4b:00.1 ens1f1: NIC Link is Down"},
 			{8*24*time.Hour + 6*time.Hour, 3, "NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0."},
+		},
+		// earlier boots: corrected errors in cpu7's data cache (and one in
+		// instruction fetch on its other thread cpu39), one memory
+		// controller error reported by cpu12; then a fatal machine check on
+		// cpu7 crashed that boot (pstore).
+		Journal: []journalLine{
+			{boot.Add(-20 * 24 * time.Hour), "6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c", "mce: [Hardware Error]: Machine check events logged"},
+			{boot.Add(-20*24*time.Hour + time.Millisecond), "6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c", "mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151"},
+			{boot.Add(-14 * 24 * time.Hour), "6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c", "mce: [Hardware Error]: CPU 12: Machine Check: 0 Bank 13: cc00008000010090"},
+			{boot.Add(-3 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151"},
+			{boot.Add(-2 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 39: Machine Check: 0 Bank 0: 9800000000000150"},
+			{boot.Add(-1 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151"},
+		},
+		Pstore: map[string]string{
+			"/var/lib/systemd/pstore/1794041280/dmesg-erst-7340032000001": "Panic#1 Part1\n" +
+				"<4>[690112.402113] mce: [Hardware Error]: CPU 7: Machine Check Exception: 5 Bank 1: bd80000000100134\n" +
+				"<4>[690112.402118] mce: [Hardware Error]: RIP !INEXACT! 10:<ffffffff8e7b1c4e> {native_safe_halt+0xe/0x20}\n" +
+				"<4>[690112.402121] mce: [Hardware Error]: TSC 2a1f0c4d8e1 ADDR 3a2f40000 MISC 86\n" +
+				"<4>[690112.402124] mce: [Hardware Error]: PROCESSOR 0:606a6 TIME 1794041280 SOCKET 0 APIC e microcode d0003e7\n" +
+				"<0>[690112.402130] Kernel panic - not syncing: Fatal machine check\n" +
+				"<0>[690112.402302] Kernel Offset: 0xd400000 from 0xffffffff81000000\n",
 		},
 		Sim:           map[string]any{"core_test_fail": []int{21}},
 		DIMMOverride:  map[string]dimmSpec{"P1-DIMMD1": {"Micron Technology", "MTA36ASF4G72PZ-3G2R1", 3200, 2933}},
@@ -208,7 +239,7 @@ func (g *gen) cmd(argv []string, stdout string, exit int) {
 	if g.err != nil {
 		return
 	}
-	name := strings.NewReplacer("/", "_", " ", "_").Replace(strings.Join(argv, "_")) + ".txt"
+	name := strings.NewReplacer("/", "_", " ", "_", "|", "_").Replace(strings.Join(argv, "_")) + ".txt"
 	rel := filepath.Join("cmd", name)
 	if err := os.MkdirAll(filepath.Join(g.dir, "cmd"), 0o755); err != nil {
 		g.err = err
@@ -265,6 +296,7 @@ func (g *gen) build() {
 	g.devices()
 	g.dmi()
 	g.kmsg()
+	g.history()
 	g.manifest()
 }
 
@@ -335,7 +367,13 @@ func (g *gen) cpu() {
 		g.write(d+"/cpufreq/scaling_driver", "intel_pstate\n")
 		g.write(d+"/thermal_throttle/core_throttle_count", fmt.Sprintf("%d\n", g.s.ThrottleCPUs[cpu]))
 		g.write(d+"/thermal_throttle/package_throttle_count", "0\n")
-		siblings := list(sib[[2]int{socket, core}])
+		var onSib []int // the kernel drops offline threads from the lists
+		for _, c := range sib[[2]int{socket, core}] {
+			if !slices.Contains(g.s.Offline, c) {
+				onSib = append(onSib, c)
+			}
+		}
+		siblings := list(onSib)
 		g.write(d+"/topology/core_cpus_list", siblings+"\n")
 		g.write(d+"/topology/thread_siblings_list", siblings+"\n")
 		for i, c := range []struct {
@@ -464,6 +502,26 @@ func (g *gen) cpu() {
 	row("MCP", func(int) int { return 2592 }, "  Machine check polls")
 	g.write("/proc/interrupts", ir.String())
 	g.write("/proc/uptime", fmt.Sprintf("%.2f %.2f\n", now.Sub(boot).Seconds(), now.Sub(boot).Seconds()*50))
+}
+
+// history: the journal of earlier boots and crash records.
+func (g *gen) history() {
+	g.write("/proc/sys/kernel/random/boot_id", "9e4c2a7f-1b3d-4c5e-8f6a-0b1c2d3e4f5a\n")
+	var b strings.Builder
+	for _, l := range g.s.Journal {
+		j, _ := json.Marshal(map[string]string{"__REALTIME_TIMESTAMP": strconv.FormatInt(l.At.UnixMicro(), 10), "_BOOT_ID": l.Boot, "MESSAGE": l.Msg})
+		b.Write(j)
+		b.WriteByte('\n')
+	}
+	g.cmd([]string{"journalctl", "_TRANSPORT=kernel", "-o", "json", "--no-pager", "-q", "--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic"}, b.String(), 0)
+	paths := make([]string, 0, len(g.s.Pstore))
+	for p := range g.s.Pstore {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+	for _, p := range paths {
+		g.write(p, g.s.Pstore[p])
+	}
 }
 
 func (g *gen) kmsg() {

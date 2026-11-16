@@ -182,6 +182,40 @@ func TestStressFromModuleTabs(t *testing.T) {
 	if st.comp != 0 || st.cpus != "12,44" {
 		t.Errorf("cpu request: comp %d cpus %q", st.comp, st.cpus)
 	}
+	// an offline CPU: the guarded offline-core test, confirmed by its name
+	focus(t, m, "2", "cpu7")
+	_, cmd = m.Update(press("S"))
+	if cmd == nil {
+		t.Fatalf("offline cpu: no prepare (%q)", m.message)
+	}
+	m.Update(cmd())
+	if st.state != stConfirm || !strings.Contains(text(m), "Type cpu7 and press enter") {
+		t.Fatalf("offline cpu: not asking for the CPU name\n%s", text(m))
+	}
+	if cfg := st.config(stress.CompCPU); cfg.Engine != stress.EngOfflineCore || cfg.CPUs != "7" || st.plans[0].ConfirmToken != "cpu7" {
+		t.Errorf("offline cpu: engine %q cpus %q token %q", cfg.Engine, cfg.CPUs, st.plans[0].ConfirmToken)
+	}
+	if w := strings.Join(st.plans[0].Warnings, " "); !strings.Contains(w, "RISK") || !strings.Contains(w, "already crashed the kernel") {
+		t.Errorf("offline-core plan lacks the risk: %q", w)
+	}
+	// "yes" does not start it; the CPU name does (simulated in fixtures)
+	run(m, "y", "e", "s", "enter")
+	if st.state != stConfirm {
+		t.Fatalf("yes started the offline-core test")
+	}
+	run(m, "esc")
+	// its other thread: says why instead of loading a suspect core
+	focus(t, m, "2", "cpu39")
+	if _, cmd = m.Update(press("S")); cmd != nil || !strings.Contains(m.message, "offline cpu7") {
+		t.Errorf("suspect cpu39: %q", m.message)
+	}
+	// back on an online CPU the engine is the built-in one again
+	focus(t, m, "2", "cpu12")
+	_, cmd = m.Update(press("S"))
+	confirm("cpu again", cmd)
+	if cfg := st.config(stress.CompCPU); cfg.Engine != stress.EngBuiltin {
+		t.Errorf("engine stayed %q", cfg.Engine)
+	}
 	// Storage: a read scan of the selected disk
 	focus(t, m, "4", "sdd")
 	_, cmd = m.Update(press("S"))

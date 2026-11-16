@@ -128,7 +128,7 @@ func (s *stressTab) Running() bool { return s.state == stRunning || s.state == s
 func (s *stressTab) Help() []key.Binding {
 	switch s.state {
 	case stConfirm:
-		return []key.Binding{key.NewBinding(key.WithKeys("enter"), key.WithHelp("yes+enter", "start")),
+		return []key.Binding{key.NewBinding(key.WithKeys("enter"), key.WithHelp(s.confirmWord()+"+enter", "start")),
 			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel"))}
 	case stRunning, stPreparing:
 		return []key.Binding{key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "abort cleanly")),
@@ -248,7 +248,7 @@ func (s *stressTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 			s.state = stForm
 			s.confirm.SetValue("")
 		case "enter":
-			if strings.TrimSpace(strings.ToLower(s.confirm.Value())) == "yes" && s.startable() {
+			if strings.TrimSpace(strings.ToLower(s.confirm.Value())) == s.confirmWord() && s.startable() {
 				s.confirm.SetValue("")
 				s.results, s.runIdx = nil, 0
 				return s.startCurrent()
@@ -609,4 +609,15 @@ func (s *stressTab) apply(e stress.Event) {
 			}
 		}
 	}
+}
+
+// confirmWord is what the user types to start: a plan's token (the CPU
+// name for the risky offline-core test), else "yes".
+func (s *stressTab) confirmWord() string {
+	for _, p := range s.plans {
+		if p != nil && p.ConfirmToken != "" {
+			return strings.ToLower(p.ConfirmToken)
+		}
+	}
+	return "yes"
 }

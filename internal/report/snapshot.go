@@ -190,7 +190,101 @@ func cpuSection(m *md, c *model.CPU) {
 		m.table([]string{"Socket", "Model", "Serial", "PPIN"}, rows)
 	}
 	sensorTable(m, "Temperatures", c.PackageTemps)
+	offlineTable(m, c)
+	mceHistoryTable(m, c)
 	coresTable(m, c)
+}
+
+// offlineTable: per offline CPU since when and how, whether it survives a
+// reboot and whether the other thread of its core still runs.
+func offlineTable(m *md, c *model.CPU) {
+	var rows [][]string
+	for _, l := range c.Logical {
+		o := l.Offline
+		if o == nil {
+			continue
+		}
+		since := "-"
+		if !o.Since.IsZero() {
+			since = o.Since.UTC().Format("2006-01-02 15:04 UTC")
+		}
+		how := map[string]string{"runtime": "at runtime", "boot": "at boot (kernel parameter)"}[o.How]
+		if o.AfterMCE {
+			how += ", after a machine check"
+		}
+		keep := "no: back online after a reboot"
+		if o.Persistent != "" {
+			keep = "yes: " + o.Persistent
+		} else if o.How == "boot" {
+			keep = "yes: kernel command line"
+		}
+		other := "-"
+		if o.Sibling != nil {
+			other = fmt.Sprintf("cpu%d offline too", *o.Sibling)
+			if o.SiblingOnline {
+				other = fmt.Sprintf("✖ cpu%d still runs work", *o.Sibling)
+			}
+			if o.SiblingInferred {
+				other += " (from the numbering)"
+			}
+		}
+		core := "-"
+		if l.SocketID >= 0 {
+			core = fmt.Sprintf("%d / %d", l.SocketID, l.CoreID)
+		}
+		crash := ""
+		for _, cr := range c.CrashRecords {
+			if cr.CPU == l.ID {
+				crash = "✖ " + strings.TrimPrefix(cr.Reason, "Kernel panic - not syncing: ")
+			}
+		}
+		rows = append(rows, []string{fmt.Sprintf("cpu%d", l.ID), core, since, how, keep, other, o.L3SharedWith, crash})
+	}
+	if len(rows) == 0 {
+		return
+	}
+	m.h(3, "Offline CPUs")
+	m.table([]string{"CPU", "Socket / core", "Offline since", "How", "Stays offline after reboot", "Other thread", "Shares L3 with", "Crashed the kernel"}, rows)
+	m.p("Test an offline CPU in a maintenance window with `sudo tyr core-test cpuN`: online only for the test, isolated from other work, offline again after. A defective core can still raise a fatal machine check and reboot the server.")
+}
+
+// mceHistoryTable lists the machine checks of all sources, newest first.
+func mceHistoryTable(m *md, c *model.CPU) {
+	if len(c.MCEHistory) == 0 && len(c.CrashRecords) == 0 {
+		return
+	}
+	m.h(3, "Machine check history")
+	m.p("Errors in a core's own units (L1/L2 cache, fetch, load-store, execution) point at that core; errors in shared units (L3, memory controller, interconnect) are only reported by the CPU that noticed them.")
+	var rows [][]string
+	for i := len(c.MCEHistory) - 1; i >= 0 && len(rows) < 50; i-- {
+		r := c.MCEHistory[i]
+		when, cpu, bank := "-", "-", "-"
+		if !r.Time.IsZero() {
+			when = r.Time.UTC().Format("2006-01-02 15:04")
+		}
+		if r.CPU >= 0 {
+			cpu = fmt.Sprintf("cpu%d", r.CPU)
+		}
+		if r.Bank >= 0 {
+			bank = fmt.Sprint(r.Bank)
+		}
+		where := map[string]string{"core": "in the core", "shared": "shared"}[r.Scope]
+		rows = append(rows, []string{when, cpu, bank, r.Unit, where, status(r.Severity), r.Source})
+	}
+	if len(c.MCEHistory) > len(rows) {
+		m.p("Newest %d of %d records.", len(rows), len(c.MCEHistory))
+	}
+	m.table([]string{"Time (UTC)", "CPU", "Bank", "Unit", "Where", "Severity", "Source"}, rows)
+	for _, cr := range c.CrashRecords {
+		when := ""
+		if !cr.Time.IsZero() {
+			when = " (" + cr.Time.UTC().Format("2006-01-02 15:04 UTC") + ")"
+		}
+		m.p("**Crash record**%s `%s`: %s", when, cr.File, esc(cr.Reason))
+		if len(cr.Lines) > 0 {
+			m.p("```text\n%s\n```", strings.Join(cr.Lines, "\n"))
+		}
+	}
 }
 
 func memorySection(m *md, x *model.Memory) {

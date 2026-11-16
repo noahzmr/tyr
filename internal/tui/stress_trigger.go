@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 
@@ -25,6 +26,7 @@ type stressReq struct {
 	cpus   string // CPU list for the CPU test ("" = all online)
 	stMode int    // storage: 0 read scan, 1 file write
 	target string // storage: a disk path or a mountpoint
+	engine string // "" = keep the form's engine (offline-core resets to builtin)
 	why    string // set: this selection cannot be stressed, say why
 }
 
@@ -68,6 +70,22 @@ func (m *Model) startStress(this bool) tea.Cmd {
 		return nil
 	}
 	st.comp, st.cpus, st.stMode, st.stTarget, st.field = req.comp, req.cpus, req.stMode, 0, 0
+	if c := st.component(); c != "" {
+		es := st.engines()
+		cur := ""
+		if i := st.engine[c]; i < len(es) {
+			cur = es[i].Name
+		}
+		want := req.engine
+		if want == "" && cur == stress.EngOfflineCore {
+			want = stress.EngBuiltin
+		}
+		for i, e := range es {
+			if e.Name == want {
+				st.engine[c] = i
+			}
+		}
+	}
 	if req.target != "" {
 		i := slices.Index(st.targets(), req.target)
 		if i < 0 {
@@ -103,7 +121,11 @@ func (c *cpuTab) StressTarget() stressReq {
 	}
 	l := c.cpu.Logical[c.sel]
 	if !l.Online {
-		return stressReq{why: cpuKey(l.ID) + " is offline: select an online CPU, or F for the full test"}
+		// the guarded offline-core test: its own confirmation names the risk
+		return stressReq{comp: compIndex(stress.CompCPU), cpus: strconv.Itoa(l.ID), engine: stress.EngOfflineCore}
+	}
+	if off, bad := c.cpu.Suspects()[l.ID]; bad {
+		return stressReq{why: fmt.Sprintf("%s shares its core with offline cpu%d: select cpu%d and press S to test that core isolated", cpuKey(l.ID), off, off)}
 	}
 	cpus := l.Siblings
 	if cpus == "" {

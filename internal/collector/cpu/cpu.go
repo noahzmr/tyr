@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/noahzmr/tyr/internal/affinity"
@@ -29,6 +30,9 @@ import (
 type Collector struct {
 	// Corrupt is a test hook for the core test; nil in production.
 	Corrupt Corrupt
+
+	mu   sync.Mutex
+	hist *staticHistory // machine checks of earlier boots, crash records
 }
 
 // New returns a CPU collector.
@@ -230,6 +234,16 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		c.mceFindings(h, mceBy, mceGlobal)
 	}
 
+	// --- machine check history, offline CPUs ---------------------------------
+	amd := strings.Contains(strings.ToLower(out.Vendor), "amd")
+	hist := c.history(ctx, env, amd)
+	for _, s := range hist.sources {
+		h.SetSource(s.Name, s.State, s.Reason)
+	}
+	out.MCEHistory = mceHistory(klog, hist, amd)
+	out.CrashRecords = hist.crashes
+	c.offlineInfo(env, out, klog)
+
 	// --- core test ----------------------------------------------------------
 	if env.Opts.CoreTest && prev == nil {
 		c.coreTest(ctx, env, out)
@@ -275,11 +289,14 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 
 	// --- findings ---------------------------------------------------------------
 	c.livenessFindings(env, h, masks, procs, out)
+	offlineFindings(h, out)
+	historyFindings(h, out)
 	tempFindings(h, out, temps)
 	throttleFindings(h, out, prevByID)
 	microcodeFindings(h, out.Logical)
+	suspects := out.Suspects()
 	for i := range out.Logical {
-		out.Logical[i].Status = logicalStatus(&out.Logical[i], temps)
+		out.Logical[i].Status = logicalStatus(&out.Logical[i], temps, suspects)
 	}
 
 	online := 0
@@ -548,7 +565,7 @@ func (c *Collector) livenessFindings(env *collector.Env, h *model.Header, masks 
 				noun = "core"
 			}
 			h.Find(model.StatusCrit, "core_offline", strings.Join(names, ","), "sysfs",
-				fmt.Sprintf("%d %s offline (%s)", len(offline), noun, abbreviate(names, 6)))
+				fmt.Sprintf("%d %s offline (%s)%s", len(offline), noun, abbreviate(names, 6), offlineNote(out)))
 		}
 	}
 	// Threads SMBIOS expects vs. threads the kernel sees.
@@ -683,7 +700,7 @@ func throttleFindings(h *model.Header, out *model.CPU, prev map[int]*model.Logic
 	}
 }
 
-func logicalStatus(l *model.LogicalCPU, t temps) model.Status {
+func logicalStatus(l *model.LogicalCPU, t temps, suspects map[int]int) model.Status {
 	st := model.StatusOK
 	if l.Present && !l.Online {
 		st = model.StatusCrit
@@ -700,6 +717,9 @@ func logicalStatus(l *model.LogicalCPU, t temps) model.Status {
 	if l.MCELogged != nil && *l.MCELogged > 0 {
 		st = model.Worst(st, model.StatusWarn)
 	}
+	if _, bad := suspects[l.ID]; bad {
+		st = model.Worst(st, model.StatusWarn) // its other thread was taken offline
+	}
 	return st
 }
 
@@ -710,8 +730,9 @@ func (c *Collector) coreTest(ctx context.Context, env *collector.Env, out *model
 		timeout = 2 * time.Second
 	}
 	var online []int
+	suspect := out.Suspects()
 	for _, l := range out.Logical {
-		if l.Online {
+		if _, bad := suspect[l.ID]; l.Online && !bad {
 			online = append(online, l.ID)
 		}
 	}
@@ -744,7 +765,10 @@ func (c *Collector) coreTest(ctx context.Context, env *collector.Env, out *model
 			}
 			continue
 		}
-		r := res[l.ID]
+		r, ok := res[l.ID]
+		if s, bad := suspect[l.ID]; bad && !ok {
+			r = CoreResult{State: model.CoreTestSkip, Detail: fmt.Sprintf("suspect core: its other thread cpu%d is offline", s)}
+		}
 		l.CoreTest, l.CoreTestDetail = r.State, r.Detail
 		switch r.State {
 		case model.CoreTestPass:

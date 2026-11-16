@@ -347,9 +347,16 @@ func (s *stressTab) formWarnings() []string {
 		return nil
 	}
 	var out []string
-	for _, l := range s.snap.CPU.Logical {
-		if !l.Online {
-			out = append(out, cpuKey(l.ID)+" is offline and will be skipped.")
+	if c == stress.CompCPU && s.config(c).Engine == stress.EngOfflineCore {
+		out = append(out, "The CPU goes online only for the test, isolated; a defective core can still crash the server - the confirmation says more.")
+	} else {
+		suspect := s.snap.CPU.Suspects()
+		for _, l := range s.snap.CPU.Logical {
+			if !l.Online {
+				out = append(out, cpuKey(l.ID)+" is offline and will be skipped.")
+			} else if off, bad := suspect[l.ID]; bad {
+				out = append(out, fmt.Sprintf("%s is left out: its other thread cpu%d is offline (suspect core).", cpuKey(l.ID), off))
+			}
 		}
 	}
 	for _, p := range s.snap.CPU.PackageTemps {
@@ -373,6 +380,8 @@ func (s *stressTab) formRight(t *Theme, w int) string {
 			switch {
 			case e.Name == stress.EngBuiltin:
 				lines = append(lines, t.Dot(model.StatusOK)+" "+pad(e.Name, 10)+t.Sub.Render("always · verifies results"))
+			case e.Name == stress.EngOfflineCore && e.Available:
+				lines = append(lines, truncate(t.Dot(model.StatusWarn)+" "+pad("offline-core", 13)+t.Sub.Render("guarded, for offline CPUs"), w))
 			case e.Available:
 				lines = append(lines, t.Dot(model.StatusOK)+" "+pad(e.Name, 10)+t.Sub.Render("installed"))
 			default:
@@ -484,7 +493,7 @@ func (s *stressTab) confirmView(t *Theme) string {
 	lines = append(lines, "", lipgloss.NewStyle().Width(bw).Render(t.Dim.Render("Abort any time with esc; all workers stop cleanly. "+
 		"The guard stops the run on a critical temperature, a new machine check or an uncorrectable ECC error.")), "")
 	if s.startable() {
-		lines = append(lines, t.Bold.Render("Type yes and press enter to start  ")+s.confirm.Field(t, 8), t.Sub.Render("esc cancel"))
+		lines = append(lines, t.Bold.Render("Type "+s.confirmWord()+" and press enter to start  ")+s.confirm.Field(t, 8), t.Sub.Render("esc cancel"))
 	} else {
 		lines = append(lines, t.StatusText(model.StatusCrit, "Nothing can run."), t.Sub.Render("esc back to the form"))
 	}

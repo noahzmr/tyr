@@ -130,6 +130,9 @@ func New(env *collector.Env, cols []collector.Collector, implemented func(model.
 		newInventoryTab(p),
 	}
 	m.resize()
+	if cpu, ok := stress.OfflineCorePending(); ok && env != nil && env.FS != nil && env.FS.IsHost() {
+		m.flash(fmt.Sprintf("an offline-core test did not finish: cpu%d may still be online - run: sudo tyr core-test --restore", cpu))
+	}
 	return m
 }
 

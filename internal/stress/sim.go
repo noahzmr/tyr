@@ -15,6 +15,9 @@ import (
 type simTest struct{}
 
 func (simTest) Plan(cfg Config, env *Env) *Plan {
+	if cfg.Engine == EngOfflineCore {
+		return offlineCorePlan(cfg, env, true)
+	}
 	p := &Plan{Scope: []string{fmt.Sprintf("simulated %s test (fixtures mode, no real load)", cfg.Component)},
 		Impact: []string{"Nothing: fixtures mode only replays recorded data."}}
 	if cfg.Component == CompMemory {

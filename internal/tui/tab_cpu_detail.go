@@ -595,6 +595,8 @@ func (c *cpuTab) Detail(t *Theme, w int) (string, string) {
 			doc.kv([2]string{"Socket", s.Designation + "  " + s.Version}, [2]string{"Socket IDs", ids})
 		}
 	}
+	offlineSection(doc, c.cpu, l)
+	mceHistorySection(doc, c.cpu, l)
 	doc.section("Live", "")
 	hist := func(k string) string {
 		h := t.sess.history("cpu/" + id + "/" + k)
@@ -653,4 +655,107 @@ func (c *cpuTab) Detail(t *Theme, w int) (string, string) {
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasSuffix(k, "."+id) }), "")
 	doc.findings(model.ModCPU, relatedFindings(c.cpu.Findings, id))
 	return "Logical CPU " + id, doc.String()
+}
+
+// offlineSection: when and how the CPU went offline, whether that survives
+// a reboot, and whether the other thread of its core still runs.
+func offlineSection(doc *doc, c *model.CPU, l model.LogicalCPU) {
+	o := l.Offline
+	if o == nil {
+		return
+	}
+	t := doc.t
+	id := cpuKey(l.ID)
+	how := "offline since boot"
+	switch o.How {
+	case "runtime":
+		how = fmt.Sprintf("taken offline after boot: echo 0 > /sys/devices/system/cpu/%s/online, or a RAS daemon", id)
+	case "boot":
+		how = "not started at boot: maxcpus= / nr_cpus= on the kernel command line"
+	}
+	since := ""
+	if !o.Since.IsZero() {
+		since = o.Since.Local().Format("2006-01-02 15:04:05")
+		if o.AfterMCE {
+			since += t.StatusText(model.StatusWarn, "  minutes after a machine check on it")
+		}
+	}
+	keep := t.StatusText(model.StatusWarn, "no - it runs work again after a reboot")
+	if o.Persistent != "" {
+		keep = t.StatusText(model.StatusOK, "yes") + t.Dim.Render(" · "+o.Persistent)
+	} else if o.How == "boot" {
+		keep = t.StatusText(model.StatusOK, "yes") + t.Dim.Render(" · kernel command line")
+	}
+	other := t.Sub.Render("unknown (no SMT, or the numbering does not tell)")
+	if o.Sibling != nil {
+		s := cpuKey(*o.Sibling)
+		if o.SiblingOnline {
+			other = t.StatusText(model.StatusCrit, s+" is online: the physical core still runs work")
+		} else {
+			other = t.StatusText(model.StatusOK, s+" is offline too: the core is out of service")
+		}
+		if o.SiblingInferred {
+			other += t.Dim.Render("  (from the CPU numbering)")
+		}
+	}
+	doc.section("Offline", t.Dim.Render("nothing here changes the system"))
+	doc.kv([2]string{"Since", since}, [2]string{"How", how}, [2]string{"After reboot", "offline? " + keep},
+		[2]string{"Other thread", other}, [2]string{"Shares L3 with", o.L3SharedWith})
+	for _, cr := range c.CrashRecords {
+		if cr.CPU == l.ID {
+			when := ""
+			if !cr.Time.IsZero() {
+				when = cr.Time.Local().Format("2006-01-02 15:04 ")
+			}
+			doc.kv([2]string{"Crashed the kernel", t.StatusText(model.StatusCrit, when+cr.Reason) + t.Dim.Render(" · "+cr.File)})
+		}
+	}
+	doc.add("", hang("   ", t.Key.Render("S")+t.Sub.Render(" tests this core: online only for the test, isolated from all other work, offline again after. "+
+		"A defective core can still raise a fatal machine check and reboot the server: use a maintenance window."), doc.w-1))
+	if o.Persistent == "" && o.How != "boot" {
+		doc.add(hang("   ", t.Sub.Render(fmt.Sprintf("To keep %s offline across reboots: a oneshot systemd unit with ExecStart=/bin/sh -c 'echo 0 > /sys/devices/system/cpu/%s/online'.", id, id)), doc.w-1))
+	}
+}
+
+// mceHistorySection lists the machine checks of this CPU and the other
+// thread of its core, from all sources, newest first.
+func mceHistorySection(doc *doc, c *model.CPU, l model.LogicalCPU) {
+	sib := -1
+	if l.Offline != nil && l.Offline.Sibling != nil {
+		sib = *l.Offline.Sibling
+	}
+	for _, x := range c.Logical {
+		if x.Offline != nil && x.Offline.Sibling != nil && *x.Offline.Sibling == l.ID {
+			sib = x.ID
+		}
+	}
+	var rows [][]string
+	var sts []model.Status
+	for i := len(c.MCEHistory) - 1; i >= 0; i-- {
+		r := c.MCEHistory[i]
+		if r.CPU != l.ID && (sib < 0 || r.CPU != sib) {
+			continue
+		}
+		when := "-"
+		if !r.Time.IsZero() {
+			when = r.Time.Local().Format("2006-01-02 15:04")
+		}
+		scope := map[string]string{"core": "in the core", "shared": "shared: not the core"}[r.Scope]
+		bank := "-"
+		if r.Bank >= 0 {
+			bank = fmt.Sprint(r.Bank)
+		}
+		rows = append(rows, []string{when, cpuKey(r.CPU), bank, r.Unit, scope, strings.ToLower(r.Severity.String()), r.Source})
+		sts = append(sts, r.Severity)
+	}
+	if len(rows) == 0 {
+		return
+	}
+	note := "this CPU"
+	if sib >= 0 {
+		note = "this CPU and " + cpuKey(sib) + " (same core)"
+	}
+	doc.section("Machine check history", doc.t.Dim.Render(note+" · this boot, earlier boots, crash records, rasdaemon"))
+	doc.table([]string{"Time", "CPU", "Bank", "Unit", "Where", "Severity", "Source"}, rows, sts)
+	doc.add(hang("   ", doc.t.Sub.Render("Errors in the core (L1/L2, fetch, load-store, execution) point at this core; errors in shared units (L3, memory controller, fabric) are only reported by it."), doc.w-1))
 }

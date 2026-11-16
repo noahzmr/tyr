@@ -94,7 +94,7 @@ func TestServerDegraded(t *testing.T) {
 		t.Fatalf("status %v", c.Status)
 	}
 	f := finding(c, "core_offline")
-	if f == nil || f.Status != model.StatusCrit || f.Message != "1 core offline (cpu7)" || f.Subject != "cpu7" {
+	if f == nil || f.Status != model.StatusCrit || f.Message != "1 core offline (cpu7); taken offline at runtime - back online after a reboot" || f.Subject != "cpu7" {
 		t.Errorf("offline finding %+v", f)
 	}
 	if !strings.HasPrefix(c.Summary, "63/64 cores online, max 96°C") {
@@ -119,8 +119,31 @@ func TestServerDegraded(t *testing.T) {
 			cpu7 = &c.Logical[i]
 		}
 	}
-	if cpu7 == nil || cpu7.Online || !cpu7.Present || cpu7.Status != model.StatusCrit || cpu7.CoreTest != model.CoreTestSkip || cpu7.CoreID != -1 {
+	if cpu7 == nil || cpu7.Online || !cpu7.Present || cpu7.Status != model.StatusCrit || cpu7.CoreTest != model.CoreTestSkip || cpu7.CoreID != 7 {
 		t.Errorf("cpu7 %+v", cpu7)
+	}
+	// offline analysis: other thread, how, history, crash record
+	if o := cpu7.Offline; o == nil || o.Sibling == nil || *o.Sibling != 39 || !o.SiblingOnline || !o.SiblingInferred || o.How != "runtime" ||
+		o.Since.IsZero() || o.Persistent != "" || o.L3SharedWith == "" {
+		t.Errorf("cpu7 offline info %+v", cpu7.Offline)
+	}
+	if f := finding(c, "core_half_offline"); f == nil || f.Subject != "cpu7" || !strings.Contains(f.Message, "cpu39") {
+		t.Errorf("core_half_offline %+v", f)
+	}
+	if f := finding(c, "mce_history"); f == nil || f.Status != model.StatusCrit || !strings.HasPrefix(f.Message, "machine checks before this boot: cpu7 4× (core: L1 data cache (DCU))") ||
+		!strings.Contains(f.Message, "cpu12 1× (shared: uncore bank 13") {
+		t.Errorf("mce_history %+v", f)
+	}
+	if f := finding(c, "crash_record"); f == nil || f.Subject != "cpu7" || !strings.Contains(f.Message, "Fatal machine check") {
+		t.Errorf("crash_record %+v", f)
+	}
+	if len(c.CrashRecords) != 1 || c.CrashRecords[0].CPU != 7 || len(c.CrashRecords[0].Lines) == 0 {
+		t.Errorf("crash records %+v", c.CrashRecords)
+	}
+	for _, l := range c.Logical {
+		if l.ID == 39 && (l.CoreTest != model.CoreTestSkip || !strings.Contains(l.CoreTestDetail, "cpu7") || l.Status < model.StatusWarn) {
+			t.Errorf("cpu39 (suspect core) %+v", l)
+		}
 	}
 	if c.Topology.Offline != "7" || c.Topology.Online != "0-6,8-63" {
 		t.Errorf("topology %+v", c.Topology)

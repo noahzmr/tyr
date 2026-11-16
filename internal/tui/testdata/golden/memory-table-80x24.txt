@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
-1✖37 2✖4  3 Memory ✖9  4✖12 5○ 6✖6 7✖6 8○ 9 0                             ? help
+ TYR  srv-degraded-01                              fixture  now  19/21   ✖ CRIT
+1✖40 2✖7  3 Memory ✖9  4✖12 5○ 6✖6 7✖6 8○ 9 0                             ? help
  ✖ CRIT  512 GB installed · 480 GB visible · 16 of 32 slots…  v Table · Slot map
 
 Used █████░░░░░░░░░░░ 141 GB of 471 GB · 330 GB available · swap 0 / 8.0 GB

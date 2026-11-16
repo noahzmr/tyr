@@ -1,12 +1,12 @@
- TYR  srv-degraded-01                              fixture  now  16/21   ✖ CRIT
-1✖37 2✖4 3✖9 4✖12 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
- ✖ CRIT  Stress test · machine has 16 critical findings, results may be affec…
+ TYR  srv-degraded-01                              fixture  now  19/21   ✖ CRIT
+1✖40 2✖7 3✖9 4✖12 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
+ ✖ CRIT  Stress test · machine has 19 critical findings, results may be affec…
 
 New run ────────────────────────────────────────────────────────────────────────
 
 ▌Test        CPU  Memory  Storage  Network  Full test
 
- Engine      builtin
+ Engine      builtin  offline-core
              Tyr kernels on every core, each result checked against a golden va…
             ○ stress-ng fixtures mode: external engines are not run
             ○ mprime fixtures mode: external engines are not run
@@ -19,6 +19,6 @@ New run ────────────────────────
               Start CPU test ▸   asks for confirmation
 
 ▲ cpu7 is offline and will be skipped.
+▲ cpu39 is left out: its other thread cpu7 is offline (suspect core).
 ▲ CPU1 Package is already at 93 °C; the guard may stop the test early.
-
 ↑↓ field  ←→ change  enter edit / start  i install engines  ! problems  ? help

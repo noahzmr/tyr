@@ -136,6 +136,11 @@ guard that keeps it safe, and gives a verdict you can trust.
 - The memory test locks its buffer in RAM and goes up to 100 % of available
   memory.
 - `S` on any tab stresses the selected component, `F` runs the full test.
+- Offline (suspect) cores: Tyr shows since when and how, whether the other
+  thread of the core still runs, whether they stay offline after a reboot, and
+  their machine check history across boots and crash records. Stress tests
+  leave suspect cores alone; `tyr core-test cpu7` tests one isolated in a
+  cpuset partition and takes it offline again.
 
 ### Reports and history
 
@@ -317,6 +322,7 @@ and cron work unchanged.
 | `tyr` | TUI (text report when stdout is not a terminal) |
 | `tyr report` | health report: `--format text\|json\|markdown`, `--from FILE` renders a saved snapshot or stress result |
 | `tyr stress` | stress test: `--component cpu\|memory\|storage\|network\|full` |
+| `tyr core-test CPU` | test an offline (suspect) CPU: online only for the test, isolated, offline again after; `--restore` cleans up after a kill |
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
 | `tyr net-peer` | far end of the network test, on a second host |
@@ -337,7 +343,8 @@ and cron work unchanged.
 TUI only: `--refresh 5s`, `--mouse`. Report: `--section cpu,memory,…`,
 `--inventory`, `--core-test`, `--charts mermaid|text`. Stress: `--duration`,
 `--engine`, `--cpus`, `--mem-percent` (up to 100), `--mode read|file`,
-`--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`.
+`--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
+`--include-suspect-cores`. Core test: `--duration`, `--yes`, `--restore`.
 Net peer: `--listen`, `--token`, `--idle`.
 
 ### Exit codes

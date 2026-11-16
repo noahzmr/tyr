@@ -1,0 +1,7 @@
+Panic#1 Part1
+<4>[690112.402113] mce: [Hardware Error]: CPU 7: Machine Check Exception: 5 Bank 1: bd80000000100134
+<4>[690112.402118] mce: [Hardware Error]: RIP !INEXACT! 10:<ffffffff8e7b1c4e> {native_safe_halt+0xe/0x20}
+<4>[690112.402121] mce: [Hardware Error]: TSC 2a1f0c4d8e1 ADDR 3a2f40000 MISC 86
+<4>[690112.402124] mce: [Hardware Error]: PROCESSOR 0:606a6 TIME 1794041280 SOCKET 0 APIC e microcode d0003e7
+<0>[690112.402130] Kernel panic - not syncing: Fatal machine check
+<0>[690112.402302] Kernel Offset: 0xd400000 from 0xffffffff81000000

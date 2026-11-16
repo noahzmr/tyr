@@ -75,13 +75,81 @@ an optional per-core compute test (`--core-test`).
 
 | Code | Status | When |
 |---|---|---|
-| `core_offline` | ✖ | a present CPU is offline |
+| `core_offline` | ✖ | a present CPU is offline; says whether it comes back online after a reboot |
+| `core_half_offline` | ✖ | a CPU is offline but the other thread of its physical core still runs work |
+| `mce_history` | ▲ / ✖ | machine checks before this boot (journal, crash records, rasdaemon) |
+| `crash_record` | ✖ | a kernel panic saved in pstore, with the CPU of a fatal machine check |
 | `cpu_missing` | ▲ | the kernel sees fewer CPUs than SMBIOS reports (e.g. `maxcpus=`) |
 | `cpu_temp`, `core_temp` | ▲ / ✖ | past the warn / crit limit |
 | `mce` | ▲ / ✖ | machine check records in the kernel log, severity from the record |
 | `mce_exceptions` | ▲ | machine check exceptions counted in `/proc/interrupts` |
 | `throttling` | ▲ | thermal throttling since the last refresh |
 | `microcode_mismatch` | ▲ | sockets run different microcode |
+
+#### Offline and suspect cores
+
+When a CPU is offline - taken out by hand after errors, by a RAS daemon, or
+not started at boot - Tyr works out, without changing anything:
+
+| Question | How |
+|---|---|
+| Since when, and how? | `smpboot: CPU N is now offline` in the kernel log (at runtime); `maxcpus=` / `nr_cpus=` (at boot); whether a machine check on it came shortly before |
+| Does it stay offline after a reboot? | a systemd unit, tmpfiles, `rc.local` or udev rule that writes `0` to `cpuN/online`; without one the CPU runs work again after the next reboot |
+| Is the physical core out of service? | the other hardware thread of the core: sysfs drops offline threads from the sibling lists, so Tyr infers it from how the complete cores are numbered (`6,38` → `7` pairs with `39`) |
+| Which L3 does it share? | the other thread's `cache/index3/shared_cpu_list` |
+| What failed, and where? | the machine check history (below) for this CPU and its other thread |
+
+A core with one thread offline is a **suspect core**: CPU stress tests and the
+core test leave its other thread alone (`--include-suspect-cores` loads it
+anyway), and its row is ▲.
+
+#### Machine check history
+
+| Source | What |
+|---|---|
+| kernel log | this boot |
+| journal | earlier boots: `journalctl _TRANSPORT=kernel -g 'Hardware Error\|Kernel panic' --since -365d`, labelled with the boot ID (`journalctl -b <id>`) |
+| pstore | crash records the kernel saved before a panic (`/sys/fs/pstore`, `/var/lib/systemd/pstore`); the time comes from the record |
+| rasdaemon | `ras-mc-ctl --errors`, when installed; repeats of kernel log records are dropped |
+
+Every record has the reporting CPU, the MCA bank and the unit. The unit
+decides what is to blame:
+
+| Where | Units | Means |
+|---|---|---|
+| in the core | Intel banks 0-3 (instruction fetch, L1 data cache, data TLB, L2); AMD load-store, instruction fetch, L2, decode, execution, floating point | that core |
+| shared | Intel bank 4 and up (power control, interconnect, memory controller, L3); AMD L3, unified memory controller, data fabric, I/O | not the core: the CPU only reported it - check DIMMs and the socket |
+
+AMD unit names come from the kernel's decoder lines (`… Ext. Error Code`).
+
+#### Troubleshooting a suspect core
+
+```bash
+journalctl --list-boots                                        # which boots
+journalctl _TRANSPORT=kernel -g 'Hardware Error' --since -90d  # all machine checks
+cat /var/lib/systemd/pstore/*/dmesg*                           # the last crash
+ras-mc-ctl --errors                                            # rasdaemon's record
+cat /sys/devices/system/cpu/cpu39/topology/thread_siblings_list
+echo 0 > /sys/devices/system/cpu/cpu39/online                  # take the other thread out too
+```
+
+Keeping the cores out after a reboot needs a boot-time unit, for example
+`/etc/systemd/system/cpu-offline.service`:
+
+```ini
+[Unit]
+Description=Keep suspect CPU cores offline
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for c in 7 39; do echo 0 > /sys/devices/system/cpu/cpu$c/online; done'
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Tyr finds such a unit and reports the CPUs as staying offline. To test a
+suspect core, see [offline cores](stress-tests.md#offline-cores).
 
 ### Memory
 

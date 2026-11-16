@@ -45,7 +45,7 @@ func MissingEngines(env *Env, comps ...Component) []string {
 	var out []string
 	for _, c := range comps {
 		for _, e := range Engines(c, env) {
-			if !e.Available && !slices.Contains(out, e.Name) {
+			if !e.Available && e.Name != EngOfflineCore && !slices.Contains(out, e.Name) { // not a package
 				out = append(out, e.Name)
 			}
 		}

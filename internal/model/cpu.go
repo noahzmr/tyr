@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // CPU is the CPU module section.
 type CPU struct {
@@ -37,6 +40,69 @@ type CPU struct {
 	NoHzFull        string             `json:"nohz_full_cpus,omitempty"`
 	Boost           *bool              `json:"boost"`
 	EPP             string             `json:"energy_performance_preference,omitempty"`
+
+	// MCEHistory are machine check records from this boot (kernel log),
+	// earlier boots (journal), crash records (pstore) and rasdaemon, oldest
+	// first; CrashRecords are kernel panics saved in pstore.
+	MCEHistory   []MCERecord   `json:"mce_history,omitempty"`
+	CrashRecords []CrashRecord `json:"crash_records,omitempty"`
+}
+
+// OfflineInfo describes a logical CPU the kernel does not run.
+type OfflineInfo struct {
+	Since time.Time `json:"since,omitzero"` // "smpboot: CPU N is now offline" this boot
+	// How: "runtime" (taken offline after boot: echo 0 > …/online or a RAS
+	// daemon), "boot" (never brought up: maxcpus=/nr_cpus=), "" unknown.
+	How        string `json:"how,omitempty"`
+	AfterMCE   bool   `json:"after_mce,omitempty"`  // a machine check on it shortly before
+	Persistent string `json:"persistent,omitempty"` // file that offlines it at boot; "" = back online after a reboot
+	// Sibling is the other hardware thread of the same physical core
+	// (inferred from the numbering of the complete cores when sysfs no
+	// longer lists it); SiblingOnline means the core still runs work.
+	Sibling         *int   `json:"smt_sibling,omitempty"`
+	SiblingOnline   bool   `json:"smt_sibling_online,omitempty"`
+	SiblingInferred bool   `json:"smt_sibling_inferred,omitempty"`
+	L3SharedWith    string `json:"l3_shared_with,omitempty"` // CPUs sharing its L3 (from the sibling)
+}
+
+// MCERecord is one machine check: where it was reported and which unit.
+type MCERecord struct {
+	Time   time.Time `json:"time,omitzero"`
+	Source string    `json:"source"` // "kernel log", "journal (boot -1)", "pstore", "rasdaemon"
+	CPU    int       `json:"cpu"`    // -1 unknown
+	Bank   int       `json:"bank"`   // -1 unknown
+	Unit   string    `json:"unit,omitempty"`
+	// Scope: "core" (a unit inside the core: caches L1/L2, load-store,
+	// fetch, execution), "shared" (L3, memory controller, fabric, I/O: the
+	// CPU number only says who reported it), "" unknown.
+	Scope    string `json:"scope,omitempty"`
+	Severity Status `json:"severity"`
+	Text     string `json:"text"`
+}
+
+// CrashRecord is a kernel panic saved in pstore before a reboot.
+type CrashRecord struct {
+	Time   time.Time `json:"time,omitzero"`
+	File   string    `json:"file"`
+	Reason string    `json:"reason"` // "Kernel panic - not syncing: Fatal machine check"
+	CPU    int       `json:"cpu"`    // CPU of the machine check, -1 unknown
+	Lines  []string  `json:"lines,omitempty"`
+}
+
+// Suspects maps every online CPU whose SMT sibling is offline to that
+// sibling: the physical core is suspect (someone took a thread offline),
+// so stress and core tests leave it alone.
+func (c *CPU) Suspects() map[int]int {
+	out := map[int]int{}
+	if c == nil {
+		return out
+	}
+	for _, l := range c.Logical {
+		if o := l.Offline; o != nil && o.Sibling != nil && o.SiblingOnline {
+			out[*o.Sibling] = l.ID
+		}
+	}
+	return out
 }
 
 // CPUCache is one cache level/type. SizeBytes is per instance.
@@ -132,6 +198,7 @@ type LogicalCPU struct {
 	MCELogged          *uint64       `json:"mce_logged_events"` // kernel log machine check records
 	CoreTest           CoreTestState `json:"core_test,omitempty"`
 	CoreTestDetail     string        `json:"core_test_detail,omitempty"`
+	Offline            *OfflineInfo  `json:"offline,omitempty"`
 	Status             Status        `json:"status"`
 
 	MinFreqMHz *float64    `json:"min_freq_mhz"` // hardware limits of this CPU

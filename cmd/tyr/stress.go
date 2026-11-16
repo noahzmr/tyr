@@ -25,7 +25,7 @@ type stressFlags struct {
 	component, engine, cpus, mode, target, size, token, runDir string
 	duration                                                   time.Duration
 	memPct, streams                                            int
-	reverse, yes, simError                                     bool
+	reverse, yes, simError, suspect                            bool
 }
 
 func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -46,6 +46,7 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.IntVar(&f.streams, "streams", 4, "network: parallel TCP streams")
 	fs.BoolVar(&f.reverse, "reverse", false, "network: the peer sends, this host receives")
 	fs.BoolVar(&f.yes, "yes", false, "start without the confirmation prompt")
+	fs.BoolVar(&f.suspect, "include-suspect-cores", false, "cpu: also load online CPUs whose other thread is offline (left out by default)")
 	fs.StringVar(&f.runDir, "run-dir", "", "where to write result files (default /var/lib/tyr/runs, else ./tyr-runs)")
 	fs.BoolVar(&f.simError, "sim-error", false, "fixtures mode: inject one verification error")
 	if err := fs.Parse(args); err != nil {
@@ -79,7 +80,8 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var lines []string
 	for _, comp := range comps {
 		cfg := stress.Config{Component: comp, Engine: f.engine, Duration: f.duration, CPUs: f.cpus, MemoryPercent: f.memPct,
-			StorageMode: f.mode, Target: f.target, SizeBytes: size, Token: f.token, Streams: f.streams, Reverse: f.reverse, SimError: f.simError}
+			StorageMode: f.mode, Target: f.target, SizeBytes: size, Token: f.token, Streams: f.streams, Reverse: f.reverse, SimError: f.simError,
+			IncludeSuspect: f.suspect}
 		if len(comps) > 1 {
 			cfg.Engine = stress.EngBuiltin
 			if comp == stress.CompStorage && f.target == "" {
@@ -285,4 +287,66 @@ func runNetPeer(args []string, stdout, stderr io.Writer) int {
 		return 3
 	}
 	return 0
+}
+
+// runCoreTest is `tyr core-test cpu7`: the offline-core stress engine for
+// one CPU, or --restore after a test that was killed.
+func runCoreTest(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("tyr core-test", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fs.Usage = func() {
+		fmt.Fprintln(stderr, "Usage: tyr core-test [flags] CPU     e.g. tyr core-test cpu7\n       tyr core-test --restore\n\nTests an offline CPU: online only for the test, in an exclusive cpuset partition,\nevery result checked, offline again afterwards. A defective core can still crash\nthe kernel: use a maintenance window.")
+		fs.PrintDefaults()
+	}
+	var c common
+	c.register(fs)
+	duration := fs.Duration("duration", 2*time.Minute, "how long the CPU runs the kernels")
+	yes := fs.Bool("yes", false, "start without typing the CPU name")
+	restore := fs.Bool("restore", false, "take the CPU offline again and undo the isolation of a test that did not finish")
+	runDir := fs.String("run-dir", "", "where to write the result file (default /var/lib/tyr/runs, else ./tyr-runs)")
+	// flags may follow the CPU
+	var pos []string
+	for len(args) > 0 {
+		if err := fs.Parse(args); err != nil {
+			return 3
+		}
+		if fs.NArg() == 0 {
+			break
+		}
+		pos, args = append(pos, fs.Arg(0)), fs.Args()[1:]
+	}
+	if *restore {
+		did, err := stress.RestoreOfflineCore(func(f string, a ...any) { fmt.Fprintf(stdout, f+"\n", a...) })
+		switch {
+		case err != nil:
+			fmt.Fprintln(stderr, "tyr core-test --restore:", err)
+			return 2
+		case !did:
+			fmt.Fprintln(stdout, "nothing to restore")
+		default:
+			fmt.Fprintln(stdout, "restored")
+		}
+		return 0
+	}
+	if len(pos) != 1 {
+		fs.Usage()
+		return 3
+	}
+	cpu := strings.TrimPrefix(strings.ToLower(pos[0]), "cpu")
+	if _, err := strconv.Atoi(cpu); err != nil {
+		fmt.Fprintf(stderr, "tyr core-test: %q is not a CPU (e.g. cpu7)\n", pos[0])
+		return 3
+	}
+	cenv, _, err := c.env()
+	if err != nil {
+		fmt.Fprintln(stderr, "tyr:", err)
+		return 3
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+	env := &stress.Env{Collector: cenv, Cols: all.Collectors(), RunDir: *runDir}
+	cfg := stress.Config{Component: stress.CompCPU, Engine: stress.EngOfflineCore, Duration: *duration, CPUs: cpu}
+	code, line := stressOne(ctx, env, cfg, bufio.NewReader(stdin), stdout, stderr, *yes)
+	fmt.Fprintln(stdout, line)
+	return code
 }

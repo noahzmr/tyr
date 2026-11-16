@@ -161,7 +161,7 @@ func TestSessionNewResolvedRising(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := newLoaded(t, "server-degraded", 140, 50)
+	m := newLoaded(t, "server-degraded", 140, 60)
 	snap := collector.Collect(context.Background(), env, all.Collectors(), nil)
 	// second refresh: sdc gained I/O errors (new finding + rising counter),
 	// the read-only /data finding is gone (resolved).
@@ -262,7 +262,7 @@ func TestTreeSlotMapHelpMouse(t *testing.T) {
 
 func TestWindowTitleShowsStatus(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
-	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (16 crit, 21 warn)") {
+	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (19 crit, 21 warn)") {
 		t.Errorf("title %q", title)
 	}
 }

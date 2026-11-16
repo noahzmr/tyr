@@ -41,6 +41,17 @@ func cpuScope(cfg Config, env *Env) ([]int, []string) {
 		}
 		want = keep
 	}
+	if suspect := env.Baseline.CPU.Suspects(); len(suspect) > 0 && !cfg.IncludeSuspect {
+		var keep []int
+		for _, c := range want {
+			if off, bad := suspect[c]; bad {
+				warn = append(warn, fmt.Sprintf("cpu%d left out: its other thread cpu%d is offline (suspect core); --include-suspect-cores loads it", c, off))
+				continue
+			}
+			keep = append(keep, c)
+		}
+		want = keep
+	}
 	if allowed, err := affinity.Allowed(); err == nil && !env.Simulated() {
 		var keep []int
 		for _, c := range want {

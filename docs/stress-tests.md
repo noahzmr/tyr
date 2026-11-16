@@ -49,6 +49,7 @@ sequenceDiagram
 | CPU | **builtin** | integer, floating point, FMA, vector, SHA-256, CRC32C and matrix kernels on every selected CPU; every result is compared with a precomputed golden value, so a core that computes wrong under load is named |
 | | `stress-ng` | `--cpu`, all methods, `--verify` |
 | | `mprime` | Prime95 torture test, self-checking FFTs |
+| | `offline-core` | one offline (suspect) CPU, online only for the test and isolated: see [offline cores](#offline-cores) |
 | Memory | **builtin** | walking bits, random data, moving inversions, address-in-address; one thread per CPU; the buffer is locked in RAM |
 | | `stress-ng` | `--vm`, all methods, `--verify` |
 | | `memtester` | the memtester pattern suite |
@@ -128,14 +129,60 @@ tyr stress --component network --target peer.example:7300 --token s3cret
 In the TUI, enter the peer and token on the Stress form. Without a peer the
 network test cannot run and the full test skips it.
 
+## Offline cores
+
+A CPU someone took offline after errors cannot be tested while it is offline.
+`tyr core-test cpu7` (or `S` on the CPU in the TUI) brings it online only for
+the test:
+
+```mermaid
+flowchart LR
+    s["state file<br/>/run/tyr-offline-core.json"] --> p["cpuset partition<br/>cpus = 7"]
+    p --> i["interrupts moved off cpu7"]
+    i --> on["cpu7 online"]
+    on --> x["partition isolated:<br/>other tasks leave cpu7"]
+    x --> w["worker process on cpu7<br/>kernels, every result checked"]
+    w --> off["cpu7 offline again<br/>everything restored"]
+```
+
+| Step | What |
+|---|---|
+| Isolation | a cgroup v2 cpuset partition (`isolated`, else `root`) owns the CPU, so no other task runs there; movable interrupts and the default interrupt affinity leave it. Without the cpuset controller Tyr does not bring the CPU online. |
+| Test | a worker process is started inside the partition (`clone3` into the cgroup), pinned to the CPU, and runs the built-in kernels with rotating seeds; every result is compared with its golden value |
+| Stops on | the first wrong result, a new machine check on that CPU (`/proc/interrupts`), the guard (temperature, any new machine check or UE), `esc` / Ctrl+C |
+| Always | the CPU goes offline again, then the partition, interrupts and cpuset controller are put back |
+| Confirmation | type the CPU's name (`cpu7`), not `yes` |
+
+**Risk.** Isolation keeps other work off the CPU, but cannot stop a defective
+core from raising a fatal machine check: the kernel then panics and the server
+reboots. Run it in a maintenance window with workloads moved off the host. If
+nothing takes the CPU offline at boot, it runs work again after such a reboot -
+add a boot unit first ([health checks](health-checks.md#troubleshooting-a-suspect-core)).
+Per-CPU kernel threads and managed interrupts (NVMe queues) still run on the
+CPU while it is online. A pass does not prove the core healthy: faults can be
+intermittent or depend on temperature and voltage. The vendor's offline
+diagnostics (HPE: UEFI System Utilities / Intelligent Provisioning; Dell:
+ePSA; Supermicro: the BMC's diagnostics) test outside the OS.
+
+```bash
+sudo tyr core-test cpu7 --duration 2m   # asks for "cpu7"
+sudo tyr core-test --restore            # after Tyr was killed mid-test
+```
+
+If Tyr is killed during the test, the state file stays behind: the next
+test refuses to start, and `tyr core-test --restore` takes the CPU offline
+again and undoes the rest. A reboot also brings everything back (but the CPU
+online, unless a boot unit takes it out).
+
 ## Starting a test
 
 | Where | How |
 |---|---|
 | TUI, Stress tab (`9`) | the form: test, engine, duration, size; Start; type `yes` |
-| TUI, any module tab | `S` stresses the selected component (a CPU and its sibling, a disk, a filesystem, memory, network) |
+| TUI, any module tab | `S` stresses the selected component (a CPU and its sibling, a disk, a filesystem, memory, network); on an offline CPU, the offline-core test |
 | TUI, anywhere | `F` runs the full test with defaults |
 | CLI | `tyr stress --component cpu --duration 30m` (asks for `yes`; `--yes` skips the prompt) |
+| CLI, offline CPU | `tyr core-test cpu7` (asks for `cpu7`) |
 
 While a test runs the other tabs stay live; `esc` on the Stress tab aborts it
 cleanly, `q` is blocked, `ctrl+c` stops the test and quits.

@@ -2,6 +2,7 @@ package stress
 
 import (
 	"fmt"
+	"os"
 	"slices"
 )
 
@@ -19,6 +20,7 @@ var engineDescs = map[Component][]EngineInfo{
 		{Name: EngBuiltin, Desc: "Tyr kernels on every core, each result checked against a golden value"},
 		{Name: EngStressNG, Desc: "stress-ng --cpu, all methods, --verify"},
 		{Name: EngMprime, Desc: "Prime95 torture test (mprime), self-checking FFTs"},
+		{Name: EngOfflineCore, Desc: "an offline (suspect) core: online only for the test, isolated, offline again after"},
 	},
 	CompMemory: {
 		{Name: EngBuiltin, Desc: "Tyr patterns: walking bits, random, moving inversions, address-in-address"},
@@ -42,6 +44,12 @@ func Engines(c Component, env *Env) []EngineInfo {
 	for _, e := range engineDescs[c] {
 		e.Available = true
 		switch {
+		case e.Name == EngOfflineCore:
+			if env == nil || len(offlineCPUs(env)) == 0 {
+				e.Available, e.Reason = false, "no CPU is offline"
+			} else if !env.Simulated() && os.Geteuid() != 0 {
+				e.Available, e.Reason = false, "needs root"
+			}
 		case env != nil && env.Simulated():
 			if e.Name != EngBuiltin {
 				e.Available, e.Reason = false, "fixtures mode: external engines are not run"
@@ -78,6 +86,9 @@ func testFor(cfg Config, env *Env) (Test, error) {
 	}
 	if env.Simulated() {
 		return simTest{}, nil
+	}
+	if cfg.Engine == EngOfflineCore {
+		return offlineCore{}, nil
 	}
 	switch cfg.Component {
 	case CompCPU:
