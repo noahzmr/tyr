@@ -14,6 +14,9 @@ import (
 type Defaults struct {
 	WarnTempC float64 // --warn-temp
 	CritTempC float64 // --crit-temp
+	// Explicit is set when --warn-temp or --crit-temp was given: the
+	// user's limit then also wins over built-in per-model CPU limits.
+	Explicit bool
 }
 
 // DefaultDefaults returns the built-in fallbacks.

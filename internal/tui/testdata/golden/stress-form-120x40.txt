@@ -14,7 +14,7 @@ New run ────────────────────────
 
  Duration   ◂ 5 min ▸                         30 s … 24 h · per compo…
  CPUs       [all online (63)       ]          enter to edit · e.g. 0-…
- Guard      stop at 100 °C, any MCE or UE     fixed safety guard
+ Guard      stop at 105 °C (limit+5), MCE, UE fixed safety guard
 
               Start CPU test ▸   asks for confirmation
 

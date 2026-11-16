@@ -45,9 +45,13 @@ func DefaultRules() []Rule {
 	return []Rule{RuleTempCritical(), RuleNewMCE(), RuleNewUncorrectable()}
 }
 
-// RuleTempCritical trips when any temperature reaches CRIT (its sensor's
-// critical threshold, else --crit-temp) and was not already CRIT before
-// the test started (the plan refuses to start in that case).
+// RuleTempCritical trips when a temperature goes past its limit: drives,
+// DIMMs and accelerators at CRIT (their own critical threshold, else
+// --crit-temp); CPU packages only CPUGuardMarginC above their limit. A CPU
+// throttles itself at its maximum (Tjmax / PROCHOT), so running there is
+// what a stress test is for; going clearly beyond it means the CPU's own
+// protection is not holding the temperature. The plan refuses to start
+// when the host is already past these points.
 func RuleTempCritical() Rule {
 	return ruleFunc{"temp_critical", func(base *model.Snapshot, s Sample) (bool, string) {
 		for _, t := range critTemps(s.Snap) {
@@ -57,7 +61,40 @@ func RuleTempCritical() Rule {
 	}}
 }
 
-// critTemps lists CRIT temperature readings of a snapshot.
+// CPUGuardMarginC is how far above its own limit a CPU package may go
+// before the guard stops the test.
+const CPUGuardMarginC = 5.0
+
+func cpuGuardTemp(p model.Sensor) *float64 {
+	if p.Thresholds == nil || p.Thresholds.UpperCrit == nil {
+		return nil
+	}
+	return model.F(*p.Thresholds.UpperCrit + CPUGuardMarginC)
+}
+
+// CPUGuardTempC is the lowest CPU package guard point of a snapshot (its
+// limit plus the margin), for display; nil without CPU limits.
+func CPUGuardTempC(s *model.Snapshot) *float64 {
+	var g *float64
+	if s != nil && s.CPU != nil {
+		for _, p := range s.CPU.PackageTemps {
+			if v := cpuGuardTemp(p); v != nil && (g == nil || *v < *g) {
+				g = v
+			}
+		}
+	}
+	return g
+}
+
+// cpuLimitC is the lowest CPU package limit (its critical threshold).
+func cpuLimitC(s *model.Snapshot) *float64 {
+	if g := CPUGuardTempC(s); g != nil {
+		return model.F(*g - CPUGuardMarginC)
+	}
+	return nil
+}
+
+// critTemps lists the temperatures past the guard points of a snapshot.
 func critTemps(s *model.Snapshot) []string {
 	if s == nil {
 		return nil
@@ -70,7 +107,13 @@ func critTemps(s *model.Snapshot) []string {
 	}
 	if c := s.CPU; c != nil {
 		for _, p := range c.PackageTemps {
-			add(p.Name, p.Value, p.Status)
+			g := cpuGuardTemp(p)
+			switch {
+			case g == nil: // no limit known: the sensor's own CRIT (alarm)
+				add(p.Name, p.Value, p.Status)
+			case p.Value != nil && *p.Value >= *g:
+				out = append(out, fmt.Sprintf("%s %.0f°C (limit %.0f°C + %.0f)", p.Name, *p.Value, *g-CPUGuardMarginC, CPUGuardMarginC))
+			}
 		}
 	}
 	if m := s.Memory; m != nil {

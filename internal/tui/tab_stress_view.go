@@ -313,12 +313,14 @@ func (s *stressTab) startLabel() string {
 // guardText: what stops a run on its own (stress.DefaultRules).
 func (s *stressTab) guardText() string {
 	if c := s.cpuCrit(); c != nil {
-		return fmt.Sprintf("stop at %.0f °C, any MCE or UE", *c)
+		return fmt.Sprintf("stop at %.0f °C (limit+%.0f), MCE, UE", *c+stress.CPUGuardMarginC, stress.CPUGuardMarginC)
 	}
 	return "stop at CRIT temp, any MCE or UE"
 }
 
-// cpuCrit is the lowest package critical temperature of the snapshot.
+// cpuCrit is the lowest CPU package limit of the snapshot (its critical
+// threshold: the CPU's Tjmax where known). The guard stops a test
+// stress.CPUGuardMarginC above it.
 func (s *stressTab) cpuCrit() *float64 {
 	if s.critTemp != nil {
 		return s.critTemp
@@ -768,8 +770,10 @@ func (s *stressTab) graph(t *Theme, name string, col color.Color, w, h int) stri
 	case "cpu_temp":
 		spec.Min = 20
 		if c := s.cpuCrit(); c != nil {
-			spec.Limits = []chartLimit{{V: *c, Label: fmt.Sprintf("crit %.0f", *c), St: model.StatusCrit}}
-			spec.Max = *c + 15
+			g := *c + stress.CPUGuardMarginC
+			spec.Limits = []chartLimit{{V: g, Label: fmt.Sprintf("guard %.0f", g), St: model.StatusCrit},
+				{V: *c, Label: fmt.Sprintf("limit %.0f", *c), St: model.StatusWarn}}
+			spec.Max = g + 10
 			if len(v) > 0 {
 				spec.ValueSt = checkEval(&v[len(v)-1], &model.Thresholds{UpperWarn: ptr(*c - 10), UpperCrit: c})
 			}
@@ -800,7 +804,7 @@ func (s *stressTab) liveSparks(t *Theme, w int) []string {
 		note := ""
 		if n == "cpu_temp" {
 			if c := s.cpuCrit(); c != nil {
-				note = t.Sub.Render(fmt.Sprintf(" crit %.0f", *c))
+				note = t.Sub.Render(fmt.Sprintf(" limit %.0f", *c))
 			}
 		}
 		label := short[n]
@@ -970,7 +974,7 @@ func (s *stressTab) resultView(t *Theme) string {
 			st, limit := model.StatusOK, ""
 			if m.Name == "cpu_temp" {
 				if c := s.cpuCrit(); c != nil {
-					limit = fmt.Sprintf("crit %.0f", *c)
+					limit = fmt.Sprintf("limit %.0f · guard %.0f", *c, *c+stress.CPUGuardMarginC)
 					if m.Max >= *c {
 						st = model.StatusWarn
 					}

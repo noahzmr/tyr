@@ -521,14 +521,24 @@ func (r *Run) Wait() *Result
 **Verdict:**
 - FAIL: any verify error, a guard abort, a new CRIT finding, a new MCE or UE,
   an increased SMART error counter, or a core test FAIL/TIMEOUT.
-- WARN: a new WARN finding, CE increase, throttling events, or network
-  throughput below 90 % of the negotiated link speed.
+- WARN: a new WARN finding, CE increase, throttling events, a CPU that
+  reached its own temperature limit under load, or network throughput below
+  90 % of the negotiated link speed.
+- CPU temperature findings in the after-snapshot are not counted: it is
+  taken while the CPU is still hot from the load.
 - PASS: none of the above.
 
 User abort gives `aborted: {by: "user"}` and exit 3 (incomplete). A guard abort
 gives FAIL and exit 2.
 
 ### 5.3 Guard (`internal/stress/guard`)
+
+CPU limits: coretemp reports Intel's TjMax as the crit threshold. k10temp
+and zenpower report none, so AMD CPUs use their documented Tjmax from a
+per-family table (Ryzen 7000/9000 desktop 95 °C; Ryzen 7040/8040 mobile,
+Ryzen AI 300 and Ryzen AI Max 100 °C) with warn 10 °C below; unknown AMD
+models keep `--crit-temp`. An explicit `--crit-temp`/`--warn-temp` wins
+over the table.
 
 ```go
 type Rule interface {
@@ -537,8 +547,10 @@ type Rule interface {
 }
 ```
 
-Default rules: `TempCritical` (any reading ≥ its source's crit threshold,
-else `--crit-temp`), `NewMCE`, `NewUncorrectableECC`, `PSUFault`,
+Default rules: `TempCritical` (drives, DIMMs and accelerators at their
+source's crit threshold, else `--crit-temp`; CPU packages only 5 °C above
+their limit, because a CPU throttles itself at its maximum and running
+there is the point of a stress test), `NewMCE`, `NewUncorrectableECC`, `PSUFault`,
 `RedundancyLost`, `NewSMARTErrors` (in-scope disks), and `MemoryPressure`
 (the memory test only: swap-out delta > 0, `oom_kill` delta > 0, PSI
 `some avg10` > 10 %, or MemAvailable < reserve).

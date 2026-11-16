@@ -206,7 +206,7 @@ func Prepare(ctx context.Context, env *Env, cfg Config) (*Plan, Test, error) {
 	p.Component, p.Engine, p.Duration = cfg.Component, cfg.Engine, cfg.Duration
 	if hot := critTemps(env.Baseline); len(hot) > 0 && p.Blocked == "" {
 		p.Blocked = "already at critical temperature before the test: " + strings.Join(hot, ", ") +
-			" (cool the system down, or raise the limit with --crit-temp if the default is too low for this CPU)"
+			" (cool the system down, or set the right limit with --crit-temp if this sensor's default is too low)"
 	}
 	if w := busyWarnings(env); len(w) > 0 {
 		p.Warnings = append(p.Warnings, w...)
@@ -501,7 +501,16 @@ func (r *Run) verdict(env *Env, base, after *model.Snapshot, baseCounters map[st
 			res.Aborted = &Aborted{By: "error", Reason: testErr.Error()}
 		}
 	}
+	// A CPU at its own limit under full load throttles itself: that is a
+	// cooling observation (WARN), not a failure. Past the limit the guard
+	// has already stopped the test.
+	if lim, m := cpuLimitC(base), r.metrics["cpu_temp"]; lim != nil && m != nil && m.Samples > 0 && m.Max >= *lim {
+		warn = append(warn, fmt.Sprintf("CPU reached its %.0f°C limit under load (max %.0f°C): it throttles there, cooling cannot keep it below", *lim, m.Max))
+	}
 	for _, f := range res.NewFindings {
+		if f.Code == "cpu_temp" || f.Code == "core_temp" {
+			continue // the after-snapshot is taken while the CPU is still hot from the load
+		}
 		switch f.Status {
 		case model.StatusCrit:
 			fail = append(fail, "new finding: "+f.Message)

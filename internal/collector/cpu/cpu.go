@@ -182,7 +182,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	out.CoreCount = countCores(logical)
 
 	// --- temperatures -----------------------------------------------------
-	temps := readTemps(f, pkgIDs, env.Opts.Thresholds)
+	temps := readTemps(f, pkgIDs, env.Opts.Thresholds, ci)
 	if temps.source == "" && !env.IsVM() {
 		// Linux has no CPU sensor: ask the BMC.
 		sens, st := env.IPMISensors(ctx)
@@ -817,7 +817,7 @@ func mkTemp(name string, s sysfs.HwmonSensor, d check.Defaults, src string) *mod
 
 // readTemps finds CPU temperatures. Order: coretemp (Intel, per package and
 // per core), k10temp/zenpower (AMD, per socket), CPU thermal zones.
-func readTemps(f hostfs.FS, pkgIDs []int, d check.Defaults) temps {
+func readTemps(f hostfs.FS, pkgIDs []int, d check.Defaults, ci sysfs.CPUInfo) temps {
 	t := temps{pkg: map[int]*model.Sensor{}, core: map[[2]int]*model.Sensor{}}
 	chips := sysfs.ReadHwmon(f)
 	var amd []sysfs.HwmonChip
@@ -852,6 +852,15 @@ func readTemps(f hostfs.FS, pkgIDs []int, d check.Defaults) temps {
 	}
 	if len(amd) > 0 {
 		sort.Slice(amd, func(i, j int) bool { return amd[i].Device < amd[j].Device })
+		// k10temp has no limits: use the model's Tjmax where known
+		ad, origin, known := amdLimits(ci.Family, ci.ModelNum, d)
+		mk := func(name string, s sysfs.HwmonSensor, src string) *model.Sensor {
+			sen := mkTemp(name, s, ad, src)
+			if known && sen.Thresholds != nil && sen.Thresholds.Origin == "default" {
+				sen.Thresholds.Origin = origin
+			}
+			return sen
+		}
 		for i, c := range amd {
 			socket := i
 			if i < len(pkgIDs) {
@@ -869,14 +878,14 @@ func readTemps(f hostfs.FS, pkgIDs []int, d check.Defaults) temps {
 				case s.Label == "Tctl":
 					tctl = s
 				case strings.HasPrefix(s.Label, "Tccd"):
-					t.extra = append(t.extra, *mkTemp(fmt.Sprintf("CPU%d %s", socket, s.Label), *s, d, c.Name))
+					t.extra = append(t.extra, *mk(fmt.Sprintf("CPU%d %s", socket, s.Label), *s, c.Name))
 				}
 			}
 			if tdie == nil {
 				tdie = tctl
 			}
 			if tdie != nil {
-				t.pkg[socket] = mkTemp(fmt.Sprintf("CPU%d Package", socket), *tdie, d, c.Name)
+				t.pkg[socket] = mk(fmt.Sprintf("CPU%d Package", socket), *tdie, c.Name)
 			}
 		}
 		if t.source == "" {

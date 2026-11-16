@@ -90,10 +90,12 @@ type common struct {
 	opts       collector.Options
 	version    bool
 	warn, crit float64
+	fs         *flag.FlagSet
 }
 
 func (c *common) register(fs *flag.FlagSet) {
 	c.opts = collector.DefaultOptions()
+	c.fs = fs
 	fs.StringVar(&c.fixtures, "fixtures", "", "run against a fixture directory instead of this host (developer mode)")
 	fs.BoolVar(&c.version, "version", false, "print version and exit")
 	fs.DurationVar(&c.opts.Timeout, "timeout", c.opts.Timeout, "timeout per collector")
@@ -103,11 +105,18 @@ func (c *common) register(fs *flag.FlagSet) {
 	fs.BoolVar(&c.opts.NICAll, "nic-all", false, "include virtual network interfaces")
 	fs.BoolVar(&c.opts.SELAll, "sel-all", false, "show all SEL entries, not only warnings and errors")
 	fs.Float64Var(&c.warn, "warn-temp", c.opts.Thresholds.WarnTempC, "default warning temperature (°C) when a sensor has no own limit")
-	fs.Float64Var(&c.crit, "crit-temp", c.opts.Thresholds.CritTempC, "default critical temperature (°C) when a sensor has no own limit")
+	fs.Float64Var(&c.crit, "crit-temp", c.opts.Thresholds.CritTempC, "critical temperature (°C) for sensors without their own limit; given explicitly it also replaces the built-in AMD CPU limits")
 }
 
 func (c *common) env() (*collector.Env, string, error) {
 	c.opts.Thresholds.WarnTempC, c.opts.Thresholds.CritTempC = c.warn, c.crit
+	if c.fs != nil {
+		c.fs.Visit(func(f *flag.Flag) {
+			if f.Name == "warn-temp" || f.Name == "crit-temp" {
+				c.opts.Thresholds.Explicit = true
+			}
+		})
+	}
 	if c.warn >= c.crit {
 		return nil, "", fmt.Errorf("--warn-temp (%.0f) must be below --crit-temp (%.0f)", c.warn, c.crit)
 	}

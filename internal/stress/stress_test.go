@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/noahzmr/tyr/internal/check"
 	"github.com/noahzmr/tyr/internal/collector"
 	"github.com/noahzmr/tyr/internal/collector/all"
 	"github.com/noahzmr/tyr/internal/execx"
@@ -346,6 +347,11 @@ func TestLifecycleVerdicts(t *testing.T) {
 	}
 }
 
+func cpuAt(v, crit float64) *model.Snapshot {
+	return &model.Snapshot{CPU: &model.CPU{PackageTemps: []model.Sensor{{Name: "CPU0 Package", Value: &v, Status: model.StatusCrit,
+		Thresholds: &model.Thresholds{UpperWarn: model.F(crit - 10), UpperCrit: model.F(crit)}}}}}
+}
+
 func TestGuardRules(t *testing.T) {
 	hot := 101.0
 	snap := &model.Snapshot{CPU: &model.CPU{PackageTemps: []model.Sensor{{Name: "CPU0 Package", Value: &hot, Status: model.StatusCrit}}}}
@@ -355,6 +361,10 @@ func TestGuardRules(t *testing.T) {
 		trip bool
 	}{
 		{RuleTempCritical(), Sample{Snap: snap}, true},
+		// at its own 100 °C limit a CPU throttles: the guard lets it run …
+		{RuleTempCritical(), Sample{Snap: cpuAt(101, 100)}, false},
+		// … and stops it 5 °C past the limit
+		{RuleTempCritical(), Sample{Snap: cpuAt(105, 100)}, true},
 		{RuleTempCritical(), Sample{Snap: &model.Snapshot{}}, false},
 		{RuleNewMCE(), Sample{Deltas: map[string]int64{"mce.exceptions.cpu3": 1}}, true},
 		{RuleNewMCE(), Sample{Deltas: map[string]int64{"throttle.cpu3": 5}}, false},
@@ -372,13 +382,45 @@ func TestGuardRules(t *testing.T) {
 			t.Errorf("case %d %s: trip=%v (%s)", i, c.rule.Name(), trip, why)
 		}
 	}
-	// A host already at critical temperature is refused before the test.
+	// The AMD laptop sits at 96 °C: below its 100 °C Tjmax it may run …
 	env := fixtureEnv(t, "laptop-amd-nonroot")
 	plan, _, err := Prepare(context.Background(), env, Config{Component: CompCPU, Engine: EngBuiltin, Duration: time.Second})
 	if err != nil {
 		t.Fatal(err)
 	}
+	if plan.Blocked != "" {
+		t.Errorf("96 °C on a 100 °C CPU refused: %q", plan.Blocked)
+	}
+	if g := CPUGuardTempC(env.Baseline); g == nil || *g != 105 {
+		t.Errorf("guard point %v, want 105", g)
+	}
+	// … with an explicit --crit-temp 90 the host is already past the guard
+	// point (90 + 5) and is refused before the test.
+	env = fixtureEnv(t, "laptop-amd-nonroot")
+	env.Collector.Opts.Thresholds = check.Defaults{WarnTempC: 75, CritTempC: 90, Explicit: true}
+	plan, _, err = Prepare(context.Background(), env, Config{Component: CompCPU, Engine: EngBuiltin, Duration: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(plan.Blocked, "critical temperature") {
-		t.Errorf("hot laptop not refused: %q", plan.Blocked)
+		t.Errorf("hot laptop not refused with --crit-temp 90: %q", plan.Blocked)
+	}
+}
+
+func TestVerdictCPUAtLimitIsWarn(t *testing.T) {
+	base := cpuAt(60, 100)
+	base.CPU.PackageTemps[0].Status = model.StatusOK
+	after := cpuAt(100, 100)
+	after.CPU.Find(model.StatusCrit, "cpu_temp", "CPU0 Package", "k10temp", "CPU0 Package at 100°C (crit 100°C)")
+	r := &Run{ID: "t", Cfg: Config{Component: CompCPU, Engine: EngBuiltin}, Start: time.Now(),
+		metrics: map[string]*MetricSummary{"cpu_temp": {Name: "cpu_temp", Max: 100, Samples: 30}}}
+	res := r.verdict(nil, base, after, nil, nil, "")
+	if res.Verdict != VerdictWarn || len(res.Reasons) != 1 || !strings.Contains(res.Reasons[0], "reached its 100°C limit") {
+		t.Errorf("verdict %s %v", res.Verdict, res.Reasons)
+	}
+	// below the limit the CPU being hot right after the load is no reason
+	r.metrics["cpu_temp"].Max = 99
+	if res := r.verdict(nil, base, after, nil, nil, ""); res.Verdict != VerdictPass || len(res.Reasons) != 0 {
+		t.Errorf("verdict %s %v", res.Verdict, res.Reasons)
 	}
 }
