@@ -56,6 +56,8 @@ fixtures:
 golden:
 	go test ./internal/workload -run TestGoldenTable -update
 
+# Static binaries to copy to other hosts: dist/tyr-linux-{amd64,arm64}
+# plus dist/SHA256SUMS (see README "Run on a remote host").
 cross:
 	@mkdir -p $(DIST)
 	@for arch in amd64 arm64; do \
@@ -65,6 +67,7 @@ cross:
 			-o $(DIST)/$(BINARY)-linux-$$arch ./cmd/tyr || exit 1; \
 		else GOOS=linux GOARCH=$$arch go build ./... || exit 1; fi; \
 	done
+	@cd $(DIST) && sha256sum $(BINARY)-linux-* > SHA256SUMS && cat SHA256SUMS
 
 clean:
 	rm -rf $(DIST)
