@@ -13,7 +13,7 @@
             │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │
 sdd ────────│ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │l SMART page
 Model     ST│ ←→ hl      move / regions     v          switch view        c          copy serial           │
-Serial    WJ│ pgup pgdn  page               /          search             R          report (Markdown)     │
+Serial    WJ│ pgup pgdn  page               /          search             R          reports               │
 Firmware  SN│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │
 Path      /d│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │)
             │ esc        back · close       h          virtual NICs                                        │

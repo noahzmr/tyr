@@ -447,6 +447,9 @@ func historyMD(h History) string {
 	m.p("**Latest status: %s** · %d open %s · %s to %s · %d %s · %d stress %s", status(worst), open, plural(open, "alert", "alerts"),
 		when(h.From), when(h.To), len(h.Snapshots), plural(len(h.Snapshots), "snapshot", "snapshots"), len(h.Runs), plural(len(h.Runs), "run", "runs"))
 
+	if n := len(h.Snapshots); n > 0 {
+		healthSection(&m, h.Snapshots[n-1].snap, "Component health (latest, "+when(h.Snapshots[n-1].Time)+")")
+	}
 	if len(h.Snapshots) > 0 {
 		m.h(2, "Status over time")
 		var rows [][]string

@@ -44,7 +44,9 @@ func TestSnapshotReport(t *testing.T) {
 		t.Log("\n" + md)
 	}
 	for _, want := range []string{"# srv-degraded-01 · hardware report", "**Status: ✖ CRIT**", "## Alerts", "| ✖ CRIT | CPU | cpu7 |",
-		"## Memory", "P2-DIMMB1", "## Storage", "WJG0A004", "## Inventory"} {
+		"## Memory", "P2-DIMMB1", "## Storage", "WJG0A004", "## Inventory",
+		"## Component health", "| CPU cores (logical) | ✖ CRIT | 64 |", "cpu7 ✖", "| Memory modules |", "P2-DIMMB1 ✖", "| Disks |", "| Transceivers |",
+		"### Cores", "| cpu7 |", "offline", "| Power supplies | ● OK | 2 |", "| Fans |"} {
 		if !strings.Contains(md, want) {
 			t.Errorf("snapshot report missing %q", want)
 		}
@@ -127,7 +129,7 @@ func TestHistory(t *testing.T) {
 		t.Log("\n" + md)
 	}
 	for _, want := range []string{"# srv-degraded-01 · history", "## Alerts timeline", "resolved", "## Counter trends", "disk.sdc.io_errors",
-		"## Sensor trends", "## Hardware changes", "NEW0001", "## Stress tests", "## Files not used", "other.json"} {
+		"## Component health (latest", "## Sensor trends", "## Hardware changes", "NEW0001", "## Stress tests", "## Files not used", "other.json"} {
 		if !strings.Contains(md, want) {
 			t.Errorf("history missing %q", want)
 		}

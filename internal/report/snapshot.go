@@ -60,6 +60,7 @@ func Snapshot(s *model.Snapshot) string {
 	m.table([]string{"Module", "Status", "Summary", "Alerts"}, rows)
 
 	alertsSection(&m, all)
+	healthSection(&m, s, "Component health")
 	systemSection(&m, s.System)
 	cpuSection(&m, s.CPU)
 	memorySection(&m, s.Memory)
@@ -187,6 +188,7 @@ func cpuSection(m *md, c *model.CPU) {
 		m.table([]string{"Socket", "Model", "Serial", "PPIN"}, rows)
 	}
 	sensorTable(m, "Temperatures", c.PackageTemps)
+	coresTable(m, c)
 }
 
 func memorySection(m *md, x *model.Memory) {
@@ -325,9 +327,9 @@ func inventorySection(m *md, inv []model.Component) {
 	m.h(2, "Inventory")
 	var rows [][]string
 	for _, c := range inv {
-		rows = append(rows, []string{c.Category, c.Location, c.Vendor, c.Model, c.PartNumber, c.Serial, c.Firmware, c.Detail})
+		rows = append(rows, []string{c.Category, c.Location, c.Vendor, c.Model, c.PartNumber, c.Serial, c.Firmware, c.Detail, status(c.Status)})
 	}
-	m.table([]string{"Type", "Location", "Vendor", "Model", "Part number", "Serial", "Firmware", "Detail"}, rows)
+	m.table([]string{"Type", "Location", "Vendor", "Model", "Part number", "Serial", "Firmware", "Detail", "Health"}, rows)
 }
 
 func sourcesSection(m *md, s *model.Snapshot) {

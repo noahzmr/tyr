@@ -84,15 +84,18 @@ tyr view host.json                                  # view a report in the termi
 tyr view ./results/                                 # several files: their history
 ```
 
-- **Hardware report:** status, alerts by severity, system, CPU, memory (DIMMs with serials and ECC counts), storage (disks with SMART, RAID, filesystems), network, GPU/NPU, the full inventory, and the data sources that could not be used and why.
-- **Stress result:** verdict and reasons, scope, metrics (min/avg/max), wrong results, counters that changed, new alerts, the log.
+- **Hardware report:** status, alerts by severity, component health (every kind of component — CPU cores, packages, DIMMs, disks, RAID, filesystems, ports, transceivers, GPUs/NPUs, PSUs, fans — with OK/WARN/CRIT counts and which ones have problems), each logical CPU (state, clock, load, temperature, MCEs, throttling, core test), system, CPU, memory (DIMMs with serials and ECC counts), storage (disks with SMART, RAID, filesystems), network, GPU/NPU, the full inventory, and the data sources that could not be used and why.
+- **Stress result:** verdict and reasons, scope, metrics (min/avg/max), wrong results, counters that changed, new alerts, component health after the test (and each core after a CPU test), the log.
 - **History** of each host across any number of snapshots and stress results (a stress result adds its before/after snapshots): status over time, when each alert appeared and was resolved, counters that grew (with resets), sensor min/max/last against their limits, parts added, removed or replaced (serial changed) and firmware/BIOS/kernel/microcode updates, and every stress run.
 
 Tyr does not keep history on its own: collect the JSON you want (`tyr report
 --format json`, the TUI's `e` export, the stress result files) and pass files or
-directories; other JSON files are listed as skipped. In the TUI, `R` shows the
-current host's report (on a stress result: that result), and `e` writes both
-JSON and Markdown.
+directories; other JSON files are listed as skipped.
+
+In the TUI, `R` opens the Reports dialog: choose the host report, a stress
+result (this session's or an earlier run) or the history of files and
+directories, Markdown or JSON, and view it (scroll, `/` search), save it, or
+both. `e` writes the current snapshot as JSON and Markdown.
 
 ## Fixtures
 

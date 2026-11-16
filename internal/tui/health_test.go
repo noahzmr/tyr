@@ -3,9 +3,9 @@ package tui
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
@@ -378,27 +378,101 @@ func TestSelectionFollowsIDAndReportsLoss(t *testing.T) {
 	}
 }
 
-func TestReportPageAndExport(t *testing.T) {
+// generate presses ↓ until the Generate button and enter.
+func generate(t *testing.T, m *Model) {
+	t.Helper()
+	for m.reports != nil && m.reports.fields()[m.reports.field] != "generate" {
+		run(m, "down")
+	}
+	run(m, "enter")
+}
+
+func TestReportsDialog(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
 	run(m, "R")
-	if m.page == nil || !strings.Contains(text(m), "srv-degraded-01 · hardware report") || !strings.Contains(text(m), "R report") {
-		t.Fatalf("report page\n%s", text(m))
+	if s := text(m); m.reports == nil || !strings.Contains(s, "Reports") || !strings.Contains(s, "Host report") || !strings.Contains(s, "Generate") {
+		t.Fatalf("dialog\n%s", s)
+	}
+	checkFits(t, "reports dialog", screen(m), 120, 40)
+	// host report, viewed, searchable
+	generate(t, m)
+	if m.page == nil || !strings.Contains(text(m), "srv-degraded-01 · hardware report") {
+		t.Fatalf("host report page\n%s", text(m))
 	}
 	run(m, "/", "P", "2", "-", "D", "I", "M", "M", "B", "1", "enter")
 	if !strings.Contains(text(m), "match 1 of") {
 		t.Errorf("search in report\n%s", text(m))
 	}
 	run(m, "esc", "esc")
-	run(m, "e")
-	if !strings.Contains(m.message, ".json and .md") {
-		t.Errorf("export: %q", m.message)
+
+	// saved as Markdown (Output: Save)
+	run(m, "R", "down", "down", "right")
+	generate(t, m)
+	saved := strings.TrimPrefix(m.message, "saved ")
+	if b, err := os.ReadFile(saved); err != nil || !strings.HasSuffix(saved, ".md") || !strings.Contains(string(b), "## Alerts") || m.page != nil {
+		t.Fatalf("save: %q %v", m.message, err)
 	}
-	files, _ := filepath.Glob(filepath.Join(m.opts.ExportDir, "*.md"))
-	if len(files) != 1 {
-		t.Fatalf("no markdown export: %v", files)
+
+	// JSON, view + save
+	run(m, "R", "down", "right", "down", "right", "right")
+	generate(t, m)
+	if m.page == nil || !strings.Contains(text(m), "schema_version") || !strings.HasSuffix(m.message, ".json") {
+		t.Fatalf("json view+save: %q\n%s", m.message, text(m))
 	}
-	if b, _ := os.ReadFile(files[0]); !strings.Contains(string(b), "## Alerts") {
-		t.Errorf("markdown export\n%s", b)
+	run(m, "esc")
+
+	// history from the export directory: the two saved files + a snapshot export
+	run(m, "e", "R", "right", "right")
+	if !strings.Contains(m.reports.paths, m.opts.ExportDir) {
+		t.Errorf("history sources %q", m.reports.paths)
+	}
+	generate(t, m)
+	if s := text(m); m.page == nil || !strings.Contains(s, "srv-degraded-01 · history") {
+		t.Fatalf("history\n%s", s)
+	}
+	run(m, "esc")
+
+	// history from a path without JSON says so and stays open
+	run(m, "R", "right", "right", "down", "enter")
+	m.reports.input.SetValue(t.TempDir())
+	run(m, "enter")
+	generate(t, m)
+	if m.reports == nil || !strings.Contains(text(m), "no Tyr snapshots or stress results") {
+		t.Errorf("empty history\n%s", text(m))
+	}
+	run(m, "esc")
+
+	// stress result: none yet, then one from this session
+	run(m, "R", "right")
+	generate(t, m)
+	if m.reports == nil || !strings.Contains(text(m), "no stress results yet") {
+		t.Errorf("no runs\n%s", text(m))
+	}
+	run(m, "esc")
+}
+
+func TestReportsStressResult(t *testing.T) {
+	saved := durations[0]
+	durations[0] = 2 * time.Second
+	defer func() { durations[0] = saved }()
+	m := newLoaded(t, "server-healthy", 120, 40)
+	run(m, "9")
+	st := m.stressTab()
+	st.env.RunDir = t.TempDir()
+	st.duration = 0
+	m.Update(st.prepare()())
+	st.confirm.SetValue("yes")
+	_, cmd := m.Update(press("enter"))
+	m.Update(cmd())
+	drive(t, m, st, 2, nil)
+	// on the result view R starts at "Stress result" with this run
+	run(m, "R")
+	if m.reports == nil || m.reports.kind != 1 || !strings.Contains(text(m), "CPU · PASS") {
+		t.Fatalf("dialog on result\n%s", text(m))
+	}
+	generate(t, m)
+	if s := text(m); m.page == nil || !strings.Contains(s, "CPU stress test") || !strings.Contains(s, "Verdict: ● PASS") {
+		t.Fatalf("stress report\n%s", s)
 	}
 }
 

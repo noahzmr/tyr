@@ -77,11 +77,12 @@ type Model struct {
 	dark     bool                 // terminal background (BackgroundColorMsg)
 	profile  colorprofile.Profile // colour depth (ColorProfileMsg)
 	sess     *session
-	page     *detailPage // full-screen component page (enter), nil when closed
-	showHelp bool        // help overlay
-	blurred  bool        // terminal window not focused: refresh slower
-	lastAt   time.Time   // when the last snapshot arrived
-	tabXs    []int       // right edge of each rendered tab (mouse hit test)
+	page     *detailPage   // full-screen component page (enter), nil when closed
+	showHelp bool          // help overlay
+	reports  *reportDialog // R: generate a report, nil when closed
+	blurred  bool          // terminal window not focused: refresh slower
+	lastAt   time.Time     // when the last snapshot arrived
+	tabXs    []int         // right edge of each rendered tab (mouse hit test)
 
 	snap       *model.Snapshot
 	collecting bool
@@ -351,7 +352,7 @@ var (
 	keyProblems = key.NewBinding(key.WithKeys("!"), key.WithHelp("!", "problems"))
 	keyOrder    = key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "order"))
 	keyCopy     = key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy serial"))
-	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "report"))
+	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "reports"))
 )
 
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
@@ -362,6 +363,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	if m.showHelp {
 		m.showHelp = false // any key closes the help overlay
 		return nil
+	}
+	if m.reports != nil {
+		return m.updateReports(msg)
 	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
@@ -388,7 +392,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		m.refreshTabs()
 		return nil
 	case key.Matches(msg, keyReport):
-		m.openReport()
+		if m.snap != nil {
+			m.openReports()
+		}
 		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
@@ -510,23 +516,6 @@ func (m *Model) export() string {
 	return "exported " + p + ".json and .md"
 }
 
-// openReport shows the Markdown report as a page: the stress result on
-// the Stress tab's result view, else the current snapshot.
-func (m *Model) openReport() {
-	if m.snap == nil {
-		return
-	}
-	title, md := m.snap.Hostname+" report", report.Snapshot(m.snap)
-	if st, ok := m.tabs[m.active].(*stressTab); ok && st.state == stResult && len(st.results) > 0 {
-		var parts []string
-		for _, r := range st.results {
-			parts = append(parts, report.Run(r))
-		}
-		title, md = "stress result", strings.Join(parts, "\n---\n")
-	}
-	m.page = markdownPage(m.theme, "R report", title, md, m.width, m.contentHeight()+3)
-}
-
 // content area: header (1) + tabs (1) + rule (1) + footer (1 or more)
 func (m *Model) footerHeight() int {
 	if m.showAll {
@@ -627,6 +616,9 @@ func (m *Model) render() string {
 		m.flash(lost + " no longer reported")
 	}
 	b.WriteString(fit(m.footer(), m.width, m.footerHeight()))
+	if m.reports != nil {
+		return m.reportsView(b.String())
+	}
 	if m.showHelp {
 		return m.helpOverlay(b.String())
 	}

@@ -6,7 +6,7 @@
 ▌✖│ tab ⇧tab  next / prev … !         problems only p         pause / resu…  │
  ▲│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON …  │
  ▲│ ←→ hl     move / regio… v         switch view   c         copy serial    │
- ●│ pgup pgdn page          /         search        R         report (Mark…  │
+ ●│ pgup pgdn page          /         search        R         reports        │
  ●│ g G       top / end     t         CPU load ↔ t… s S F     stress tests   │
  ●│ enter     open / action a         empty DIMM s… q ctrl+c  quit · stop …  │
  ●│ esc       back · close  h         virtual NICs                           │

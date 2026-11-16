@@ -132,6 +132,12 @@ func Run(r *stress.Result) string {
 		}
 		m.table([]string{"Severity", "Component", "Alert"}, rows)
 	}
+	if r.After != nil {
+		healthSection(&m, r.After, "Component health after the test")
+		if r.Component == stress.CompCPU && r.After.CPU != nil {
+			coresTable(&m, r.After.CPU)
+		}
+	}
 	if len(r.Log) > 0 {
 		m.h(2, "Log")
 		lines := r.Log

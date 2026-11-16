@@ -37,7 +37,7 @@ func (m *Model) helpOverlay(base string) string {
 	health := col("Health", [][2]string{{"n", "next problem"}, {"!", "problems only"}, {"o", "worst ↔ physical"},
 		{"v", "switch view"}, {"/", "search"}, {"t", "CPU load ↔ temp"}, {"a", "empty DIMM slots"}, {"h", "virtual NICs"}})
 	data := col("Data · stress", [][2]string{{"r", "refresh now"}, {"p", "pause / resume"}, {"e", "export JSON + .md"}, {"c", "copy serial"},
-		{"R", "report (Markdown)"}, {"s S F", "stress tests"}, {"q ctrl+c", "quit · stop all"}})
+		{"R", "reports"}, {"s S F", "stress tests"}, {"q ctrl+c", "quit · stop all"}})
 	keys := lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(colW).Render(nav),
 		lipgloss.NewStyle().Width(colW).Render(health), lipgloss.NewStyle().Width(colW).Render(data))
 
