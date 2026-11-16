@@ -552,8 +552,14 @@ source's crit threshold, else `--crit-temp`; CPU packages only 5 °C above
 their limit, because a CPU throttles itself at its maximum and running
 there is the point of a stress test), `NewMCE`, `NewUncorrectableECC`, `PSUFault`,
 `RedundancyLost`, `NewSMARTErrors` (in-scope disks), and `MemoryPressure`
-(the memory test only: swap-out delta > 0, `oom_kill` delta > 0, PSI
-`some avg10` > 10 %, or MemAvailable < reserve).
+(the memory test only: `oom_kill` delta > 0, MemAvailable < half the
+reserve, the test's own memory in swap (`VmSwap` > 64 MiB), or thrashing:
+PSI `full avg10` > 25 %, or without PSI > 1 GiB swapped back in above the
+background rate). The built-in test locks its buffer with `mlock`, so the
+kernel paging out idle memory of other processes to make room is expected
+and only logged. During a memory test Tyr sets its `oom_score_adj` to
+1000, so an OOM kill takes the test, not a service. The size goes up to
+100 % of MemAvailable minus the reserve (max(1 GiB, 5 % of RAM)).
 
 On a trip, the engine cancels the test's context and gives `Run` 2 s to return.
 Then it closes everything registered with `Track`. If anything is still

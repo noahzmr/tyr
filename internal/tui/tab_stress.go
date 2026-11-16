@@ -382,7 +382,7 @@ func (s *stressTab) change(f string, d int) {
 	case "duration":
 		s.duration = cycle(s.duration, d, len(durations))
 	case "mempct":
-		s.memPct = min(90, max(10, s.memPct+10*d))
+		s.memPct = min(100, max(10, s.memPct+10*d))
 	case "stmode":
 		s.stMode, s.stTarget = cycle(s.stMode, d, 2), 0
 	case "sttarget":

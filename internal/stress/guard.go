@@ -16,11 +16,14 @@ type Sample struct {
 
 // VMStat holds memory-pressure indicators relative to the baseline.
 type VMStat struct {
-	SwapOutPages   int64
+	SwapOutPages   int64 // other processes paged out above the background rate (reclaim, not a trip)
+	SwapInPages    int64 // paged back in above the background rate (thrashing without PSI)
 	OOMKills       int64
 	MemAvailable   uint64
-	ReserveBytes   uint64 // abort when MemAvailable drops below this (memory test)
-	PSISomeAvg10   float64
+	ReserveBytes   uint64  // abort when MemAvailable drops below this (memory test)
+	TestSwapBytes  uint64  // Tyr's own memory in swap (VmSwap): the test no longer tests RAM
+	PSISomeAvg10   float64 // some task stalled on memory
+	PSIFullAvg10   float64 // all non-idle tasks stalled on memory: thrashing
 	HavePSI, Valid bool
 }
 
@@ -191,6 +194,14 @@ func RuleNewSMARTErrors(disks []string) Rule {
 
 // RuleMemoryPressure protects the host during the memory test: no
 // swapping, no OOM kills, and MemAvailable above the reserve.
+// Memory-pressure limits. Swapping out idle pages of other processes is
+// the kernel making room for the test and does not trip; the test's own
+// pages are locked in RAM.
+const (
+	testSwapLimit    = 64 << 20
+	swapInLimitPages = 1 << 18 // 1 GiB of 4 KiB pages
+)
+
 func RuleMemoryPressure() Rule {
 	return ruleFunc{"memory_pressure", func(_ *model.Snapshot, s Sample) (bool, string) {
 		v := s.VM
@@ -199,12 +210,14 @@ func RuleMemoryPressure() Rule {
 			return false, ""
 		case v.OOMKills > 0:
 			return true, fmt.Sprintf("the kernel OOM-killed %d processes", v.OOMKills)
-		case v.SwapOutPages > 4096:
-			return true, fmt.Sprintf("the host started swapping (%d MiB swapped out above its normal rate)", v.SwapOutPages*4/1024)
 		case v.ReserveBytes > 0 && v.MemAvailable < v.ReserveBytes:
 			return true, fmt.Sprintf("available memory below the reserve (%d MiB < %d MiB)", v.MemAvailable>>20, v.ReserveBytes>>20)
-		case v.HavePSI && v.PSISomeAvg10 > 25:
-			return true, fmt.Sprintf("memory pressure stall %.0f%% (PSI some avg10)", v.PSISomeAvg10)
+		case v.TestSwapBytes > testSwapLimit:
+			return true, fmt.Sprintf("the test's own memory is going to swap (%d MiB): RAM cannot hold it, lower --mem-percent", v.TestSwapBytes>>20)
+		case v.HavePSI && v.PSIFullAvg10 > 25:
+			return true, fmt.Sprintf("the host is thrashing: all tasks stalled on memory %.0f%% of the time (PSI full avg10)", v.PSIFullAvg10)
+		case !v.HavePSI && v.SwapInPages > swapInLimitPages:
+			return true, fmt.Sprintf("the host is thrashing: %d MiB paged back in from swap", v.SwapInPages*4/1024)
 		}
 		return false, ""
 	}}

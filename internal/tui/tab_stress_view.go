@@ -221,7 +221,7 @@ func (s *stressTab) formLeft(t *Theme, w int) string {
 			}
 			row(i, "CPUs", s.textField(t, f, v, 24), "enter to edit · e.g. 0-7,16")
 		case "mempct":
-			row(i, "Memory", stepper(t, fmt.Sprintf("%d %% of available", s.memPct), focused), "max(1 GiB, 5 %) stays free")
+			row(i, "Memory", stepper(t, fmt.Sprintf("%d %% of available", s.memPct), focused), "locked in RAM · max(1 GiB, 5 %) stays free")
 		case "stmode":
 			row(i, "Mode", pill(t, "read-only scan", s.stMode == 0)+pill(t, "file write + verify", s.stMode == 1),
 				[]string{"never writes", "temporary file, removed after"}[s.stMode])

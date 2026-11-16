@@ -38,7 +38,7 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.StringVar(&f.engine, "engine", stress.EngBuiltin, "builtin, stress-ng, mprime (cpu), memtester (memory), iperf3 (network)")
 	fs.DurationVar(&f.duration, "duration", 5*time.Minute, "load duration per component")
 	fs.StringVar(&f.cpus, "cpus", "", "CPU list to load, e.g. 0-7 (default: all online)")
-	fs.IntVar(&f.memPct, "mem-percent", 70, "memory test size in percent of available memory (a reserve always stays free)")
+	fs.IntVar(&f.memPct, "mem-percent", 70, "memory test size in percent of available memory, up to 100 (a reserve of max(1 GiB, 5 % of RAM) always stays free)")
 	fs.StringVar(&f.mode, "mode", "read", "storage: read (read-only surface scan of a device) or file (write+verify a temporary file on a filesystem)")
 	fs.StringVar(&f.target, "target", "", "storage: /dev/sdX or all (read), a mountpoint (file); network: peer host[:port]")
 	fs.StringVar(&f.size, "size", "", "storage file test size, e.g. 4G (default min(4G, 10% of free space))")

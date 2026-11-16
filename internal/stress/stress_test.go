@@ -98,6 +98,14 @@ func TestMemoryBuiltinPatterns(t *testing.T) {
 	if size, _ := memSize(Config{}, env); size != 128<<20 {
 		t.Fatalf("size %d, want 128 MiB (keep 1 GiB free)", size)
 	}
+	// 100 % takes everything available except the reserve (16 GiB RAM → 1 GiB)
+	big := hostEnv(&model.Snapshot{Memory: &model.Memory{TotalBytes: 16 << 30, AvailableBytes: 10 << 30}})
+	if size, _ := memSize(Config{MemoryPercent: 100}, big); size != 9<<30 {
+		t.Errorf("100%%: size %d, want 9 GiB", size)
+	}
+	if size, _ := memSize(Config{MemoryPercent: 150}, big); size != 9<<30 {
+		t.Errorf("150%%: size %d, want 9 GiB (capped at 100)", size)
+	}
 	run := func() *fakeRT {
 		ctx, cancel := context.WithTimeout(withEnv(context.Background(), env), 1500*time.Millisecond)
 		defer cancel()
@@ -373,7 +381,13 @@ func TestGuardRules(t *testing.T) {
 		{RuleNewSMARTErrors([]string{"sda"}), Sample{Deltas: map[string]int64{"disk.sda.smart.pending": 2}}, true},
 		{RuleNewSMARTErrors([]string{"sda"}), Sample{Deltas: map[string]int64{"disk.sdb.smart.pending": 2}}, false},
 		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, OOMKills: 1}}, true},
-		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, SwapOutPages: 5000}}, true},
+		// the kernel paging out other processes to make room does not stop the test …
+		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, SwapOutPages: 1 << 20, HavePSI: true, PSISomeAvg10: 40}}, false},
+		// … the test's own memory in swap, or thrashing, does
+		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, TestSwapBytes: 200 << 20}}, true},
+		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, HavePSI: true, PSIFullAvg10: 30}}, true},
+		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, SwapInPages: 1 << 19}}, true},
+		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, HavePSI: true, SwapInPages: 1 << 19}}, false},
 		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, MemAvailable: 100 << 20, ReserveBytes: 512 << 20}}, true},
 		{RuleMemoryPressure(), Sample{VM: VMStat{Valid: true, MemAvailable: 4 << 30, ReserveBytes: 512 << 20}}, false},
 	}

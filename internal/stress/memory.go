@@ -23,9 +23,10 @@ func memSize(cfg Config, env *Env) (size uint64, why string) {
 		return 0, "memory information unavailable"
 	}
 	pct := cfg.MemoryPercent
-	if pct <= 0 || pct > 95 {
+	if pct <= 0 {
 		pct = 70
 	}
+	pct = min(pct, 100) // 100 % = everything available except the reserve
 	size = m.AvailableBytes / 100 * uint64(pct)
 	reserve := memReserve(m.TotalBytes)
 	if m.AvailableBytes <= reserve+(64<<20) {
@@ -59,7 +60,8 @@ func memPlan(cfg Config, env *Env, engine string) *Plan {
 	p.Scope = []string{fmt.Sprintf("%s of %s available memory (%d%%), %s stays free", humanBytes(size), humanBytes(m.AvailableBytes),
 		max(1, int(size*100/m.AvailableBytes)), humanBytes(memReserve(m.TotalBytes)))}
 	p.Impact = []string{"Takes the memory above away from other programs for " + fmtDur(cfg.Duration) + "; page cache is dropped as needed.",
-		"The guard stops the test if the host starts swapping, the OOM killer runs, or available memory falls below the reserve."}
+		"The test memory is locked in RAM, so the kernel may move idle memory of other programs to swap to make room.",
+		"The guard stops the test if the test memory itself reaches swap, the host thrashes, the OOM killer runs, or available memory falls below the reserve."}
 	if m.SwapTotalBytes > 0 && m.SwapUsedBytes > m.SwapTotalBytes/2 {
 		p.Warnings = append(p.Warnings, "swap is already more than half used")
 	}
@@ -96,6 +98,13 @@ func (memBuiltin) Run(ctx context.Context, cfg Config, _ *Plan, rt Runtime) erro
 	release := func() { once.Do(func() { _ = unix.Munmap(buf) }) }
 	defer release()
 	rt.Track(closerFunc(func() error { release(); return nil }))
+	// Lock the buffer in RAM: a memory test must test RAM, not swap, and
+	// the kernel may then page out other processes to make room.
+	if err := unix.Mlock(buf); err != nil {
+		rt.Logf("could not lock the test memory in RAM (%v, see ulimit -l); the guard stops the test if it reaches swap", err)
+	} else {
+		rt.Logf("%s locked in RAM", humanBytes(size))
+	}
 	words := unsafe.Slice((*uint64)(unsafe.Pointer(&buf[0])), len(buf)/8)
 
 	workers := 1

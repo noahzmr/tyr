@@ -2,6 +2,7 @@ package stress
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -11,10 +12,11 @@ import (
 )
 
 type vmRaw struct {
-	pswpout, oomKill uint64
-	ok               bool
-	swapRate         float64 // background pages/s before the test
-	at               time.Time
+	pswpout, pswpin, oomKill uint64
+	ok                       bool
+	swapRate                 float64 // background swap-out pages/s before the test
+	swapInRate               float64 // background swap-in pages/s before the test
+	at                       time.Time
 }
 
 func readVM(env *Env) vmRaw {
@@ -32,6 +34,8 @@ func readVM(env *Env) vmRaw {
 		switch f[0] {
 		case "pswpout":
 			v.pswpout = n
+		case "pswpin":
+			v.pswpin = n
 		case "oom_kill":
 			v.oomKill = n
 		}
@@ -50,6 +54,10 @@ func vmDelta(env *Env, base vmRaw, cfg Config) VMStat {
 		out.SwapOutPages = int64(cur.pswpout) - int64(base.pswpout)
 		if !base.at.IsZero() {
 			out.SwapOutPages -= int64(base.swapRate * time.Since(base.at).Seconds() * 1.5)
+		}
+		out.SwapInPages = int64(cur.pswpin) - int64(base.pswpin)
+		if !base.at.IsZero() {
+			out.SwapInPages -= int64(base.swapInRate * time.Since(base.at).Seconds() * 1.5)
 		}
 		out.OOMKills = int64(cur.oomKill) - int64(base.oomKill)
 	}
@@ -70,17 +78,49 @@ func vmDelta(env *Env, base vmRaw, cfg Config) VMStat {
 		}
 		if cfg.Component == CompMemory {
 			out.ReserveBytes = memReserve(total) / 2
+			out.TestSwapBytes = selfSwap(env)
 		}
 	}
 	if p, err := hostfs.String(env.Collector.FS, "/proc/pressure/memory"); err == nil {
-		for _, f := range strings.Fields(strings.SplitN(p, "\n", 2)[0]) {
-			if v, ok := strings.CutPrefix(f, "avg10="); ok {
-				out.PSISomeAvg10, _ = strconv.ParseFloat(v, 64)
-				out.HavePSI = true
+		for _, line := range strings.Split(p, "\n") {
+			f := strings.Fields(line)
+			if len(f) < 2 {
+				continue
+			}
+			if v, ok := strings.CutPrefix(f[1], "avg10="); ok {
+				x, _ := strconv.ParseFloat(v, 64)
+				switch f[0] {
+				case "some":
+					out.PSISomeAvg10, out.HavePSI = x, true
+				case "full":
+					out.PSIFullAvg10 = x
+				}
 			}
 		}
 	}
 	return out
+}
+
+// selfSwap is how much of Tyr's own memory (the built-in memory test's
+// buffer) is in swap: VmSwap of /proc/self/status.
+func selfSwap(env *Env) uint64 {
+	if env.Simulated() {
+		return 0
+	}
+	b, err := os.ReadFile("/proc/self/status")
+	if err != nil {
+		return 0
+	}
+	for _, l := range strings.Split(string(b), "\n") {
+		if v, ok := strings.CutPrefix(l, "VmSwap:"); ok {
+			f := strings.Fields(v)
+			if len(f) > 0 {
+				n, _ := strconv.ParseUint(f[0], 10, 64)
+				return n << 10
+			}
+		}
+	}
+	return 0
 }
 
 // diskRates turns /proc/diskstats sector counters into bytes/s.
@@ -178,4 +218,19 @@ func humanBytes(b uint64) string {
 		return fmt.Sprintf("%.0f MiB", float64(b)/(1<<20))
 	}
 	return fmt.Sprintf("%d KiB", b>>10)
+}
+
+// preferOOMKill sets this process's oom_score_adj to 1000 and returns a
+// function that puts the old value back (lowering it needs
+// CAP_SYS_RESOURCE; without it Tyr simply stays the preferred victim).
+func preferOOMKill() (func(), error) {
+	const f = "/proc/self/oom_score_adj"
+	old, err := os.ReadFile(f)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(f, []byte("1000"), 0); err != nil {
+		return nil, err
+	}
+	return func() { _ = os.WriteFile(f, old, 0) }, nil
 }

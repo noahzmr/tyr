@@ -274,10 +274,22 @@ func (r *Run) run(ctx context.Context, env *Env, t Test) {
 	if env.prepVM.ok && baseVM.ok && baseVM.pswpout >= env.prepVM.pswpout {
 		if dt := time.Since(env.prepAt).Seconds(); dt > 0.2 {
 			baseVM.swapRate = float64(baseVM.pswpout-env.prepVM.pswpout) / dt
+			if baseVM.pswpin >= env.prepVM.pswpin {
+				baseVM.swapInRate = float64(baseVM.pswpin-env.prepVM.pswpin) / dt
+			}
 		}
 	}
 	baseVM.at = time.Now()
 
+	if r.Cfg.Component == CompMemory && !env.Simulated() {
+		// Should memory run out after all, the OOM killer takes the test
+		// (and the engines it starts, which inherit this), not a service.
+		if restore, err := preferOOMKill(); err == nil {
+			defer restore()
+		} else {
+			rt.Logf("could not make the test the OOM killer's first choice: %v", err)
+		}
+	}
 	r.emit(Event{Kind: EvPhase, Phase: "load"}, true)
 	loadCtx, stopLoad := context.WithTimeout(ctx, r.Cfg.Duration)
 	defer stopLoad()
@@ -362,6 +374,8 @@ func (r *Run) monitor(ctx context.Context, env *Env, base *model.Snapshot, baseC
 	prev := base
 	disk := newDiskRates(env)
 	start := time.Now()
+	var swapNoted int64
+	rt := runtime{r}
 	for {
 		t0 := time.Now()
 		cctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -372,13 +386,16 @@ func (r *Run) monitor(ctx context.Context, env *Env, base *model.Snapshot, baseC
 		}
 		prev = snap
 		s := Sample{Snap: snap, Deltas: deltas(baseCounters, snap.Counters()), VM: vmDelta(env, baseVM, r.Cfg)}
+		if mib := s.VM.SwapOutPages * 4 / 1024; s.VM.Valid && mib >= swapNoted+256 { // say so, but do not stop
+			swapNoted = mib
+			rt.Logf("the kernel moved %d MiB of other processes' idle memory to swap to make room", mib)
+		}
 		for _, rule := range rules {
 			if ok, why := rule.Eval(base, s); ok {
 				trip(why)
 				return
 			}
 		}
-		rt := runtime{r}
 		hostMetrics(rt, snap, disk)
 		el := time.Since(start)
 		f := min(1, el.Seconds()/r.Cfg.Duration.Seconds())
