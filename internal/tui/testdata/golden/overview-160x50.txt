@@ -47,4 +47,4 @@ Findings 14 ✖ · 22 ▲ ──────────────────
  ▲ Storage  sdc           sdc: 24 reallocated sectors                                                                                             10:00        │
  ▲ Storage  sdd           sdd: 31 I/O errors (ioerr_cnt)                                                                                          10:00        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  q quit  ? help
+←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help

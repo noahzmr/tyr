@@ -37,4 +37,4 @@ Temperatures ──────────────────────�
 ▲ CPU1 Package          93°C  warn 90°C · crit 100°C (hwmon)  coretemp
 
 lines 1–35 of 64 · ↑↓ pgup pgdn
-↑↓ move  v view  ! problems  q quit  ? help
+↑↓ move  v view  S stress this  ! problems  q quit  ? help

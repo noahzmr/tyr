@@ -37,4 +37,4 @@ Package 0 °C                                           52°C Package 1 °C     
    20┤                                                         20┤
       └────────────────────────────────────────────────────       └────────────────────────────────────────────────────
        -5s                      -2s                     now        -5s                      -2s                     now
-←→ move  enter open  v view  t load/temp  ! problems  q quit  ? help
+←→ move  enter open  v view  t load/temp  S stress this  ! problems  q quit  ? help

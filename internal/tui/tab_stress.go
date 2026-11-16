@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -62,6 +63,7 @@ type stressTab struct {
 	critTemp *float64
 	history  []stress.Result
 	scroll   int // result view
+	inst     stress.InstallPlan
 }
 
 const (
@@ -70,6 +72,7 @@ const (
 	stConfirm
 	stRunning
 	stResult
+	stInstall // install confirmation for missing engines
 )
 
 var stressComps = []string{"CPU", "Memory", "Storage", "Network", "Full test"}
@@ -95,7 +98,13 @@ type (
 		ev stress.Event
 		ok bool
 	}
+	installDoneMsg struct {
+		plan stress.InstallPlan
+		err  error
+	}
 )
+
+var keyInstall = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "install engines"))
 
 func (s *stressTab) Title() string          { return "Stress" }
 func (s *stressTab) Module() model.ModuleID { return "" }
@@ -109,7 +118,9 @@ func (s *stressTab) SetData(x *model.Snapshot) {
 
 // Capturing: text fields and the confirmation input take all keys; a
 // running test takes esc (abort).
-func (s *stressTab) Capturing() bool { return s.editing || s.state == stConfirm }
+func (s *stressTab) Capturing() bool {
+	return s.editing || s.state == stConfirm || s.state == stInstall
+}
 
 // Running reports whether a test is in progress.
 func (s *stressTab) Running() bool { return s.state == stRunning || s.state == stPreparing }
@@ -122,6 +133,12 @@ func (s *stressTab) Help() []key.Binding {
 	case stRunning, stPreparing:
 		return []key.Binding{key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "abort cleanly")),
 			key.NewBinding(key.WithKeys("1"), key.WithHelp("1–0", "other tabs stay live"))}
+	case stInstall:
+		if s.inst.Blocked != "" {
+			return []key.Binding{key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back"))}
+		}
+		return []key.Binding{key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "install")),
+			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel"))}
 	case stResult:
 		return []key.Binding{key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter esc", "back to form")),
 			key.NewBinding(key.WithKeys("up"), key.WithHelp("↑↓", "scroll")), key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "export"))}
@@ -130,8 +147,12 @@ func (s *stressTab) Help() []key.Binding {
 		return []key.Binding{key.NewBinding(key.WithKeys("up"), key.WithHelp("↑↓", "field / run")),
 			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "open result"))}
 	}
-	return []key.Binding{key.NewBinding(key.WithKeys("up"), key.WithHelp("↑↓", "field")), key.NewBinding(key.WithKeys("left", "right"), key.WithHelp("←→", "change")),
+	b := []key.Binding{key.NewBinding(key.WithKeys("up"), key.WithHelp("↑↓", "field")), key.NewBinding(key.WithKeys("left", "right"), key.WithHelp("←→", "change")),
 		key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "edit / start"))}
+	if len(s.missing()) > 0 {
+		b = append(b, keyInstall)
+	}
+	return b
 }
 
 func (s *stressTab) component() stress.Component {
@@ -208,6 +229,19 @@ func (s *stressTab) config(c stress.Component) stress.Config {
 
 func (s *stressTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 	switch s.state {
+	case stInstall:
+		switch msg.String() {
+		case "esc":
+			s.state = stForm
+		case "enter":
+			if s.inst.Blocked == "" {
+				s.state = stForm
+				plan := s.inst
+				c := exec.Command(plan.Argv[0], plan.Argv[1:]...)
+				return tea.ExecProcess(c, func(err error) tea.Msg { return installDoneMsg{plan: plan, err: err} })
+			}
+		}
+		return nil
 	case stConfirm:
 		switch msg.String() {
 		case "esc":
@@ -279,6 +313,13 @@ func (s *stressTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	}
 	switch {
+	case key.Matches(msg, keyInstall):
+		miss := s.missing()
+		if len(miss) == 0 {
+			return func() tea.Msg { return statusMsg("all engines for this test are installed") }
+		}
+		s.inst = stress.PlanInstall(s.env, miss)
+		s.state = stInstall
 	case key.Matches(msg, s.keys.Up):
 		s.field = max(0, s.field-1)
 	case key.Matches(msg, s.keys.Down):
@@ -439,9 +480,43 @@ func waitEvent(r *stress.Run) tea.Cmd {
 	}
 }
 
+// missing lists the unavailable engines of the selected test (all
+// components for the full test).
+func (s *stressTab) missing() []string {
+	comps := stress.Components
+	if c := s.component(); c != "" {
+		comps = []stress.Component{c}
+	}
+	return stress.MissingEngines(s.env, comps...)
+}
+
+// installResult re-detects the engines after the package manager ran.
+func (s *stressTab) installResult(m installDoneMsg) string {
+	var now, still []string
+	for _, p := range m.plan.Packages {
+		if _, err := s.env.Collector.Exec.LookPath(p); err == nil {
+			now = append(now, p)
+		} else {
+			still = append(still, p)
+		}
+	}
+	switch {
+	case len(still) == 0:
+		return "installed " + strings.Join(now, ", ") + " · engines re-detected"
+	case m.err != nil && m.plan.Manager == "apt-get":
+		return "install failed (" + m.err.Error() + "): " + strings.Join(still, ", ") + " still missing · apt-get update may help"
+	case m.err != nil:
+		return "install failed (" + m.err.Error() + "): " + strings.Join(still, ", ") + " still missing"
+	}
+	return strings.Join(still, ", ") + " still not found after the install"
+}
+
 // HandleMsg receives the tab's own messages (routed by the root model).
 func (s *stressTab) HandleMsg(msg tea.Msg) (tea.Cmd, bool) {
 	switch msg := msg.(type) {
+	case installDoneMsg:
+		text := s.installResult(msg)
+		return func() tea.Msg { return statusMsg(text) }, true
 	case stressPlanMsg:
 		if msg.err != "" {
 			s.state, s.prepErr = stForm, msg.err

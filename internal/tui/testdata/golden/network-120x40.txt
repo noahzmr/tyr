@@ -37,4 +37,4 @@ Findings · Network 2 ✖ · 4 ▲ ───────────────
 
 
 
-↑↓ move  enter open  h virtual  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  h virtual  n next problem  S stress this  ! problems  q quit  ? help

@@ -37,4 +37,4 @@ New run ────────────────────────
 
 
 
-↑↓ field  ←→ change  enter edit / start  ! problems  q quit  ? help
+↑↓ field  ←→ change  enter edit / start  i install engines  ! problems  q quit  ? help

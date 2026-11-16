@@ -21,4 +21,4 @@ P2-DIMMB1 Samsung M393A4K40EB3-CWE · DIMM · rank 2 · ECC · S/N 3A5F0012
 Findings · Memory 3 ✖ · 6 ▲ ──────────────────────────────── n next · enter open
  ✖ sel          1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrecta…
    … 8 more · enter on a row opens its page
-↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  ? help
+↑↓ move  enter open  v view  a empty slots  n next problem  ? help

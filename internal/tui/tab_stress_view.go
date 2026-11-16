@@ -75,6 +75,8 @@ func (s *stressTab) View(t *Theme) string {
 		return t.Bold.Render("Stress test") + "\n\n  " + t.Message.Render("collecting the baseline snapshot and checking the plan …")
 	case stConfirm:
 		return s.confirmView(t)
+	case stInstall:
+		return s.installView(t)
 	case stRunning:
 		return s.liveView(t)
 	case stResult:
@@ -95,9 +97,44 @@ var engineFix = map[string]string{"stress-ng": "apt install stress-ng", "memtest
 // install hint; other reasons (fixtures mode) have no hint.
 func engineReason(e stress.EngineInfo) (string, string) {
 	if strings.HasSuffix(e.Reason, " is not installed") {
-		return "not installed", engineFix[e.Name]
+		if e.Name == stress.EngMprime {
+			return "not installed", engineFix[e.Name]
+		}
+		return "not installed", "i installs " + engineFix[e.Name][len("apt install "):]
 	}
 	return e.Reason, ""
+}
+
+// installView: the install confirmation over the faint form — packages,
+// the exact command, what happens to the terminal, or why nothing can be
+// installed.
+func (s *stressTab) installView(t *Theme) string {
+	p := s.inst
+	var lines []string
+	if len(p.Packages) > 0 {
+		lines = append(lines, t.Dim.Render(pad("Packages", 10))+t.Bold.Render(strings.Join(p.Packages, " ")))
+	}
+	if len(p.Argv) > 0 {
+		lines = append(lines, t.Dim.Render(pad("Command", 10))+t.Bold.Render(p.Command()))
+	}
+	for _, x := range p.Skipped {
+		lines = append(lines, t.Sub.Render("· "+x))
+	}
+	lines = append(lines, "")
+	kind := t.Accent
+	if p.Blocked != "" {
+		kind = t.Warn
+		lines = append(lines, t.StatusText(model.StatusWarn, "▲ "+p.Blocked), "", t.Sub.Render("esc back"))
+	} else {
+		who := "the package manager"
+		if p.Sudo {
+			who += " through sudo, which may ask for your password"
+		}
+		lines = append(lines, t.Dim.Render("Tyr hands the terminal to "+who+". "+p.Manager+" shows what it installs and may ask to confirm. "+
+			"The TUI comes back when it finishes and detects the engines again."), "",
+			button(t, "Install", true)+"   "+t.Sub.Render("enter install · esc cancel"))
+	}
+	return overlay(t, s.formView(t), kind, "Install engines", strings.Join(lines, "\n"), s.w, s.h)
 }
 
 // compTitle names a component as the form shows it.
@@ -341,6 +378,9 @@ func (s *stressTab) formRight(t *Theme, w int) string {
 				lines = append(lines, truncate(lipgloss.NewStyle().Foreground(t.NA).Render("○")+" "+t.Dim.Render(pad(e.Name, 10))+t.Sub.Render(reason), w))
 			}
 		}
+	}
+	if len(s.missing()) > 0 && !s.env.Simulated() {
+		lines = append(lines, t.Sub.Render("i installs the missing engines of this test"))
 	}
 	lines = append(lines, "", t.HeadingRight("Recent runs", "", "enter open result", w))
 	if len(s.history) == 0 {

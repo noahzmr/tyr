@@ -47,4 +47,4 @@ Security vulnerabilities 9 ok  1 vulnerable ────────────
 ● l1tf                      Not affected
 ● mds                       Not affected
 lines 1–45 of 62 · ↑↓ pgup pgdn
-↑↓ move  v view  ! problems  q quit  ? help
+↑↓ move  v view  S stress this  ! problems  q quit  ? help

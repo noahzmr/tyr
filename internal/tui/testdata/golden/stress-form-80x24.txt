@@ -21,4 +21,4 @@ New run ────────────────────────
 ▲ cpu7 is offline and will be skipped.
 ▲ CPU1 Package is already at 93 °C; the guard may stop the test early.
 
-↑↓ field  ←→ change  enter edit / start  ! problems  q quit  ? help
+↑↓ field  ←→ change  enter edit / start  i install engines  ! problems  ? help

@@ -21,4 +21,4 @@ Sync    none
 
 Findings · Storage 6 ✖ · 5 ▲ ─────────────────────────────── n next · enter open
    … 11 more · enter on a row opens its page
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

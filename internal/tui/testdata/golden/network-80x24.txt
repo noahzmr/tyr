@@ -21,4 +21,4 @@ MAC / MTU  b4:96:91:a0:00:10 · 9000
 Findings · Network 2 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
  ✖ bond0        bond0 degraded: ens1f1 down (1/2 members up)
    … 5 more · enter on a row opens its page
-↑↓ move  enter open  h virtual  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  h virtual  n next problem  S stress this  ? help

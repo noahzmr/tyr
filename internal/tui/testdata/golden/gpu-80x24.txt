@@ -21,4 +21,4 @@ Findings · GPU/NPU 2 ✖ · 4 ▲ ───────────────
 
 NPU ────────────────────────────────────────────────────────────────────────────
  · not applicable: no NPU found (checked /sys/class/accel, amdxdna, intel_vpu)
-↑↓ move  enter open  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  n next problem  S stress this  ! problems  q quit  ? help

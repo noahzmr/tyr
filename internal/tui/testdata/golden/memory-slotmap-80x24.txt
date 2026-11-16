@@ -21,4 +21,4 @@ P2 ─────────────────────────�
  ch A  ▕● 32G       ▏▕┄ empty ┄   ▏
 ▌ch B  ▕✖ 32G       ▏▕┄ empty ┄   ▏  ◂ 1 uncorrectable ECC error on P2-DIMMB1
  ch C  ▕▲ 32G       ▏▕┄ empty ┄   ▏  ◂ P2-DIMMC1 Temp at 82°C · 14 correctable…
-↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  ? help
+↑↓ move  enter open  v view  a empty slots  n next problem  ? help

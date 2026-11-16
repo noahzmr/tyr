@@ -21,4 +21,4 @@ Findings · Storage 6 ✖ · 5 ▲ ───────────────
  ✖ md1          md1 (raid5) degraded: 3/4 devices, failed sdd1
  ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
    … 8 more · enter on a row opens its page
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

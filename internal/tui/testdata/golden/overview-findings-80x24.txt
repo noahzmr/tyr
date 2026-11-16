@@ -21,4 +21,4 @@ Findings 14 ✖ · 22 ▲ ──────────────────
  ✖ Storage  RAID virtual drive 0/0 (RAID5 archive) state Dgrd                  │
  ✖ Storage  RAID physical drive 252:2 (ST2000NM0055-1V4104) state Fail…        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  q quit  ? help
+←→↑↓ move  enter open  n next problem  o order  e export  S stress this  ? help

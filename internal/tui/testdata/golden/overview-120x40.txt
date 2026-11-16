@@ -37,4 +37,4 @@ Findings 14 ✖ · 22 ▲ ──────────────────
  ▲ Memory   sel           1 memory event in BMC SEL, latest 2026-11-11 09:00: Correctable ECC @DIMMC1(CP… 10:00        │
  ▲ Memory   P2-DIMMC1     14 correctable ECC errors on P2-DIMMC1                                          10:00        │
 
-←→↑↓ move  enter open  n next problem  o order  e export  q quit  ? help
+←→↑↓ move  enter open  n next problem  o order  e export  S stress this  q quit  ? help

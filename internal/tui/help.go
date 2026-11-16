@@ -36,8 +36,8 @@ func (m *Model) helpOverlay(base string) string {
 		{"←→ hl", "move / regions"}, {"pgup pgdn", "page"}, {"g G", "top / end"}, {"enter", "open / action"}, {"esc", "back · close"}})
 	health := col("Health", [][2]string{{"n", "next problem"}, {"!", "problems only"}, {"o", "worst ↔ physical"},
 		{"v", "switch view"}, {"/", "search"}, {"t", "CPU load ↔ temp"}, {"a", "empty DIMM slots"}, {"h", "virtual NICs"}})
-	data := col("Data", [][2]string{{"r", "refresh now"}, {"p", "pause / resume"}, {"e", "export JSON"}, {"s", "go to Stress"},
-		{"c", "copy serial"}, {"q", "quit"}, {"ctrl+c", "stop all and quit"}})
+	data := col("Data · stress", [][2]string{{"r", "refresh now"}, {"p", "pause / resume"}, {"e", "export JSON"}, {"c", "copy serial"},
+		{"s", "Stress tab"}, {"S", "stress this"}, {"F", "full test"}, {"q ctrl+c", "quit · stop all"}})
 	keys := lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(colW).Render(nav),
 		lipgloss.NewStyle().Width(colW).Render(health), lipgloss.NewStyle().Width(colW).Render(data))
 
@@ -120,7 +120,7 @@ func (s *stressTab) HelpText() string {
 	case stConfirm:
 		return "type yes and press enter to start · esc cancels"
 	}
-	return "↑↓ field · ←→ change · enter edits a text field or starts (asks for confirmation) · ↓ past Start reaches recent runs, enter opens one"
+	return "↑↓ field · ←→ change · enter edits a text field or starts (asks for confirmation) · i installs missing engines through the package manager · ↓ past Start reaches recent runs, enter opens one"
 }
 
 func (v *inventoryTab) HelpText() string {

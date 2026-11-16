@@ -8,15 +8,15 @@
  ▲ sdc      HDD  ST4000NM000A-2HZ100                                     WJG0A003          4 TB  35     – PASSED     32
  ● nvme0n1  NVMe SAMSUNG MZQL21T9HCJR-00A07                              S64GNE0R100001  1.9 TB  39   3 % PASSED      0
  ● sda      ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮SSED      0
- ● sdb      │ Navigation                    Health                        Data                             │SSED      0
+ ● sdb      │ Navigation                    Health                        Data · stress                    │SSED      0
  ● sde      │ 1–0        switch tab         n          next problem       r          refresh now           │          0
             │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │
 sdd ────────│ ↑↓ jk      move               o          worst ↔ physical   e          export JSON           │l SMART page
-Model     ST│ ←→ hl      move / regions     v          switch view        s          go to Stress          │
-Serial    WJ│ pgup pgdn  page               /          search             c          copy serial           │
-Firmware  SN│ g G        top / end          t          CPU load ↔ temp    q          quit                  │
-Path      /d│ enter      open / action      a          empty DIMM slots   ctrl+c     stop all and quit     │)
-            │ esc        back · close       h          virtual NICs                                        │
+Model     ST│ ←→ hl      move / regions     v          switch view        c          copy serial           │
+Serial    WJ│ pgup pgdn  page               /          search             s          Stress tab            │
+Firmware  SN│ g G        top / end          t          CPU load ↔ temp    S          stress this           │
+Path      /d│ enter      open / action      a          empty DIMM slots   F          full test             │)
+            │ esc        back · close       h          virtual NICs       q ctrl+c   quit · stop all       │
 Findings · S│                                                                                              │· enter open
  ✖ sdd      │ This tab · Storage                                                                           │
  ✖ md1      │ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
@@ -37,4 +37,4 @@ Findings · S│                                                                
 
 
 
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help

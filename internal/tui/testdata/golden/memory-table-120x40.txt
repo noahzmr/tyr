@@ -37,4 +37,4 @@ Findings · Memory 3 ✖ · 6 ▲ ───────────────�
  ▲ P1-DIMMD1    DIMMs run at different speeds: P1-DIMMD1 at 2933 MT/s, others up to 3200 MT/s
  ▲ node1        NUMA node 1 has 220 GB, largest node has 252 GB
 
-↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  a empty slots  n next problem  S stress this  ! problems  q quit  ? help

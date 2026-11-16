@@ -37,4 +37,4 @@ NPU ─────────────────────────�
 
 
 
-↑↓ move  enter open  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  n next problem  S stress this  ! problems  q quit  ? help

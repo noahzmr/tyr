@@ -37,4 +37,4 @@ Findings · Memory 3 ✖ · 6 ▲ ───────────────�
  ▲ sel          1 memory event in BMC SEL, latest 2026-11-11 09:00: Correctable ECC @DIMMC1(CPU2)
  ▲ P2-DIMMC1    14 correctable ECC errors on P2-DIMMC1
    … 3 more · enter on a row opens its page
-↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  a empty slots  n next problem  S stress this  ! problems  q quit  ? help

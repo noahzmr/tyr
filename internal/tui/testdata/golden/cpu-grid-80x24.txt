@@ -21,4 +21,4 @@ Location  socket 0 · core 0             Throttle   0
 Siblings  0,32                          Core test  not run
                                         Deep idle  C6 60%
 
-←→ move  enter open  v view  t load/temp  ! problems  q quit  ? help
+←→ move  enter open  v view  t load/temp  S stress this  ! problems  ? help

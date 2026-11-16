@@ -385,6 +385,10 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		m.flash(map[bool]string{true: "showing problems only (! to show all)", false: "showing all rows"}[m.sess.prefs.problemsOnly])
 		m.refreshTabs()
 		return nil
+	case key.Matches(msg, keyStressThis):
+		return m.startStress(true)
+	case key.Matches(msg, keyFullTest):
+		return m.startStress(false)
 	case key.Matches(msg, keyCopy):
 		if _, ok := m.tabs[m.active].(serialer); ok {
 			return m.copySerial()
@@ -880,6 +884,9 @@ func (m *Model) footer() string {
 		if st.state != stForm {
 			return footerHints(t, hints, toastStr, m.width)
 		}
+	}
+	if _, ok := m.tabs[m.active].(stressTargeter); ok {
+		add(keyStressThis)
 	}
 	if m.active != 0 {
 		add(keyProblems)

@@ -37,4 +37,4 @@ Microcode  0xd0003e7                                        C1E   ████�
 Findings · CPU 1 ✖ · 3 ▲ ─────────────────────────────────────────────────────────────────────────── n next · enter open
  ✖ cpu7         1 core offline (cpu7)
    … 3 more · enter on a row opens its page
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help

@@ -21,4 +21,4 @@ Findings · Storage 6 ✖ · 5 ▲ ───────────────
  ▲ sdc          sdc: 24 reallocated sectors
  ▲ sdd          sdd: 31 I/O errors (ioerr_cnt)
 
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

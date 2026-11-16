@@ -1,11 +1,16 @@
 package tui
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
+
+	"github.com/noahzmr/tyr/internal/collector"
+	"github.com/noahzmr/tyr/internal/execx"
 	"github.com/noahzmr/tyr/internal/stress"
 )
 
@@ -153,5 +158,95 @@ func TestStressFormFieldsAndBlockedPlans(t *testing.T) {
 	run(m, "right")
 	if s := text(m); !strings.Contains(s, "○ stress-ng") {
 		t.Errorf("unavailable engine not shown\n%s", s)
+	}
+}
+
+func TestStressFromModuleTabs(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 120, 40)
+	st := m.stressTab()
+	confirm := func(label string, cmd tea.Cmd) {
+		t.Helper()
+		if cmd == nil {
+			t.Fatalf("%s: no prepare command (%q)", label, m.message)
+		}
+		m.Update(cmd())
+		if m.tabs[m.active] != tab(st) || st.state != stConfirm || !strings.Contains(text(m), "Confirm stress test") {
+			t.Fatalf("%s: not on the confirmation\n%s", label, text(m))
+		}
+		run(m, "esc")
+	}
+	// CPU: the selected CPU and its SMT sibling
+	focus(t, m, "2", "cpu12")
+	_, cmd := m.Update(press("S"))
+	confirm("cpu", cmd)
+	if st.comp != 0 || st.cpus != "12,44" {
+		t.Errorf("cpu request: comp %d cpus %q", st.comp, st.cpus)
+	}
+	// Storage: a read scan of the selected disk
+	focus(t, m, "4", "sdd")
+	_, cmd = m.Update(press("S"))
+	confirm("disk", cmd)
+	if st.comp != 2 || st.stMode != 0 || st.targets()[st.stTarget] != "/dev/sdd" {
+		t.Errorf("disk request: comp %d mode %d target %q", st.comp, st.stMode, st.targets()[st.stTarget])
+	}
+	// GPU: no engine, says why and stays
+	run(m, "7")
+	if _, cmd = m.Update(press("S")); cmd != nil || !strings.Contains(m.message, "no GPU/NPU stress engine") || m.tabs[m.active].Title() != "GPU/NPU" {
+		t.Errorf("gpu: %q", m.message)
+	}
+	// F from anywhere: the default full test (CPU list reset)
+	run(m, "0")
+	_, cmd = m.Update(press("F"))
+	confirm("full", cmd)
+	if st.comp != 4 || st.cpus != "" || len(st.plans) != 4 {
+		t.Errorf("full test: comp %d cpus %q plans %d", st.comp, st.cpus, len(st.plans))
+	}
+	// Overview: the focused card (CPU)
+	run(m, "1")
+	_, cmd = m.Update(press("S"))
+	confirm("overview", cmd)
+	if st.comp != 0 {
+		t.Errorf("overview card: comp %d", st.comp)
+	}
+}
+
+func TestStressInstallEngines(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 120, 40)
+	run(m, "9")
+	st := m.stressTab()
+	// fixtures mode: nothing is installed
+	run(m, "i")
+	if s := text(m); st.state != stInstall || !strings.Contains(s, "Install engines") || !strings.Contains(s, "fixtures mode: nothing is installed") {
+		t.Fatalf("fixtures install\n%s", s)
+	}
+	if _, cmd := m.Update(press("enter")); cmd != nil {
+		t.Fatal("blocked install ran something")
+	}
+	run(m, "esc")
+	// a host with apt-get and sudo, not root, stress-ng missing
+	rp := &execx.Replay{Tools: map[string]string{"apt-get": "/usr/bin/apt-get", "sudo": "/usr/bin/sudo"}}
+	st.env = &stress.Env{Collector: &collector.Env{Exec: rp}}
+	run(m, "i")
+	s := text(m)
+	for _, want := range []string{"Packages  stress-ng", "Command   sudo apt-get install stress-ng", "mprime has no distribution package", "sudo, which may ask for your password"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("install overlay missing %q\n%s", want, s)
+		}
+	}
+	if _, cmd := m.Update(press("enter")); cmd == nil || st.state != stForm {
+		t.Fatalf("enter did not hand over to the package manager (state %d)", st.state)
+	}
+	plan := stress.PlanInstall(st.env, []string{"stress-ng"})
+	rp.Tools["stress-ng"] = "/usr/bin/stress-ng"
+	_, cmd := m.Update(installDoneMsg{plan: plan})
+	m.Update(cmd())
+	if !strings.Contains(m.message, "installed stress-ng") {
+		t.Errorf("after install: %q", m.message)
+	}
+	delete(rp.Tools, "stress-ng")
+	_, cmd = m.Update(installDoneMsg{plan: plan, err: errors.New("exit status 100")})
+	m.Update(cmd())
+	if !strings.Contains(m.message, "install failed (exit status 100)") || !strings.Contains(m.message, "apt-get update may help") {
+		t.Errorf("failed install: %q", m.message)
 	}
 }

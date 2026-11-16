@@ -47,4 +47,4 @@ Findings · Storage 6 ✖ · 5 ▲ ───────────────
 
 
 
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help

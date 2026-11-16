@@ -21,4 +21,4 @@ Topology ───────────────────────�
 Counts    2 sockets · 32 cores · 64 threads
 Online    0-6,8-63
 lines 1–19 of 69 · ↑↓ pgup pgdn
-↑↓ move  v view  ! problems  q quit  ? help
+↑↓ move  v view  S stress this  ! problems  q quit  ? help

@@ -1,15 +1,15 @@
  TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
 1✖36 2✖4 3✖9  4 Storage ✖11  5○ 6✖6 7✖6 8○ 9 0                            ? help
  ✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮ms
-  │ Navigation              Health                  Data                     │
+  │ Navigation              Health                  Data · stress            │
   │ 1–0       switch tab    n         next problem  r         refresh now    │
 ▌✖│ tab ⇧tab  next / prev … !         problems only p         pause / resu…  │
  ▲│ ↑↓ jk     move          o         worst ↔ phys… e         export JSON    │
- ▲│ ←→ hl     move / regio… v         switch view   s         go to Stress   │
- ●│ pgup pgdn page          /         search        c         copy serial    │
- ●│ g G       top / end     t         CPU load ↔ t… q         quit           │
- ●│ enter     open / action a         empty DIMM s… ctrl+c    stop all and…  │
- ●│ esc       back · close  h         virtual NICs                           │
+ ▲│ ←→ hl     move / regio… v         switch view   c         copy serial    │
+ ●│ pgup pgdn page          /         search        s         Stress tab     │
+ ●│ g G       top / end     t         CPU load ↔ t… S         stress this    │
+ ●│ enter     open / action a         empty DIMM s… F         full test      │
+ ●│ esc       back · close  h         virtual NICs  q ctrl+c  quit · stop …  │
   │ This tab · Storage                                                       │
 sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
 Mo│ with SMART attributes, counters and / search · c copies the serial       │
@@ -21,4 +21,4 @@ Fi│ this session                                                             �
  ✖╰──────────────────────────────────────────────────────────────────────────╯
  ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
    … 8 more · enter on a row opens its page
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

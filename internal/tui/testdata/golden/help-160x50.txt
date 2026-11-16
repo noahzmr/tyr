@@ -13,15 +13,15 @@
 
 sdd ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── md1 member · enter full SMART page
 Model     ST4000NM000A-2HZ100   ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮
-Serial    WJG0A004              │ Navigation                    Health                        Data                             │
+Serial    WJG0A004              │ Navigation                    Health                        Data · stress                    │
 Firmware  SN04                  │ 1–0        switch tab         n          next problem       r          refresh now           │
 Path      /dev/sdd · sata       │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │(2.3 y)
                                 │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON           │
-Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions     v          switch view        s          go to Stress          │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ pgup pgdn  page               /          search             c          copy serial           │
- ✖ md1          md1 (raid5) degr│ g G        top / end          t          CPU load ↔ temp    q          quit                  │
- ✖ 0/0          RAID virtual dri│ enter      open / action      a          empty DIMM slots   ctrl+c     stop all and quit     │
- ✖ 252:2        RAID physical dr│ esc        back · close       h          virtual NICs                                        │
+Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions     v          switch view        c          copy serial           │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│ pgup pgdn  page               /          search             s          Stress tab            │
+ ✖ md1          md1 (raid5) degr│ g G        top / end          t          CPU load ↔ temp    S          stress this           │
+ ✖ 0/0          RAID virtual dri│ enter      open / action      a          empty DIMM slots   F          full test             │
+ ✖ 252:2        RAID physical dr│ esc        back · close       h          virtual NICs       q ctrl+c   quit · stop all       │
  ✖ /data        /data (xfs) is m│                                                                                              │
  ✖ /data        /data 96% full  │ This tab · Storage                                                                           │
  ▲ nvme1n1      nvme1n1: 93% of │ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
@@ -47,4 +47,4 @@ Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions   
 
 
 
-↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help
