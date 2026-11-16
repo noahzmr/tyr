@@ -284,3 +284,47 @@ func TestStressInstallEngines(t *testing.T) {
 		t.Errorf("failed install: %q", m.message)
 	}
 }
+
+// S on a CPU's detail page starts the test of that CPU: the guarded
+// offline-core test for an offline CPU, the CPU test for an online one.
+func TestStressFromDetailPage(t *testing.T) {
+	m := newLoaded(t, "server-degraded", 120, 40)
+	st := m.stressTab()
+	open := func(cpu string) {
+		t.Helper()
+		focus(t, m, "2", cpu)
+		run(m, "enter")
+		if m.page == nil || !m.page.stressable {
+			t.Fatalf("%s: no stressable page", cpu)
+		}
+	}
+	open("cpu7")
+	if s := text(m); !strings.Contains(s, "S test this core") {
+		t.Errorf("footer lacks the test hint\n%s", s)
+	}
+	_, cmd := m.Update(press("S"))
+	if cmd == nil || m.page != nil {
+		t.Fatalf("S on the page did nothing (%q)", m.message)
+	}
+	m.Update(cmd())
+	if st.state != stConfirm || st.config(stress.CompCPU).Engine != stress.EngOfflineCore || st.config(stress.CompCPU).CPUs != "7" {
+		t.Fatalf("offline cpu7: state %v cfg %+v", st.state, st.config(stress.CompCPU))
+	}
+	run(m, "esc")
+	// the suspect other thread: the page stays and says why
+	open("cpu39")
+	if _, cmd = m.Update(press("S")); cmd != nil || m.page == nil || !strings.Contains(m.message, "offline cpu7") {
+		t.Errorf("cpu39: %q", m.message)
+	}
+	run(m, "esc")
+	m.message = "" // the toast would cover the footer hints
+	open("cpu12")
+	if s := text(m); !strings.Contains(s, "S stress this") {
+		t.Errorf("footer lacks the stress hint\n%s", s)
+	}
+	_, cmd = m.Update(press("S"))
+	m.Update(cmd())
+	if st.state != stConfirm || st.cpus != "12,44" || st.config(stress.CompCPU).Engine != stress.EngBuiltin {
+		t.Errorf("cpu12: state %v cpus %q", st.state, st.cpus)
+	}
+}

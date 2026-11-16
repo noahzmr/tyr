@@ -37,4 +37,4 @@ Kernel log last 3 lines naming sdd · newest last · journalctl -k -b | grep -w 
  2026-11-15 12:00:00 ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 action 0x0
  2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
  2026-11-15 12:00:00 md/raid:md1: Disk failure on sdd1, disabling device.
-↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  n N next/prev match  esc back  q quit  ? help
+↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help

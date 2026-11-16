@@ -411,6 +411,14 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 			m.openAlertReference()
 			return nil
 		}
+		if !m.page.capturing() && m.page.stressable && key.Matches(msg, keyStressThis) {
+			if req := m.tabs[m.active].(stressTargeter).StressTarget(); req.why != "" {
+				m.flash(req.why) // stay on the page
+				return nil
+			}
+			m.page = nil
+			return m.startStress(true)
+		}
 		if !m.page.capturing() && key.Matches(msg, keyCopy) {
 			if m.page.copyText != "" {
 				return m.copyReport(m.page.copyText, m.page.copyKind)
@@ -460,6 +468,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 			if title, body := d.Detail(m.theme, m.width); title != "" {
 				m.page = newDetailPage(m.theme, title, body, m.width, m.contentHeight()+3)
 				m.page.tab = fmt.Sprintf("%d %s", (m.active+1)%10, m.tabs[m.active].Title())
+				_, m.page.stressable = m.tabs[m.active].(stressTargeter)
 				if pi, ok := m.tabs[m.active].(pageInfoer); ok {
 					m.page.info, m.page.hasInfo = pi.PageInfo()
 				}
@@ -935,6 +944,15 @@ func (m *Model) footer() string {
 			hints = append(hints[:3], append([][2]string{{"c", "copy report"}}, hints[3:]...)...)
 		} else if _, ok := m.tabs[m.active].(serialer); ok {
 			hints = append(hints[:3], append([][2]string{{"c", "copy serial"}}, hints[3:]...)...)
+		}
+		if m.page.stressable {
+			if req := m.tabs[m.active].(stressTargeter).StressTarget(); req.why == "" {
+				what := "stress this"
+				if req.engine == stress.EngOfflineCore {
+					what = "test this core"
+				}
+				hints = append(hints[:3], append([][2]string{{"S", what}}, hints[3:]...)...)
+			}
 		}
 		if st := m.page.searchStatus(t); st != "" && (m.message == "" || time.Since(m.messageAt) >= 4*time.Second) {
 			toastStr = st

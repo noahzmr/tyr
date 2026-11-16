@@ -21,4 +21,4 @@ Overall    ● PASSED
 Self-test  no failure logged
 Power-on   19 832 h · 41 cycles
 
-↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  ? help
+↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  ? help

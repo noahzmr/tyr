@@ -44,17 +44,20 @@ type pageInfoer interface {
 // detailPage is a full-screen, scrollable, searchable page. A breadcrumb
 // replaces the tab bar; the query and its match count sit in the footer.
 type detailPage struct {
-	title   string
-	body    string
-	tab     string // "4 Storage"
-	info    pageInfo
-	hasInfo bool
-	vp      viewport.Model
-	search  lineInput
-	query   string
-	matches int
-	cur     int   // current match (0-based)
-	lines   []int // line of each match
+	title string
+	body  string
+	tab   string // "4 Storage"
+	// stressable: opened from a module tab whose selection S can stress
+	// (the CPU, disk or filesystem the page shows)
+	stressable bool
+	info       pageInfo
+	hasInfo    bool
+	vp         viewport.Model
+	search     lineInput
+	query      string
+	matches    int
+	cur        int   // current match (0-based)
+	lines      []int // line of each match
 	// copyText is what "c" copies on a report page (Markdown with Mermaid
 	// charts, or JSON); empty on component pages, where c copies the serial.
 	copyText, copyKind string

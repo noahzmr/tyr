@@ -47,4 +47,4 @@ Counters since boot · growth this session ────────────�
    reported uncorrectable                 0  unchanged
 
 Findings 1 ✖ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  n N next/prev match  esc back  q quit  ? help
+↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help

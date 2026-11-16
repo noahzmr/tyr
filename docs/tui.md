@@ -47,7 +47,7 @@ the serial.
 | `A` | alert reference: every alert with meaning, causes and how to check |
 | `i` | explain the selected Overview finding: where, what it means, causes, commands |
 | `e` | export the snapshot as JSON and Markdown |
-| `S` | stress the selected component; on an offline CPU the guarded offline-core test (type the CPU's name to start) |
+| `S` | stress the selected component, also from its detail page; on an offline CPU the guarded offline-core test (type the CPU's name to start) |
 | `F` | full stress test |
 | `s` | Stress tab (on Events: the source filter) |
 | `r`, `p` | refresh now, pause / resume |

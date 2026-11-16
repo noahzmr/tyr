@@ -132,7 +132,8 @@ network test cannot run and the full test skips it.
 ## Offline cores
 
 A CPU someone took offline after errors cannot be tested while it is offline.
-`tyr core-test cpu7` (or `S` on the CPU in the TUI) brings it online only for
+`tyr core-test cpu7` (or `S` on the CPU in the TUI, in the list or on its
+page) brings it online only for
 the test:
 
 ```mermaid
