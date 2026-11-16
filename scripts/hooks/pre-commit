@@ -1,0 +1,38 @@
+#!/bin/sh
+# 1. Rejects staged changes and new file names with tooling attribution.
+# 2. Rejects staged Go files that are not gofmt-formatted.
+#
+# Activate once per clone:  git config core.hooksPath scripts/hooks
+set -eu
+
+pattern='claude|anthropic|co-authored-by|generated with'
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+# Only lines this commit adds are checked, so touching a file that already
+# contains a match does not block unrelated work. The checker and the hooks
+# spell the pattern out and are exempt.
+hits=$(git diff --cached --no-color --unified=0 --diff-filter=ACMR -- . ':(exclude)scripts/hooks' ':(exclude)scripts/check-attribution.sh' |
+	awk '/^\+\+\+ /{file=substr($0,7); next} /^\+/{print file": "substr($0,2)}' |
+	grep -iE "$pattern" || true)
+if [ -n "$hits" ]; then
+	echo "pre-commit: staged changes match /$pattern/i:" >&2
+	echo "$hits" >&2
+	exit 1
+fi
+names=$(git diff --cached --name-only --diff-filter=ACR | grep -iE "$pattern" || true)
+if [ -n "$names" ]; then
+	echo "pre-commit: staged file names match /$pattern/i:" >&2
+	echo "$names" >&2
+	exit 1
+fi
+
+gofiles=$(git diff --cached --name-only --diff-filter=ACMR -- '*.go')
+if [ -n "$gofiles" ]; then
+	unformatted=$(gofmt -l $gofiles)
+	if [ -n "$unformatted" ]; then
+		echo "pre-commit: run gofmt -w on:" >&2
+		echo "$unformatted" >&2
+		exit 1
+	fi
+fi

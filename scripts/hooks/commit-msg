@@ -1,0 +1,13 @@
+#!/bin/sh
+# Rejects commit messages that carry tooling attribution (see
+# scripts/check-attribution.sh). Comment lines are stripped by git before the
+# commit is recorded, so they are not checked.
+#
+# Activate once per clone:  git config core.hooksPath scripts/hooks
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+msg=$(mktemp)
+trap 'rm -f "$msg"' EXIT
+grep -v '^#' "$1" > "$msg" || true
+exec sh "$root/scripts/check-attribution.sh" text "$msg"

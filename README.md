@@ -106,6 +106,17 @@ OSC 52, so it reaches your local clipboard over SSH too; tmux needs
 `set -g set-clipboard on`, and some terminals cut very large copies (save
 those instead). `e` writes the current snapshot as JSON and Markdown.
 
+## Contributing
+
+Commit messages, pull requests, comments and files describe the work and
+nothing else: no trailers or notes that credit the tool used to write them.
+Turn the hooks on once per clone; CI checks the same (`.github/workflows/ci.yml`):
+
+```bash
+git config core.hooksPath scripts/hooks   # commit-msg + pre-commit (also gofmt)
+sh scripts/check-attribution.sh tree      # the checker the hooks and CI share
+```
+
 ## Fixtures
 
 `make demo FIXTURE=server-degraded` runs the TUI against recorded data in

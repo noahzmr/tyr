@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Commit messages, the pull request and the tracked files describe the
+      # work only; see scripts/check-attribution.sh.
+      - name: No tooling attribution in commit messages
+        run: sh scripts/check-attribution.sh commits HEAD
+
+      - name: No tooling attribution in the pull request
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" > "$RUNNER_TEMP/pr.txt"
+          sh scripts/check-attribution.sh text "$RUNNER_TEMP/pr.txt"
+
+      - name: No tooling attribution in the tracked files
+        run: sh scripts/check-attribution.sh tree
+
+      - name: Format, vet, staticcheck
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; echo "gofmt needed"; exit 1; }
+          go vet ./...
+          go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+
+      - name: Unit tests
+        run: go test -count=1 ./...
+
+      - name: Static binaries (linux/amd64, linux/arm64)
+        run: make cross
