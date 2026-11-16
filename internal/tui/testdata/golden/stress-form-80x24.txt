@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
+ ✖ CRIT  Stress test · machine has 14 critical findings, results may be affec…
+
+New run ────────────────────────────────────────────────────────────────────────
+
+▌Test        CPU  Memory  Storage  Network  Full test
+
+ Engine      builtin
+             Tyr kernels on every core, each result checked against a golden va…
+            ○ stress-ng fixtures mode: external engines are not run
+            ○ mprime fixtures mode: external engines are not run
+            · memtester, iperf3 not for CPU tests
+
+ Duration   ◂ 5 min ▸                         30 s … 24 h · per component
+ CPUs       [all online (63)       ]          enter to edit · e.g. 0-7,16
+ Guard      stop at 100 °C, any MCE or UE     fixed safety guard
+
+              Start CPU test ▸   asks for confirmation
+
+▲ cpu7 is offline and will be skipped.
+▲ CPU1 Package is already at 93 °C; the guard may stop the test early.
+
+↑↓ field  ←→ change  enter edit / start  ! problems  q quit  ? help

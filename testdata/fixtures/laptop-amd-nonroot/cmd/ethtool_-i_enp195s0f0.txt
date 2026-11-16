@@ -1,0 +1,10 @@
+driver: r8169
+version: 7.0.0-43-generic
+firmware-version: 
+expansion-rom-version: 
+bus-info: 0000:c3:00.0
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: yes
+supports-priv-flags: no

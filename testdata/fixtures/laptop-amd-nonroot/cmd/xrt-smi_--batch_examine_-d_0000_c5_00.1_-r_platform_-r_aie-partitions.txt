@@ -1,0 +1,14 @@
+
+------------------------------
+[0000:c5:00.1] : RyzenAI-npu6
+------------------------------
+Platform
+  Name                   : RyzenAI-npu6 
+  Power Mode             : Default 
+  Total Columns          : 8 
+
+Estimated Power          : 0.002 Watts
+
+AIE Partitions
+  No hardware contexts running on device
+

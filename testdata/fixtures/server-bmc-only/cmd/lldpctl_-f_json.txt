@@ -1,0 +1,5 @@
+{"lldp": {"interface": [
+  {"ens1f0": {"via": "LLDP", "rid": "1", "age": "8 days, 23:59:01", "chassis": {"leaf-a01.dc1": {"id": {"type": "mac", "value": "0c:29:ef:00:00:01"}, "descr": "Arista Networks EOS version 4.31.2F", "mgmt-ip": "10.0.0.11"}}, "port": {"id": {"type": "ifname", "value": "Ethernet12/1"}, "descr": "srv-01 ens1f0", "ttl": "120"}, "vlan": {"vlan-id": "100", "pvid": false}}},
+  {"ens1f1": {"via": "LLDP", "rid": "2", "age": "8 days, 23:59:01", "chassis": {"leaf-a02.dc1": {"id": {"type": "mac", "value": "0c:29:ef:00:00:02"}, "descr": "Arista Networks EOS version 4.31.2F", "mgmt-ip": "10.0.0.12"}}, "port": {"id": {"type": "ifname", "value": "Ethernet12/1"}, "descr": "srv-01 ens1f1", "ttl": "120"}}},
+  {"eno1": {"via": "LLDP", "rid": "3", "age": "8 days, 23:59:01", "chassis": {"mgmt-sw01": {"id": {"type": "mac", "value": "00:1b:21:00:00:03"}, "descr": "Cisco IOS Software, C2960X"}}, "port": {"id": {"type": "ifname", "value": "Gi1/0/21"}, "descr": "GigabitEthernet1/0/21", "ttl": "120"}}}
+]}}

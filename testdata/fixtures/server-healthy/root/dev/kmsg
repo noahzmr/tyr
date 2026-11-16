@@ -1,0 +1,3 @@
+6,1000,5000000,-;Linux version 6.8.0-49-generic (buildd@lcy02-amd64-028) #49-Ubuntu SMP
+6,1001,9000000,-;EDAC MC0: Giving out device to module i10nm_edac controller Intel_10nm Socket#0 IMC#0: DEV 0000:7e:0c.0 (INTERRUPT)
+6,1002,11000000,-;ice 0000:4b:00.0 ens1f0: NIC Link is up 25 Gbps Full Duplex, Requested FEC: RS-FEC, Negotiated FEC: RS-FEC, Autoneg Advertised: On, Autoneg Negotiated: False, Flow Control: None

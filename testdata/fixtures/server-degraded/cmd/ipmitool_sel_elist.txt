@@ -1,0 +1,7 @@
+   1 | 11/07/2026 | 08:00:00 | Event Logging Disabled #0x07 | Log area reset/cleared | Asserted
+   2 | 11/11/2026 | 09:00:00 | Memory #0x87 | Correctable ECC @DIMMC1(CPU2) | Asserted
+   3 | 11/14/2026 | 09:00:00 | Memory #0x87 | Uncorrectable ECC @DIMMB1(CPU2) | Asserted
+   4 | 11/15/2026 | 09:00:00 | Power Supply PS2 Status | Power Supply AC lost | Asserted
+   5 | 11/15/2026 | 09:00:01 | Power Unit #0xc9 | Redundancy Lost | Asserted
+   6 | 11/15/2026 | 10:00:00 | Temperature CPU2 Temp | Upper Non-critical going high | Asserted
+   7 | 11/15/2026 | 11:00:00 | Temperature CPU2 Temp | Upper Non-critical going high | Deasserted

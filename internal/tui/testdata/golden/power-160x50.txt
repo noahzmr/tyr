@@ -1,0 +1,50 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36  2 CPU ✖4  3 Memory ✖9  4 Storage ✖11   5 Power ○   6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+○ Power collector not implemented yet · inventory only: 2 PSUs · 2400 W rated · 6 fans
+
+Power supplies ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── SMBIOS type 39 · no live readings
+   PSU  Model                   Serial          State         Rating Input · output · °C
+▌● PSU1 SUPERMICRO PWS-1K22A-1R P1K22CL21123451 Present, OK   1200 W ○ needs BMC PSU sensors
+ ● PSU2 SUPERMICRO PWS-1K22A-1R P1K22CL21123452 Present, OK   1200 W ○ needs BMC PSU sensors
+
+Redundancy  ○ needs PSU status sensors                                          PSU rails
+Total draw  ○ no BMC power reading                                              ○ needs BMC voltage sensors
+CPU RAPL    ○ no RAPL collector yet
+DRAM RAPL   ○ no RAPL collector yet
+
+Total power draw · W  ○ no power readings to graph
+
+Fans ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 6 of 6 reporting
+● FAN1   ━━━━━━━━────────────────────┃── 6340 rpm    ● FAN2   ━━━━━━━━────────────────────┃── 6480 rpm    ● FAN3   ━━━━━━━━────────────────────┃── 6620 rpm
+● FAN4   ━━━━━━━━────────────────────┃── 6760 rpm    ● FAN5   ━━━━━━━━━───────────────────┃── 6900 rpm    ● FAN6   ━━━━━━━━━───────────────────┃── 7040 rpm
+
+Findings · Power ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+○ no findings Power collector not implemented yet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+↑↓ move  enter open  c copy serial  ! problems  q quit  ? help

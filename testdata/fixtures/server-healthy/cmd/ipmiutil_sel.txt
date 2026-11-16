@@ -1,0 +1,7 @@
+ipmiutil sel version 3.18
+--- BMC version 1.40, IPMI version 2.0 
+SEL Ver 51 Support 0f, Size = 1023 records (Used=2, Free=1021)
+RecId Date/Time_______ SEV Src_ Evt_Type___ Sens# Evt_detail - Trig [Evt_data]
+0001 11/07/26 08:00:00 INF BIOS Event Logging Disabled #07 Log area reset/cleared asserted 6f [02 ff ff]
+0002 11/07/26 09:01:00 INF BMC  System Event #ff Timestamp Clock Sync asserted 6f [02 ff ff]
+ipmiutil sel, completed successfully

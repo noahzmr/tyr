@@ -1,0 +1,10 @@
+driver: ice
+version: 6.8.0-49-generic
+firmware-version: 4.40 0x8001c967 1.3534.0
+expansion-rom-version: 
+bus-info: 0000:4b:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes

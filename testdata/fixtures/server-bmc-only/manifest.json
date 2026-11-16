@@ -1,0 +1,306 @@
+{
+  "arch": "amd64",
+  "commands": [
+    {
+      "argv": [
+        "ipmitool",
+        "sensor"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_sensor.txt"
+    },
+    {
+      "argv": [
+        "ipmitool",
+        "sel",
+        "elist"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_sel_elist.txt"
+    },
+    {
+      "argv": [
+        "ipmitool",
+        "sel",
+        "info"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_sel_info.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/nvme0n1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_nvme0n1.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/nvme1n1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_nvme1n1.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/sda"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_sda.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/sdb"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_sdb.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/sdc"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_sdc.txt"
+    },
+    {
+      "argv": [
+        "smartctl",
+        "-j",
+        "-x",
+        "/dev/sdd"
+      ],
+      "exit": 0,
+      "stdout": "cmd/smartctl_-j_-x__dev_sdd.txt"
+    },
+    {
+      "argv": [
+        "df",
+        "-B1",
+        "--output=target,size,used,avail,itotal,iused"
+      ],
+      "exit": 0,
+      "stdout": "cmd/df_-B1_--output=target,size,used,avail,itotal,iused.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-i",
+        "eno1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-i_eno1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "eno1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_eno1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-S",
+        "eno1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-S_eno1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-i",
+        "eno2"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-i_eno2.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "eno2"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_eno2.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-S",
+        "eno2"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-S_eno2.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-i",
+        "ens1f0"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-i_ens1f0.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "ens1f0"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_ens1f0.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-S",
+        "ens1f0"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-S_ens1f0.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-m",
+        "ens1f0"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-m_ens1f0.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-i",
+        "ens1f1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-i_ens1f1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "ens1f1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_ens1f1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-S",
+        "ens1f1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-S_ens1f1.txt"
+    },
+    {
+      "argv": [
+        "ethtool",
+        "-m",
+        "ens1f1"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ethtool_-m_ens1f1.txt"
+    },
+    {
+      "argv": [
+        "ip",
+        "-j",
+        "addr",
+        "show"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ip_-j_addr_show.txt"
+    },
+    {
+      "argv": [
+        "lldpctl",
+        "-f",
+        "json"
+      ],
+      "exit": 0,
+      "stdout": "cmd/lldpctl_-f_json.txt"
+    },
+    {
+      "argv": [
+        "ipmitool",
+        "mc",
+        "info"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_mc_info.txt"
+    },
+    {
+      "argv": [
+        "ipmitool",
+        "fru",
+        "print"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_fru_print.txt"
+    },
+    {
+      "argv": [
+        "ipmitool",
+        "lan",
+        "print"
+      ],
+      "exit": 0,
+      "stdout": "cmd/ipmitool_lan_print.txt"
+    },
+    {
+      "argv": [
+        "nvidia-smi",
+        "-q",
+        "-x"
+      ],
+      "exit": 0,
+      "stdout": "cmd/nvidia-smi_-q_-x.txt"
+    },
+    {
+      "argv": [
+        "dmidecode"
+      ],
+      "exit": 0,
+      "stdout": "cmd/dmidecode.txt"
+    }
+  ],
+  "description": "synthetic: like server-healthy but coretemp is not loaded and only ipmitool is installed; CPU and DIMM temperatures come from the BMC",
+  "hostname": "srv-bmconly-01",
+  "now": "2026-11-16T09:00:00Z",
+  "privileges": {
+    "dmi": true,
+    "ipmi": true,
+    "kmsg": true,
+    "root": true
+  },
+  "sim": null,
+  "tools": {
+    "df": "/usr/bin/df",
+    "dmidecode": "/usr/sbin/dmidecode",
+    "ethtool": "/usr/sbin/ethtool",
+    "ip": "/usr/sbin/ip",
+    "ipmitool": "/usr/bin/ipmitool",
+    "journalctl": "/usr/bin/journalctl",
+    "lldpctl": "/usr/sbin/lldpctl",
+    "nvidia-smi": "/usr/bin/nvidia-smi",
+    "smartctl": "/usr/sbin/smartctl"
+  },
+  "virtualization": "none"
+}

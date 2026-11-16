@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9  4 Storage ✖11  5○ 6✖6 7✖6 8○ 9 0                            ? help
+ ✖ CRIT  7 disks · 26 TB · md1 degraded · 1 RAID …  v Disks · RAID · Filesystems
+
+   Mountpoint                    Type   Size     Used                 Inodes
+▌✖ /data                         xfs    10.9 TB  ███████████░  96%    1%     ro
+ ● /                             ext4   1.7 TB   ██░░░░░░░░░░  22%    2%
+ ● /boot/efi                     vfat   1.0 GB   ░░░░░░░░░░░░   1%    –
+ ● /archive                      ext4   5.5 TB   ██░░░░░░░░░░  20%    0%
+
+Findings · Storage 6 ✖ · 5 ▲ ─────────────────────────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O errors in kernel log
+ ✖ md1          md1 (raid5) degraded: 3/4 devices, failed sdd1
+ ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
+ ✖ 252:2        RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed
+ ✖ /data        /data (xfs) is mounted read-only
+ ✖ /data        /data 96% full
+ ▲ nvme1n1      nvme1n1: 93% of rated endurance used
+ ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
+ ▲ sdc          sdc: 8 pending sectors
+ ▲ sdc          sdc: 24 reallocated sectors
+ ▲ sdd          sdd: 31 I/O errors (ioerr_cnt)
+
+↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help

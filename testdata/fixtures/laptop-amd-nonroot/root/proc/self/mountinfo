@@ -1,0 +1,73 @@
+28 33 0:25 / /sys rw,nosuid,nodev,noexec,relatime shared:6 - sysfs sysfs rw
+29 33 0:26 / /proc rw,nosuid,nodev,noexec,relatime shared:12 - proc proc rw
+30 33 0:7 / /dev rw,nosuid,relatime shared:2 - devtmpfs udev rw,size=15568856k,nr_inodes=3892214,mode=755,inode64
+31 30 0:27 / /dev/pts rw,nosuid,noexec,relatime shared:3 - devpts devpts rw,gid=5,mode=600,ptmxmode=000
+32 33 0:28 / /run rw,nosuid,nodev,noexec,relatime shared:5 - tmpfs tmpfs rw,size=3132436k,mode=755,inode64
+33 2 259:2 / / rw,relatime shared:1 - ext4 /dev/nvme0n1p2 rw
+34 28 0:8 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime shared:7 - securityfs securityfs rw
+35 30 0:29 / /dev/shm rw,nosuid,nodev shared:4 - tmpfs tmpfs rw,inode64,usrquota
+36 28 0:30 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:8 - cgroup2 cgroup2 rw,nsdelegate,memory_recursiveprot,memory_hugetlb_accounting
+37 28 0:31 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime shared:9 - pstore none rw
+38 28 0:32 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime shared:10 - efivarfs efivarfs rw
+39 28 0:33 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime shared:11 - bpf bpf rw,mode=700
+40 29 0:34 / /proc/sys/fs/binfmt_misc rw,relatime shared:13 - autofs systemd-1 rw,fd=40,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=13869
+41 32 0:35 / /run/credentials/systemd-journald.service rw,nosuid,nodev,noexec,relatime,nosymfollow shared:16 - tmpfs none ro,size=1024k,nr_inodes=1024,mode=700,inode64,noswap
+42 28 0:9 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime shared:14 - debugfs debugfs rw
+43 28 0:14 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime shared:15 - tracefs tracefs rw
+44 30 0:23 / /dev/mqueue rw,nosuid,nodev,noexec,relatime shared:17 - mqueue mqueue rw
+45 30 0:36 / /dev/hugepages rw,nosuid,nodev,relatime shared:18 - hugetlbfs hugetlbfs rw,pagesize=2M
+46 28 0:21 / /sys/kernel/config rw,nosuid,nodev,noexec,relatime shared:19 - configfs configfs rw
+47 28 0:37 / /sys/fs/fuse/connections rw,nosuid,nodev,noexec,relatime shared:20 - fusectl fusectl rw
+48 33 0:38 / /tmp rw,nosuid,nodev shared:21 - tmpfs tmpfs rw,size=15662176k,nr_inodes=1048576,inode64,usrquota
+96 32 0:40 / /run/credentials/systemd-resolved.service rw,nosuid,nodev,noexec,relatime,nosymfollow shared:23 - tmpfs none ro,size=1024k,nr_inodes=1024,mode=700,inode64,noswap
+54 33 7:0 / /snap/bare/5 ro,nodev,relatime shared:163 - squashfs /dev/loop0 ro,errors=continue,threads=single
+59 33 7:2 / /snap/code/280 ro,nodev,relatime shared:168 - squashfs /dev/loop2 ro,errors=continue,threads=single
+65 33 7:1 / /snap/code/278 ro,nodev,relatime shared:173 - squashfs /dev/loop1 ro,errors=continue,threads=single
+70 33 7:3 / /snap/core20/2922 ro,nodev,relatime shared:178 - squashfs /dev/loop3 ro,errors=continue,threads=single
+106 33 7:4 / /snap/core20/3015 ro,nodev,relatime shared:183 - squashfs /dev/loop4 ro,errors=continue,threads=single
+156 33 7:5 / /snap/core22/3129 ro,nodev,relatime shared:188 - squashfs /dev/loop5 ro,errors=continue,threads=single
+161 33 7:6 / /snap/core22/2955 ro,nodev,relatime shared:193 - squashfs /dev/loop6 ro,errors=continue,threads=single
+167 33 7:7 / /snap/desktop-security-center/206 ro,nodev,relatime shared:198 - squashfs /dev/loop7 ro,errors=continue,threads=single
+172 33 7:8 / /snap/core24/2124 ro,nodev,relatime shared:203 - squashfs /dev/loop8 ro,errors=continue,threads=single
+243 33 7:10 / /snap/core24/2307 ro,nodev,relatime shared:208 - squashfs /dev/loop10 ro,errors=continue,threads=single
+248 33 7:11 / /snap/firefox/9205 ro,nodev,relatime shared:213 - squashfs /dev/loop11 ro,errors=continue,threads=single
+253 33 7:9 / /snap/firefox/9137 ro,nodev,relatime shared:218 - squashfs /dev/loop9 ro,errors=continue,threads=single
+258 33 7:13 / /snap/firmware-updater/262 ro,nodev,relatime shared:223 - squashfs /dev/loop13 ro,errors=continue,threads=single
+263 33 7:12 / /snap/firmware-updater/258 ro,nodev,relatime shared:228 - squashfs /dev/loop12 ro,errors=continue,threads=single
+268 33 7:15 / /snap/glab/7178 ro,nodev,relatime shared:233 - squashfs /dev/loop15 ro,errors=continue,threads=single
+273 33 7:14 / /snap/gnome-42-2204/247 ro,nodev,relatime shared:238 - squashfs /dev/loop14 ro,errors=continue,threads=single
+278 33 7:16 / /snap/gnome-42-2204/263 ro,nodev,relatime shared:243 - squashfs /dev/loop16 ro,errors=continue,threads=single
+283 33 7:17 / /snap/gnome-46-2404/168 ro,nodev,relatime shared:248 - squashfs /dev/loop17 ro,errors=continue,threads=single
+288 33 7:18 / /snap/gnome-system-monitor/193 ro,nodev,relatime shared:253 - squashfs /dev/loop18 ro,errors=continue,threads=single
+293 33 7:19 / /snap/gtk-common-themes/1535 ro,nodev,relatime shared:258 - squashfs /dev/loop19 ro,errors=continue,threads=single
+298 33 7:20 / /snap/gnome-46-2404/177 ro,nodev,relatime shared:263 - squashfs /dev/loop20 ro,errors=continue,threads=single
+303 33 7:21 / /snap/kubectl/3855 ro,nodev,relatime shared:268 - squashfs /dev/loop21 ro,errors=continue,threads=single
+308 33 7:22 / /snap/kubectl/3869 ro,nodev,relatime shared:273 - squashfs /dev/loop22 ro,errors=continue,threads=single
+313 33 7:23 / /snap/mesa-2404/1165 ro,nodev,relatime shared:278 - squashfs /dev/loop23 ro,errors=continue,threads=single
+318 33 7:24 / /snap/mesa-2404/1839 ro,nodev,relatime shared:283 - squashfs /dev/loop24 ro,errors=continue,threads=single
+323 33 7:25 / /snap/powershell/456 ro,nodev,relatime shared:288 - squashfs /dev/loop25 ro,errors=continue,threads=single
+328 33 7:26 / /snap/powershell/448 ro,nodev,relatime shared:293 - squashfs /dev/loop26 ro,errors=continue,threads=single
+333 33 7:27 / /snap/prompting-client/228 ro,nodev,relatime shared:298 - squashfs /dev/loop27 ro,errors=continue,threads=single
+338 33 7:28 / /snap/snap-store/1468 ro,nodev,relatime shared:303 - squashfs /dev/loop28 ro,errors=continue,threads=single
+343 33 7:29 / /snap/snap-store/1489 ro,nodev,relatime shared:308 - squashfs /dev/loop29 ro,errors=continue,threads=single
+348 33 7:30 / /snap/snapd/28332 ro,nodev,relatime shared:313 - squashfs /dev/loop30 ro,errors=continue,threads=single
+353 33 7:32 / /snap/snapd-desktop-integration/387 ro,nodev,relatime shared:318 - squashfs /dev/loop32 ro,errors=continue,threads=single
+358 33 7:31 / /snap/snapd/28254 ro,nodev,relatime shared:323 - squashfs /dev/loop31 ro,errors=continue,threads=single
+363 33 7:33 / /snap/snapd-desktop-integration/391 ro,nodev,relatime shared:328 - squashfs /dev/loop33 ro,errors=continue,threads=single
+368 33 259:1 / /boot/efi rw,relatime shared:333 - vfat /dev/nvme0n1p1 rw,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro
+379 40 0:52 / /proc/sys/fs/binfmt_misc rw,nosuid,nodev,noexec,relatime shared:343 - binfmt_misc binfmt_misc rw
+374 32 0:51 / /run/credentials/systemd-networkd.service rw,nosuid,nodev,noexec,relatime,nosymfollow shared:338 - tmpfs none ro,size=1024k,nr_inodes=1024,mode=700,inode64,noswap
+443 42 0:14 / /sys/kernel/debug/tracing rw,nosuid,nodev,noexec,relatime shared:1646 - tracefs tracefs rw
+886 32 0:28 /snapd/ns /run/snapd/ns rw,nosuid,nodev,noexec,relatime - tmpfs tmpfs rw,size=3132436k,mode=755,inode64
+3070 886 0:5 mnt:[4026533421] /run/snapd/ns/snapd-desktop-integration.mnt rw - nsfs nsfs rw
+3090 33 0:85 / /var/lib/docker/rootfs/overlayfs/f996f816be571caaea61197e2138a8d84d264a94929201775e6789f6a39e57d6 rw,relatime shared:1531 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2463/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2457/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2456/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2455/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2453/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2452/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2451/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2449/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2464/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2464/work,nouserxattr
+3091 33 0:84 / /var/lib/docker/rootfs/overlayfs/709e8abfb99709ee96e64541695f22e8404b7c8a79c7e927c185c9f2f4950b9e rw,relatime shared:1574 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2144/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2106/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2105/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2104/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2103/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2102/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2101/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2100/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2099/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2145/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2145/work,nouserxattr
+3140 32 0:5 net:[4026533433] /run/docker/netns/46207334e6cb rw shared:1683 - nsfs nsfs rw
+3136 32 0:5 net:[4026533374] /run/docker/netns/3143850b55e9 rw shared:1705 - nsfs nsfs rw
+3233 32 0:119 / /run/user/1000 rw,nosuid,nodev,relatime shared:2210 - tmpfs tmpfs rw,size=3132432k,nr_inodes=783108,mode=700,uid=1000,gid=1000,inode64
+3267 3233 0:120 / /run/user/1000/doc rw,nosuid,nodev,relatime shared:2242 - fuse.portal portal rw,user_id=1000,group_id=1000
+6566 886 0:5 mnt:[4026533717] /run/snapd/ns/prompting-client.mnt rw - nsfs nsfs rw
+6567 3233 0:128 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:2274 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000
+7066 886 0:5 mnt:[4026533606] /run/snapd/ns/firefox.mnt rw - nsfs nsfs rw
+3341 886 0:5 mnt:[4026534480] /run/snapd/ns/glab.mnt rw - nsfs nsfs rw
+8965 886 0:5 mnt:[4026535027] /run/snapd/ns/firmware-updater.mnt rw - nsfs nsfs rw

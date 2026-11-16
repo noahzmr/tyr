@@ -1,0 +1,11 @@
+Mounted on                                    1B-blocks         Used        Avail   Inodes   IUsed
+/run                                         3207614464      4775936   3202838528  3915543    2507
+/                                         1005867986944 654048464896 300648751104 62447616 6779670
+/dev/shm                                    16038064128     32714752  16005349376  3915543     173
+/sys/firmware/efi/efivars                        251804       138540       108144        0       0
+/run/credentials/systemd-journald.service       1048576            0      1048576     1024       1
+/tmp                                        16038068224     98041856  15940026368  1048576    8280
+/run/credentials/systemd-resolved.service       1048576            0      1048576     1024       1
+/boot/efi                                    1124999168     66797568   1058201600        0       0
+/run/credentials/systemd-networkd.service       1048576            0      1048576     1024       1
+/run/user/1000                               3207610368      4313088   3203297280   783108     246

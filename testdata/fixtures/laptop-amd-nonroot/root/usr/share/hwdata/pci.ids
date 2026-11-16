@@ -1,0 +1,33 @@
+1002  Advanced Micro Devices, Inc. [AMD/ATI]
+	1114  Krackan [Radeon 840M / 860M Graphics]
+	1640  Radeon High Definition Audio Controller
+1022  Advanced Micro Devices, Inc. [AMD]
+	1110  Krackan Internal PCIe GPP Bridge 0 to Bus A
+	1111  Krackan Internal PCIe GPP Bridge 0 to Bus B
+	1112  Krackan Internal PCIe GPP Bridge 0 to Bus C
+	1116  Krackan PCIe Dummy Function
+	1122  Krackan Root Complex
+	1123  Krackan IOMMU
+	1248  Krackan Data Fabric; Function 0
+	1249  Krackan Data Fabric; Function 1
+	124a  Krackan Data Fabric; Function 2
+	124b  Krackan Data Fabric; Function 3
+	124c  Krackan Data Fabric; Function 4
+	124d  Krackan Data Fabric; Function 5
+	124e  Krackan Data Fabric; Function 6
+	124f  Krackan Data Fabric; Function 7
+	15e2  Audio Coprocessor
+	15e3  Ryzen HD Audio Controller
+	164a  Sensor Fusion Hub
+	17e0  Strix/Krackan/Strix Halo CCP/ASP
+	17f0  Strix/Krackan/Strix Halo Neural Processing Unit
+	790b  FCH SMBus Controller
+	790e  FCH LPC Bridge
+10ec  Realtek Semiconductor Co., Ltd.
+	8168  RTL8111/8168/8211/8411 PCI Express Gigabit Ethernet Controller
+17cb  Qualcomm Technologies, Inc
+	1107  WCN785x Wi-Fi 7(802.11be) 320MHz 2x2 [FastConnect 7800]
+1c5c  SK hynix
+	1959  Platinum P41/PC801 NVMe Solid State Drive
+8086  Intel Corporation
+	0b26  Thunderbolt 4 Bridge [Goshen Ridge 2020]

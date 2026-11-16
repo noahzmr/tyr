@@ -1,0 +1,10 @@
+driver: ath12k_wifi7_pci
+version: 7.0.0-43-generic
+firmware-version: N/A
+expansion-rom-version: 
+bus-info: 0000:c2:00.0
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: no

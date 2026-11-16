@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6  7 GPU/NPU ✖6  8○ 9 0                            ? help
+ ✖ CRIT  2 GPUs · 0 NPUs · nvidia 550.127.05 · 1 BMC display adapter not coun…
+
+   Device Model                                  Load            °C PCIe
+▌✖ gpu1   NVIDIA A100 80GB PCIe                  ░░░░░░░░   0 %  92 Gen4 x8/x16
+ ● gpu0   NVIDIA A100 80GB PCIe                  ░░░░░░░░   0 %  45 Gen4 x16
+   –      ASPEED Graphics Family (BMC) · 02:00.0 · not counted
+
+gpu1 · NVIDIA A100 80GB PCIe ─────────────────────────────────── enter full page
+Serial    1324420012346
+Part      900-21001-0020-100
+UUID      GPU-5c1a…0002
+PCI       ca:00.0 · NUMA 1
+Firmware  92.00.68.00.01
+Driver    nvidia 550.127.05
+
+Findings · GPU/NPU 2 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
+ ✖ 0000:ca:00.0 GPU1 ca:00.0: 2 uncorrectable ECC errors
+   … 5 more · enter on a row opens its page
+
+NPU ────────────────────────────────────────────────────────────────────────────
+ · not applicable: no NPU found (checked /sys/class/accel, amdxdna, intel_vpu)
+↑↓ move  enter open  n next problem  ! problems  q quit  ? help

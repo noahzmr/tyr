@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6  8 Events ○  9 0                             ? help
+○ Events collector (SEL and kernel log) not implemented yet
+
+Severity  all  warn+ crit   Source  all  SEL kernel   since boot (9d 0h)   ╭─ /…
+SEL fill  ○ no SEL reader yet (BMC event log via ipmitool sel)
+
+   Time         Sev  Source Component   Message
+   ○ no events Events collector (SEL and kernel log) not implemented yet
+
+Findings · Events ──────────────────────────────────────────────────────────────
+○ no findings Events collector (SEL and kernel log) not implemented yet
+
+
+
+
+
+
+
+
+
+
+
+↑↓ move  enter jump to component  f severity  s source  / search  ? help

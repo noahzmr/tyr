@@ -1,0 +1,529 @@
+{
+ "description": "HP ZBook laptop, AMD Ryzen AI 7 PRO 350 (16 threads), Radeon 860M, Ryzen AI NPU, NVMe, non-root, no BMC",
+ "hostname": "fixture-host",
+ "arch": "amd64",
+ "virtualization": "none",
+ "now": "2026-11-16T10:14:44Z",
+ "privileges": {
+  "root": false,
+  "dmi": false,
+  "kmsg": false,
+  "ipmi": false
+ },
+ "tools": {
+  "dmidecode": "/usr/sbin/dmidecode",
+  "journalctl": "/usr/bin/journalctl",
+  "dmesg": "/home/linuxbrew/.linuxbrew/bin/dmesg",
+  "ipmitool": "/usr/bin/ipmitool",
+  "lsblk": "/home/linuxbrew/.linuxbrew/bin/lsblk",
+  "ethtool": "/usr/sbin/ethtool",
+  "ip": "/usr/sbin/ip",
+  "lldpctl": "/usr/sbin/lldpctl",
+  "df": "/usr/bin/df",
+  "xrt-smi": "/usr/bin/xrt-smi"
+ },
+ "commands": [
+  {
+   "argv": [
+    "dmidecode"
+   ],
+   "stdout": "cmd/dmidecode.txt",
+   "stderr": "/sys/firmware/dmi/tables/smbios_entry_point: Permission denied\nCan't read memory from /dev/mem",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "journalctl",
+    "-k",
+    "-b",
+    "-o",
+    "json",
+    "--no-pager",
+    "--output-fields=MESSAGE,PRIORITY,__REALTIME_TIMESTAMP"
+   ],
+   "stdout": "cmd/journalctl_-k_-b_-o_json_--no-pager_--output-fields_MESSAGE_PRIORITY___REALTIME_TIMESTAMP.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "sensor"
+   ],
+   "stdout": "cmd/ipmitool_sensor.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "sel",
+    "info"
+   ],
+   "stdout": "cmd/ipmitool_sel_info.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "sel",
+    "elist"
+   ],
+   "stdout": "cmd/ipmitool_sel_elist.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "fru",
+    "print"
+   ],
+   "stdout": "cmd/ipmitool_fru_print.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "lan",
+    "print"
+   ],
+   "stdout": "cmd/ipmitool_lan_print.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "mc",
+    "info"
+   ],
+   "stdout": "cmd/ipmitool_mc_info.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "dcmi",
+    "power",
+    "reading"
+   ],
+   "stdout": "cmd/ipmitool_dcmi_power_reading.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ipmitool",
+    "sdr",
+    "type",
+    "Power Supply"
+   ],
+   "stdout": "cmd/ipmitool_sdr_type_Power_Supply.txt",
+   "stderr": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "br-816f026c8331"
+   ],
+   "stdout": "cmd/ethtool_br-816f026c8331.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "br-816f026c8331"
+   ],
+   "stdout": "cmd/ethtool_-i_br-816f026c8331.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "br-816f026c8331"
+   ],
+   "stdout": "cmd/ethtool_-S_br-816f026c8331.txt",
+   "stderr": "no stats available",
+   "exit": 94
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "br-816f026c8331"
+   ],
+   "stdout": "cmd/ethtool_-m_br-816f026c8331.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "br-a61d389c2100"
+   ],
+   "stdout": "cmd/ethtool_br-a61d389c2100.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "br-a61d389c2100"
+   ],
+   "stdout": "cmd/ethtool_-i_br-a61d389c2100.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "br-a61d389c2100"
+   ],
+   "stdout": "cmd/ethtool_-S_br-a61d389c2100.txt",
+   "stderr": "no stats available",
+   "exit": 94
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "br-a61d389c2100"
+   ],
+   "stdout": "cmd/ethtool_-m_br-a61d389c2100.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "docker0"
+   ],
+   "stdout": "cmd/ethtool_docker0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "docker0"
+   ],
+   "stdout": "cmd/ethtool_-i_docker0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "docker0"
+   ],
+   "stdout": "cmd/ethtool_-S_docker0.txt",
+   "stderr": "no stats available",
+   "exit": 94
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "docker0"
+   ],
+   "stdout": "cmd/ethtool_-m_docker0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "enp195s0f0"
+   ],
+   "stdout": "cmd/ethtool_enp195s0f0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "enp195s0f0"
+   ],
+   "stdout": "cmd/ethtool_-i_enp195s0f0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "enp195s0f0"
+   ],
+   "stdout": "cmd/ethtool_-S_enp195s0f0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "enp195s0f0"
+   ],
+   "stdout": "cmd/ethtool_-m_enp195s0f0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "veth1bbf854"
+   ],
+   "stdout": "cmd/ethtool_veth1bbf854.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "veth1bbf854"
+   ],
+   "stdout": "cmd/ethtool_-i_veth1bbf854.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "veth1bbf854"
+   ],
+   "stdout": "cmd/ethtool_-S_veth1bbf854.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "veth1bbf854"
+   ],
+   "stdout": "cmd/ethtool_-m_veth1bbf854.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "veth985b580"
+   ],
+   "stdout": "cmd/ethtool_veth985b580.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "veth985b580"
+   ],
+   "stdout": "cmd/ethtool_-i_veth985b580.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "veth985b580"
+   ],
+   "stdout": "cmd/ethtool_-S_veth985b580.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "veth985b580"
+   ],
+   "stdout": "cmd/ethtool_-m_veth985b580.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "virbr0"
+   ],
+   "stdout": "cmd/ethtool_virbr0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "virbr0"
+   ],
+   "stdout": "cmd/ethtool_-i_virbr0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "virbr0"
+   ],
+   "stdout": "cmd/ethtool_-S_virbr0.txt",
+   "stderr": "no stats available",
+   "exit": 94
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "virbr0"
+   ],
+   "stdout": "cmd/ethtool_-m_virbr0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "wg0"
+   ],
+   "stdout": "cmd/ethtool_wg0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 75
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "wg0"
+   ],
+   "stdout": "cmd/ethtool_-i_wg0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "wg0"
+   ],
+   "stdout": "cmd/ethtool_-S_wg0.txt",
+   "stderr": "no stats available",
+   "exit": 94
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "wg0"
+   ],
+   "stdout": "cmd/ethtool_-m_wg0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "ethtool",
+    "wlp194s0"
+   ],
+   "stdout": "cmd/ethtool_wlp194s0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-i",
+    "wlp194s0"
+   ],
+   "stdout": "cmd/ethtool_-i_wlp194s0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-S",
+    "wlp194s0"
+   ],
+   "stdout": "cmd/ethtool_-S_wlp194s0.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ethtool",
+    "-m",
+    "wlp194s0"
+   ],
+   "stdout": "cmd/ethtool_-m_wlp194s0.txt",
+   "stderr": "netlink error: Operation not permitted",
+   "exit": 1
+  },
+  {
+   "argv": [
+    "lldpctl",
+    "-f",
+    "json"
+   ],
+   "stdout": "cmd/lldpctl_-f_json.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "ip",
+    "-j",
+    "addr",
+    "show"
+   ],
+   "stdout": "cmd/ip_-j_addr_show.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "df",
+    "-B1",
+    "--output=target,size,used,avail,itotal,iused"
+   ],
+   "stdout": "cmd/df_-B1_--output_target_size_used_avail_itotal_iused.txt",
+   "stderr": "",
+   "exit": 0
+  },
+  {
+   "argv": [
+    "xrt-smi",
+    "--batch",
+    "examine",
+    "-d",
+    "0000:c5:00.1",
+    "-r",
+    "platform",
+    "-r",
+    "aie-partitions"
+   ],
+   "stdout": "cmd/xrt-smi_--batch_examine_-d_0000_c5_00.1_-r_platform_-r_aie-partitions.txt",
+   "stderr": "",
+   "exit": 0
+  }
+ ],
+ "sim": {}
+}

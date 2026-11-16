@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36 2 CPU ✖4 3 Mem ✖9 4 Stor ✖11 5 Power ○ 6 Net ✖6  7 GPU/NPU ✖6  8 Events ○ 9 Stress 0 Inv           ? help
+ ✖ CRIT  2 GPUs · 0 NPUs · nvidia 550.127.05 · 1 BMC display adapter not counted
+
+   Device Model                                 Driver Load           Memory                      Power  °C PCIe
+▌✖ gpu1   NVIDIA A100 80GB PCIe                 nvidia ░░░░░░░░   0 % ░░░░░░░░ 4 MB/80 GB     62W / 300  92 Gen4 x8/x16
+ ● gpu0   NVIDIA A100 80GB PCIe                 nvidia ░░░░░░░░   0 % ░░░░░░░░ 4 MB/80 GB     62W / 300  45 Gen4 x16
+   –      ASPEED Graphics Family (BMC) · 02:00.0 · not counted
+
+gpu1 · NVIDIA A100 80GB PCIe ─────────────────────────────────────────────────────────────────────────── enter full page
+Serial    1324420012346                 GPU     ━━━━━━━━━━━─ 88°C               ECC          ce 0 · ue 2
+Part      900-21001-0020-100            Memory  ━━━━━━━━━━━─ 92°C               Retired      n/a
+UUID      GPU-5c1a…0002                 Power   ━━━───────┃─ 62.41 W            Remap        ▲ pending
+PCI       ca:00.0 · NUMA 1              Util    ▁ 0 %                           Throttle     none
+Firmware  92.00.68.00.01                Link    x8 of x16 16.0 GT/s PCIe        Driver err   1
+Driver    nvidia 550.127.05                                                     Power state  D0 active
+
+Findings · GPU/NPU 2 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ 0000:ca:00.0 GPU1 ca:00.0: 2 uncorrectable ECC errors
+ ✖ 0000:ca:00.0 GPU1 ca:00.0: 1 driver error in kernel log, last: NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=pyth…
+ ▲ 0000:ca:00.0 GPU1 ca:00.0: GPU temperature 88°C
+ ▲ 0000:ca:00.0 GPU1 ca:00.0: Memory temperature 92°C
+ ▲ 0000:ca:00.0 GPU1 ca:00.0: memory row remap/retirement pending (reset the GPU)
+ ▲ 0000:ca:00.0 GPU1 ca:00.0: PCIe link x8, device supports x16
+
+NPU ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ · not applicable: no NPU found (checked /sys/class/accel, amdxdna, intel_vpu)
+
+
+
+
+
+
+
+
+
+
+
+
+↑↓ move  enter open  n next problem  ! problems  q quit  ? help

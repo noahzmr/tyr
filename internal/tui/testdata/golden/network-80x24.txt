@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○  6 Network ✖6  7✖6 8○ 9 0                            ? help
+ ✖ CRIT  4 physical ports · 2 up · bond0 1/2 · BMC 10.10.0.121 · 1 virtual hi…
+
+   Interface    Link           Address / LLDP neighbor                       rx
+▌✖ bond0        25G 1/2 ports  –                                              –
+ ▲ ├─ ens1f0    25G full       leaf-a01.dc1 Ethernet12/1                      –
+ ✖ ├─ ens1f1    no link        leaf-a02.dc1 Ethernet12/1                      –
+ ● └─ bond0.100 up             10.20.0.21/24                                  –
+ ▲ eno1         100M of 1G     10.10.0.21/24 mgmt-sw01 Gi1/0/21               –
+ ○ eno2         admin down     –                                              –
+   + 1 virtual interface hidden · h show · BMC 10.10.0.121 (Static Address) 3c:…
+
+bond0 ─────────────────────────── enter full page: transceiver, counters, graphs
+Adapter    n/a
+Serial     n/a
+Driver     n/a
+PCI        n/a
+MAC / MTU  b4:96:91:a0:00:10 · 9000
+
+Findings · Network 2 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
+ ✖ bond0        bond0 degraded: ens1f1 down (1/2 members up)
+   … 5 more · enter on a row opens its page
+↑↓ move  enter open  h virtual  n next problem  ! problems  q quit  ? help

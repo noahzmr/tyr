@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○ 9  0 Inventory                            ? help
+ ✖ CRIT  47 components · 13 with problems · serials visible        v List · Tree
+
+Search ╭─ / to search ────────╮  Category  all  f cycles
+
+   Type    Location           Model                   Serial
+▌✖ DIMM    P2-DIMMB1          DDR4 DIMM               3A5F0012                 ┃
+ ✖ disk    /dev/sdd           ST4000NM000A-2HZ100     WJG0A004                 ┃
+ ✖ RAID    controller 0       AVAGO MegaRAID SAS 936… SK94012345               ┃
+ ✖ RAID PD c0 252:2           ST2000NM0055-1V4104     ZFL4A002                 ┃
+ ✖ NIC     ens1f1 4b:00.1     Ethernet Controller E8… B49691A00010             │
+ ✖ xcvr    ens1f1             25G Ethernet: 25G Base… X7A0B11                  │
+ ✖ GPU     GPU1 ca:00.0       NVIDIA A100 80GB PCIe   1324420012346            │
+ ▲ DIMM    P2-DIMMC1          DDR4 DIMM               3A5F0014                 │
+ ▲ disk    /dev/nvme1n1       SAMSUNG MZQL21T9HCJR-0… S64GNE0R100002           │
+ ▲ disk    /dev/sdc           ST4000NM000A-2HZ100     WJG0A003                 │
+ ▲ NIC     eno1 03:00.0       I350 Gigabit Network C… 3CECEF100001             │
+ ▲ NIC     ens1f0 4b:00.0     Ethernet Controller E8… B49691A00010             │
+ ▲ xcvr    ens1f0             25G Ethernet: 25G Base… X7A0B10                  │
+ ● system  srv-degraded-01    SYS-120U-TNR            S412345X3A01234          │
+ ● chassis Rack Mount Chassis –                       C1160LL12AB0123          │
+
+/ search  f category  enter page  c copy serial  v tree  ! problems  ? help

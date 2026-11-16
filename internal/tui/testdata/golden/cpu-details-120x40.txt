@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36  2 CPU ✖4  3 Mem ✖9 4 Stor ✖11 5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv               ? help
+ ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · hottest 96°C                                v Grid · Cores · Details
+
+Identification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+Vendor        GenuineIntel
+Model         Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+Signature     family 6 · model 106 · stepping 6  (06h/6Ah)
+Microcode     0xd0003e7 (same on all online CPUs)
+Architecture  amd64
+
+Sockets 2 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+● CPU1  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+    16 cores / 32 threads · 31 threads online · max 4000 MHz · Populated, Enabled
+    PPIN 0x2f1a9c4e5b6d7000 · asset CPU1
+● CPU2  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+    16 cores / 32 threads · 32 threads online · max 4000 MHz · Populated, Enabled
+    PPIN 0x2f1a9c4e5b6d7001 · asset CPU2
+
+Topology ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Counts    2 sockets · 32 cores · 64 threads
+Online    0-6,8-63
+Offline   7
+Present   0-63
+Possible  0-63
+SMT       on (active: true)
+
+Frequency and power ────────────────────────────────────────────────────────────────────────────────────────────────────
+Driver       intel_pstate
+Governor     performance
+Boost        enabled
+Base / max   2400 / 3400 MHz
+Idle states  POLL (0 µs) · C1 (2 µs) · C1E (10 µs) · C6 (170 µs)
+
+Temperatures ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+● CPU0 Package          52°C  warn 90°C · crit 100°C (hwmon)  coretemp
+▲ CPU1 Package          93°C  warn 90°C · crit 100°C (hwmon)  coretemp
+
+lines 1–35 of 64 · ↑↓ pgup pgdn
+↑↓ move  v view  ! problems  q quit  ? help

@@ -1,0 +1,25 @@
+FRU Device Description : Builtin FRU Device (ID 0)
+ Chassis Type          : Rack Mount Chassis
+ Chassis Part Number   : CSE-119UH4TS-R1K22P-T
+ Chassis Serial        : C1160LL12AB0123
+ Board Mfg Date        : Mon Mar  1 00:00:00 2021 UTC
+ Board Mfg             : Supermicro
+ Board Product         : X12DPU-6
+ Board Serial          : OM21AS012345
+ Board Part Number     : X12DPU-6
+ Product Manufacturer  : Supermicro
+ Product Name          : SYS-120U-TNR
+ Product Part Number   : SYS-120U-TNR
+ Product Serial        : S412345X3A01234
+
+FRU Device Description : PS1 (ID 1)
+ Board Mfg             : SUPERMICRO
+ Board Product         : PWS-1K22A-1R
+ Board Serial          : P1K22CL21123451
+ Board Part Number     : PWS-1K22A-1R
+
+FRU Device Description : PS2 (ID 2)
+ Board Mfg             : SUPERMICRO
+ Board Product         : PWS-1K22A-1R
+ Board Serial          : P1K22CL21123452
+ Board Part Number     : PWS-1K22A-1R

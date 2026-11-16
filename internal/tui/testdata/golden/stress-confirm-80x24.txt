@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○  9 Stress  0                              ? help
+ ✖ CRIT  Stress test · machine has 14 critical findings, results may be affec…
+
+New run ────────────────────────────────────────────────────────────────────────
+
+▌T╭─ Confirm stress test ────────────────────────────────────────────────────╮
+  │ CPU · builtin · 5 min                                                    │
+ E│                                                                          │
+  │ ● CPU      builtin · 5 min · simulated cpu test (fixtures mode, no real  │a…
+  │            load)                                                         │
+  │            Nothing: fixtures mode only replays recorded data.            │
+  │                                                                          │
+  │ Abort any time with esc; all workers stop cleanly. The guard stops the   │
+ D│ run on a critical temperature, a new machine check or an uncorrectable   │
+ C│ ECC error.                                                               │
+ G│                                                                          │
+  │ Type yes and press enter to start  [█     ]                              │
+  │ esc cancel                                                               │
+  ╰──────────────────────────────────────────────────────────────────────────╯
+▲ cpu7 is offline and will be skipped.
+▲ CPU1 Package is already at 93 °C; the guard may stop the test early.
+
+yes+enter start  esc cancel  ? help

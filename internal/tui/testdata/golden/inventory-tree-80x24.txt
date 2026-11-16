@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○ 9  0 Inventory                            ? help
+ ✖ CRIT  47 components · 13 with problems · serials visible        v List · Tree
+
+   Component                                                  Serial
+▌  ▾ ✖ srv-degraded-01  Supermicro SYS-120U-TNR               S412345X3A01234  ┃
+   ├─ ▸ ● Platform                                                             ┃
+   ├─ ▾ ✖ Processors  2 sockets · 32 cores · 64 threads                        ┃
+   │  ├─ ▾ ✖ offline CPUs  Intel(R) Xeon(R) Silver 4314 CPU …                  ┃
+   │  │  └─ ▾ ✖ unknown core  cpu7                                             ┃
+   │  │     └─ ✖ cpu7  OFFLINE · – · –                                         │
+   │  ├─ ▾ ▲ CPU1  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GH…                  │
+   │  │  ├─ ▸ ● CPU0 Package – Core 11  13 healthy                             │
+   │  │  ├─ ▾ ▲ Core 12  cpu12 cpu44                                           │
+   │  │  │  ├─ ▲ cpu12  online · 2900 MHz · 44°C                               │
+   │  │  │  └─ ● cpu44  online · 2600 MHz · 44°C                               │
+   │  │  └─ ▸ ● Core 13–15  3 healthy                                          │
+   │  └─ ▾ ▲ CPU2  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GH…                  │
+   │     ├─ ▲ CPU1 Package  93°C                                               │
+   │     ├─ ▸ ● Core 0–3  4 healthy                                            │
+   │     ├─ ▾ ▲ Core 4  cpu20 cpu52                                            │
+   │     │  ├─ ▲ cpu20  online · 1800 MHz · 96°C                               │
+   │     │  └─ ▲ cpu52  online · 1800 MHz · 96°C                               │
+↑↓ move  → space open  ← close/parent  enter open in tab  c copy serial  ? help

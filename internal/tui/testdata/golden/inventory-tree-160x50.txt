@@ -1,0 +1,50 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36  2 CPU ✖4  3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
+ ✖ CRIT  47 components · 13 with problems · serials visible                                                                                        v List · Tree
+
+   Component                                                                                 Serial             │ ✖ srv-degraded-01
+▌  ▾ ✖ srv-degraded-01  Supermicro SYS-120U-TNR                                              S412345X3A01234  ┃ │ ──────────────────────────────────────────────
+   ├─ ▸ ● Platform                                                                                            ┃ │ Type      system
+   ├─ ▾ ✖ Processors  2 sockets · 32 cores · 64 threads                                                       ┃ │ Location  srv-degraded-01
+   │  ├─ ▾ ✖ offline CPUs  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz                                         ┃ │ Vendor    Supermicro
+   │  │  └─ ▾ ✖ unknown core  cpu7                                                                            ┃ │ Model     SYS-120U-TNR
+   │  │     └─ ✖ cpu7  OFFLINE · – · –                                                                        ┃ │ Part no.  n/a
+   │  ├─ ▾ ▲ CPU1  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz · PPIN 0x2f1a9c4e5b6d7000                       ┃ │ Serial    S412345X3A01234
+   │  │  ├─ ▸ ● CPU0 Package – Core 11  13 healthy                                                            ┃ │ Firmware  BIOS 1.4b 06/14/2024
+   │  │  ├─ ▾ ▲ Core 12  cpu12 cpu44                                                                          ┃ │ UUID 00000000-0000-0000-0000-3cecef123456
+   │  │  │  ├─ ▲ cpu12  online · 2900 MHz · 44°C                                                              ┃ │
+   │  │  │  └─ ● cpu44  online · 2600 MHz · 44°C                                                              ┃ │ enter  open in System tab
+   │  │  └─ ▸ ● Core 13–15  3 healthy                                                                         ┃ │ c      copy serial
+   │  └─ ▾ ▲ CPU2  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz · PPIN 0x2f1a9c4e5b6d7001                       ┃ │
+   │     ├─ ▲ CPU1 Package  93°C                                                                              ┃ │ Path
+   │     ├─ ▸ ● Core 0–3  4 healthy                                                                           ┃ │ srv-degraded-01
+   │     ├─ ▾ ▲ Core 4  cpu20 cpu52                                                                           ┃ │
+   │     │  ├─ ▲ cpu20  online · 1800 MHz · 96°C                                                              ┃ │
+   │     │  └─ ▲ cpu52  online · 1800 MHz · 96°C                                                              ┃ │
+   │     ├─ ▾ ▲ Core 5  cpu21 cpu53                                                                           ┃ │
+   │     │  ├─ ▲ cpu21  online · 1800 MHz · 91°C                                                              ┃ │
+   │     │  └─ ▲ cpu53  online · 1800 MHz · 91°C                                                              ┃ │
+   │     └─ ▸ ● Core 6–15  10 healthy                                                                         ┃ │
+   ├─ ▾ ✖ Memory  512 GB installed in 16/32 slots                                                             ┃ │
+   │  ├─ ▸ ● P1                                                                                               ┃ │
+   │  └─ ▾ ✖ P2                                                                                               ┃ │
+   │     ├─ ▸ ● Channel A                                                                                     ┃ │
+   │     ├─ ▾ ✖ Channel B                                                                                     ┃ │
+   │     │  ├─ ✖ P2-DIMMB1  32 GB DDR4 Samsung M393A4K40EB3-CWE                              3A5F0012         ┃ │
+   │     │  └─ ● P2-DIMMB2  empty                                                                             ┃ │
+   │     ├─ ▾ ▲ Channel C                                                                                     ┃ │
+   │     │  ├─ ▲ P2-DIMMC1  32 GB DDR4 Samsung M393A4K40EB3-CWE                              3A5F0014         │ │
+   │     │  └─ ● P2-DIMMC2  empty                                                                             │ │
+   │     └─ ▸ ● Channel D–H  5 healthy                                                                        │ │
+   ├─ ▾ ✖ Storage  7 disks                                                                                    │ │
+   │  ├─ ▾ ✖ RAID controller 0  AVAGO MegaRAID SAS 9361-8i                                   SK94012345       │ │
+   │  │  ├─ ▾ ✖ VD 0/0  RAID5 Dgrd 5.457 TB                                                                   │ │
+   │  │  │  ├─ ● PD 252:0  Onln ST2000NM0055-1V4104                                          ZFL4A000         │ │
+   │  │  │  ├─ ● PD 252:1  Onln ST2000NM0055-1V4104                                          ZFL4A001         │ │
+   │  │  │  ├─ ✖ PD 252:2  Failed ST2000NM0055-1V4104                                        ZFL4A002         │ │
+   │  │  │  └─ ● PD 252:3  Onln ST2000NM0055-1V4104                                          ZFL4A003         │ │
+   │  │  └─ ● CacheVault  Optimal                                                                             │ │
+   │  ├─ ▸ ● md0  raid1 active 2/2                                                                            │ │
+   │  ├─ ▾ ✖ md1  raid5 active 3/4                                                                            │ │
+   │  │  ├─ ✖ sdd1  FAILED                                                                                    │ │
+↑↓ move  → space open  ← close/parent  enter open in tab  c copy serial  v list  ! problems  q quit  ? help

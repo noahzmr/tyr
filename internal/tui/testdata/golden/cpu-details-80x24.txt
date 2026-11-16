@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36  2 CPU ✖4  3✖9 4✖11 5○ 6✖6 7✖6 8○ 9 0                                ? help
+ ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · h…  v Grid · Cores · Details
+
+Identification ─────────────────────────────────────────────────────────────────
+Vendor        GenuineIntel
+Model         Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+Signature     family 6 · model 106 · stepping 6  (06h/6Ah)
+Microcode     0xd0003e7 (same on all online CPUs)
+Architecture  amd64
+
+Sockets 2 ──────────────────────────────────────────────────────────────────────
+● CPU1  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+    16 cores / 32 threads · 31 threads online · max 4000 MHz · Populated, Enabl…
+    PPIN 0x2f1a9c4e5b6d7000 · asset CPU1
+● CPU2  Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+    16 cores / 32 threads · 32 threads online · max 4000 MHz · Populated, Enabl…
+    PPIN 0x2f1a9c4e5b6d7001 · asset CPU2
+
+Topology ───────────────────────────────────────────────────────────────────────
+Counts    2 sockets · 32 cores · 64 threads
+Online    0-6,8-63
+lines 1–19 of 69 · ↑↓ pgup pgdn
+↑↓ move  v view  ! problems  q quit  ? help

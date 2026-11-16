@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9  4 Storage ✖11  5○ 6✖6 7✖6 8○ 9 0                            ? help
+ ✖ CRIT  7 disks · 26 TB · md1 degraded · 1 RAID …  v Disks · RAID · Filesystems
+
+   Disk     Type Serial            Size  °C  Wear SMART     Err
+▌✖ sdd      HDD  WJG0A004          4 TB  36     – PASSED 33 I/O
+ ▲ nvme1n1  NVMe S64GNE0R100002  1.9 TB  42  93 % PASSED      3
+ ▲ sdc      HDD  WJG0A003          4 TB  35     – PASSED     32
+ ● nvme0n1  NVMe S64GNE0R100001  1.9 TB  39   3 % PASSED      0
+ ● sda      HDD  WJG0A001          4 TB  33     – PASSED      0
+ ● sdb      HDD  WJG0A002          4 TB  34     – PASSED      0
+ ● sde      HDD  –                 6 TB   –     – –           0
+
+sdd ───────────────────────────────────────── md1 member · enter full SMART page
+Model ST4000NM000A-2HZ100  S/N WJG0A004  fw SN04
+SMART PASSED  realloc 0  I/O err 33
+Temp  ━━━━━────╎──┃─ 36°C
+
+Findings · Storage 6 ✖ · 5 ▲ ─────────────────────────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O errors in kernel log
+ ✖ md1          md1 (raid5) degraded: 3/4 devices, failed sdd1
+ ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
+   … 8 more · enter on a row opens its page
+↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help

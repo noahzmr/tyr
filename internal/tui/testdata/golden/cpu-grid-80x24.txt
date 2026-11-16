@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36  2 CPU ✖4  3✖9 4✖11 5○ 6✖6 7✖6 8○ 9 0                                ? help
+ ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · h…  v Grid · Cores · Details
+
+Model      Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz
+Microcode  0xd0003e7 ● same on all 63
+Topology   2 sockets · 32 cores · 64 threads SMT on
+Online     0-6,8-63  ✖ 7 offline
+Core test  not run
+
+Logical CPUs ──────────────────────────────── load % · t temperature · ←→↑↓ move
+socket 0 t0 · · · · · · · · · · · · · · · ·
+socket 0 t1 · · · · · · ·   · · · · · · · ·
+socket 1 t0 · · · · · · · · · · · · · · · ·
+socket 1 t1 · · · · · · · · · · · · · · · ·
+no topology ✖
+
+cpu0 ─────────────────────────────────────────────────────────── enter full page
+State     ● online                      MCE        0
+Location  socket 0 · core 0             Throttle   0
+Siblings  0,32                          Core test  not run
+                                        Deep idle  C6 60%
+
+←→ move  enter open  v view  t load/temp  ! problems  q quit  ? help

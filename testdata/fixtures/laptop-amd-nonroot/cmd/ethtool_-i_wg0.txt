@@ -1,0 +1,10 @@
+driver: wireguard
+version: 7.0.0-43-generic
+firmware-version: 
+expansion-rom-version: 
+bus-info: 
+supports-statistics: no
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: no

@@ -1,0 +1,4 @@
+MAJOR=261
+MINOR=0
+DEVNAME=accel/accel0
+DEVTYPE=accel_minor

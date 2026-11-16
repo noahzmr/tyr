@@ -1,0 +1,2 @@
+Settings for wlp194s0:
+	Link detected: yes

@@ -1,0 +1,20 @@
+{
+  "json_format_version": [1, 0],
+  "smartctl": {"version": [7, 4], "argv": ["smartctl", "-j", "-x", "/dev/nvme0n1"], "exit_status": 0},
+  "device": {"name": "/dev/nvme0n1", "info_name": "/dev/nvme0n1", "type": "nvme", "protocol": "NVMe"},
+  "model_name": "SAMSUNG MZQL21T9HCJR-00A07",
+  "serial_number": "S64GNE0R100001",
+  "firmware_version": "GDC5602Q",
+  "user_capacity": {"blocks": 3750000000, "bytes": 1920000000000},
+  "smart_status": {"passed": true, "nvme": {"value": 0}},
+  "nvme_smart_health_information_log": {
+    "critical_warning": 0, "temperature": 38, "available_spare": 100, "available_spare_threshold": 10,
+    "percentage_used": 3, "data_units_read": 412398123, "data_units_written": 801234567, "host_reads": 9123456789,
+    "host_writes": 12345678901, "controller_busy_time": 4567, "power_cycles": 41, "power_on_hours": 19830,
+    "unsafe_shutdowns": 7, "media_errors": 0, "num_err_log_entries": 0,
+    "warning_temp_time": 0, "critical_comp_time": 0
+  },
+  "temperature": {"current": 38},
+  "power_cycle_count": 41,
+  "power_on_time": {"hours": 19830}
+}

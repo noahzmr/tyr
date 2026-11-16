@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36 2 CPU ✖4 3 Mem ✖9 4 Stor ✖11 5 Power ○  6 Network ✖6  7 GPU ✖6 8 Events ○ 9 Stress 0 Inv           ? help
+ ✖ CRIT  4 physical ports · 2 up · bond0 1/2 · BMC 10.10.0.121 · 1 virtual hidden
+
+   Interface    Kind   Link           Address / LLDP neighbor                               rx        tx traffic
+▌✖ bond0        bond   25G 1/2 ports  –                                                      –         –
+ ▲ ├─ ens1f0    port   25G full       leaf-a01.dc1 Ethernet12/1                              –         –
+ ✖ ├─ ens1f1    port   no link        leaf-a02.dc1 Ethernet12/1                              –         –
+ ● └─ bond0.100 vlan   up             10.20.0.21/24                                          –         –
+ ▲ eno1         port   100M of 1G     10.10.0.21/24 mgmt-sw01 Gi1/0/21                       –         –
+ ○ eno2         port   admin down     –                                                      –         –
+   + 1 virtual interface hidden · h show · BMC 10.10.0.121 (Static Address) 3c:ec:ef:10:00:99
+
+bond0 ─────────────────────────────────────────────────────────────────── enter full page: transceiver, counters, graphs
+Adapter    n/a                          Port       n/a                          rx CRC       0
+Serial     n/a                          Autoneg    n/a                          rx errors    0
+Driver     n/a                          Duplex     full                         rx dropped   0
+PCI        n/a                          Max speed  n/a                          carrier chg  2
+MAC / MTU  b4:96:91:a0:00:10 · 9000                                             rx           n/a
+
+Findings · Network 2 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ bond0        bond0 degraded: ens1f1 down (1/2 members up)
+ ✖ ens1f1       ens1f1 link down
+ ▲ eno1         eno1 running half duplex
+ ▲ eno1         eno1 at 100M, port supports 1G
+ ▲ ens1f0       ens1f0: 1532 CRC errors since boot (cable/optics)
+ ▲ ens1f0       ens1f0 transceiver rx power -13.90 dBm out of range
+
+
+
+
+
+
+
+
+
+
+
+
+↑↓ move  enter open  h virtual  n next problem  ! problems  q quit  ? help

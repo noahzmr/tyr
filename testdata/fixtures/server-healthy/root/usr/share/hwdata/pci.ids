@@ -1,0 +1,13 @@
+#	pci.ids trimmed for Tyr fixtures (from hwdata)
+1000  Broadcom / LSI
+	005d  MegaRAID SAS-3 3108 [Invader]
+10de  NVIDIA Corporation
+	20b5  GA100 [A100 PCIe 80GB]
+144d  Samsung Electronics Co Ltd
+	a80a  NVMe SSD Controller PM9A1/PM9A3/980PRO
+1a03  ASPEED Technology, Inc.
+	2000  ASPEED Graphics Family
+8086  Intel Corporation
+	1521  I350 Gigabit Network Connection
+	159b  Ethernet Controller E810-XXV for SFP
+	a182  C620 Series Chipset Family SATA Controller [AHCI mode]

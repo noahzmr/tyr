@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4  3 Memory ✖9  4✖11 5○ 6✖6 7✖6 8○ 9 0                             ? help
+ ✖ CRIT  512 GB installed · 480 GB visible · 16 of 32 slots…  v Table · Slot map
+
+Used █████░░░░░░░░░░░ 141 GB of 471 GB · 330 GB available · swap 0 / 8.0 GB
+ECC  ▲ 14 corrected  ✖ 1 uncorrected  node 0 252 GB  node 1 220 GB  poisoned 4 …
+
+P1 ─────────────────────────────────────────────────────────── node 0 · 252 GB
+          slot 1        slot 2
+ ch A  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch B  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch C  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch D  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch E  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch F  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch G  ▕● 32G       ▏▕┄ empty ┄   ▏
+ ch H  ▕● 32G       ▏▕┄ empty ┄   ▏
+
+P2 ─────────────────────────────────────────────────────────── node 1 · 220 GB
+          slot 1        slot 2
+ ch A  ▕● 32G       ▏▕┄ empty ┄   ▏
+▌ch B  ▕✖ 32G       ▏▕┄ empty ┄   ▏  ◂ 1 uncorrectable ECC error on P2-DIMMB1
+ ch C  ▕▲ 32G       ▏▕┄ empty ┄   ▏  ◂ P2-DIMMC1 Temp at 82°C · 14 correctable…
+↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  ? help

@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ100 …  line 1–20 · 0 %
+
+Identity ───────────────────────────────────────────────────────────────────────
+Device     /dev/sdd
+Model      ST4000NM000A-2HZ100
+Serial     WJG0A004
+WWN        naa.5000c500e4a10004
+Firmware   SN04
+Capacity   4 TB · 7200 rpm
+Interface  HDD over sata
+Used by    md1 member
+
+Sensors ──────────────────────────────────────────────────────────────── session
+Temperature ━━━━━━─────╎──┃─ 36°C
+            limits warn 55 · crit 65 (default)
+
+SMART health ────────────────────────────────────────────────────── via smartctl
+Overall    ● PASSED
+Self-test  no failure logged
+Power-on   19 832 h · 41 cycles
+
+SMART attributes ────────────────────────────────────────────────── 8 attributes
+↑↓ pgup pgdn scroll  g G top/end  / search  n N next/prev match  ? help

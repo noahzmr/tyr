@@ -1,0 +1,50 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36  2 CPU ✖4  3 Memory ✖9  4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
+ ✖ CRIT  47 components · 13 with problems · serials visible                                                                                        v List · Tree
+
+Search ╭─ / to search ────────╮  Category  all  system chassis board BMC CPU DIMM disk RAID RAID PD NIC xcvr GPU PSU FRU
+
+   Type    Location           Vendor            Model                                 Part number          Serial                  Firmware
+▌✖ DIMM    P2-DIMMB1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0012                –                           ┃
+ ✖ disk    /dev/sdd           –                 ST4000NM000A-2HZ100                   –                    WJG0A004                SN04                        ┃
+ ✖ RAID    controller 0       –                 AVAGO MegaRAID SAS 9361-8i            –                    SK94012345              4.680.00-8527               ┃
+ ✖ RAID PD c0 252:2           –                 ST2000NM0055-1V4104                   –                    ZFL4A002                SN05                        ┃
+ ✖ NIC     ens1f1 4b:00.1     Intel             Ethernet Controller E810-XXV for SFP  K91258-006           B49691A00010            4.40 0x8001c967 1.3534.0    ┃
+ ✖ xcvr    ens1f1             FINISAR CORP.     25G Ethernet: 25G Base-SR             FTLF8536P4BCL        X7A0B11                 –                           ┃
+ ✖ GPU     GPU1 ca:00.0       NVIDIA            NVIDIA A100 80GB PCIe                 900-21001-0020-100   1324420012346           92.00.68.00.01              ┃
+ ▲ DIMM    P2-DIMMC1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0014                –                           ┃
+ ▲ disk    /dev/nvme1n1       –                 SAMSUNG MZQL21T9HCJR-00A07            –                    S64GNE0R100002          GDC5602Q                    ┃
+ ▲ disk    /dev/sdc           –                 ST4000NM000A-2HZ100                   –                    WJG0A003                SN04                        ┃
+ ▲ NIC     eno1 03:00.0       Intel             I350 Gigabit Network Connection       AOC-I350             3CECEF100001            1.63, 0x80000f73, 1.3534.0  ┃
+ ▲ NIC     ens1f0 4b:00.0     Intel             Ethernet Controller E810-XXV for SFP  K91258-006           B49691A00010            4.40 0x8001c967 1.3534.0    ┃
+ ▲ xcvr    ens1f0             FINISAR CORP.     25G Ethernet: 25G Base-SR             FTLF8536P4BCL        X7A0B10                 –                           ┃
+ ● system  srv-degraded-01    Supermicro        SYS-120U-TNR                          –                    S412345X3A01234         BIOS 1.4b 06/14/2024        ┃
+ ● chassis Rack Mount Chassis Supermicro        –                                     –                    C1160LL12AB0123         –                           ┃
+ ● board   mainboard          Supermicro        X12DPU-6                              –                    OM21AS012345            –                           ┃
+ ● BMC     BMC                Supermicro        –                                     –                    –                       1.40                        ┃
+ ● PSU     PSU1               SUPERMICRO        PWS-1K22A-1R                          –                    P1K22CL21123451         1.4                         ┃
+ ● PSU     PSU2               SUPERMICRO        PWS-1K22A-1R                          –                    P1K22CL21123452         1.4                         ┃
+ ● FRU     Builtin FRU Device Supermicro        SYS-120U-TNR                          SYS-120U-TNR         S412345X3A01234         –                           ┃
+ ● FRU     PS1                SUPERMICRO        PWS-1K22A-1R                          PWS-1K22A-1R         P1K22CL21123451         –                           ┃
+ ● FRU     PS2                SUPERMICRO        PWS-1K22A-1R                          PWS-1K22A-1R         P1K22CL21123452         –                           ┃
+ ● CPU     CPU1               GenuineIntel      Intel(R) Xeon(R) Silver 4314 CPU @ 2… –                    PPIN 0x2f1a9c4e5b6d7000 µcode 0xd0003e7             ┃
+ ● CPU     CPU2               GenuineIntel      Intel(R) Xeon(R) Silver 4314 CPU @ 2… –                    PPIN 0x2f1a9c4e5b6d7001 µcode 0xd0003e7             ┃
+ ● DIMM    P1-DIMMA1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0000                –                           ┃
+ ● DIMM    P1-DIMMB1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0002                –                           ┃
+ ● DIMM    P1-DIMMC1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0004                –                           ┃
+ ● DIMM    P1-DIMMD1          Micron Technology DDR4 DIMM                             MTA36ASF4G72PZ-3G2R1 3A5F0006                –                           ┃
+ ● DIMM    P1-DIMME1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0008                –                           ┃
+ ● DIMM    P1-DIMMF1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F000A                –                           ┃
+ ● DIMM    P1-DIMMG1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F000C                –                           ┃
+ ● DIMM    P1-DIMMH1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F000E                –                           ┃
+ ● DIMM    P2-DIMMA1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0010                –                           ┃
+ ● DIMM    P2-DIMMD1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0016                –                           ┃
+ ● DIMM    P2-DIMME1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0018                –                           ┃
+ ● DIMM    P2-DIMMF1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001A                –                           │
+ ● DIMM    P2-DIMMG1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001C                –                           │
+ ● DIMM    P2-DIMMH1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F001E                –                           │
+ ● disk    /dev/nvme0n1       –                 SAMSUNG MZQL21T9HCJR-00A07            –                    S64GNE0R100001          GDC5602Q                    │
+ ● disk    /dev/sda           –                 ST4000NM000A-2HZ100                   –                    WJG0A001                SN04                        │
+ ● disk    /dev/sdb           –                 ST4000NM000A-2HZ100                   –                    WJG0A002                SN04                        │
+
+/ search  f category  enter page  c copy serial  v tree  ! problems  q quit  ? help

@@ -1,0 +1,45 @@
+	Identifier                                : 0x03 (SFP)
+	Extended identifier                       : 0x04 (GBIC/SFP defined by 2-wire interface ID)
+	Connector                                 : 0x07 (LC)
+	Transceiver codes                         : 0x10 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	Transceiver type                          : 25G Ethernet: 25G Base-SR
+	Encoding                                  : 0x06 (64B/66B)
+	BR, Nominal                               : 25500MBd
+	Length (OM3 50um)                         : 70m
+	Laser wavelength                          : 850nm
+	Vendor name                               : FINISAR CORP.
+	Vendor OUI                                : 00:90:65
+	Vendor PN                                 : FTLF8536P4BCL
+	Vendor rev                                : A
+	Vendor SN                                 : X7A0B11
+	Date code                                 : 210314
+	Optical diagnostics support               : Yes
+	Laser bias current                        : 7.510 mA
+	Laser output power                        : 0.6810 mW / -1.67 dBm
+	Receiver signal average optical power     : 0.0000 mW / -40.00 dBm
+	Module temperature                        : 36.12 degrees C / 97.02 degrees F
+	Module voltage                            : 3.3053 V
+	Alarm/warning flags implemented           : Yes
+	Laser bias current high alarm             : Off
+	Laser output power high alarm             : Off
+	Laser output power low alarm              : Off
+	Module temperature high alarm             : Off
+	Laser rx power low alarm                  : Off
+	Laser bias current high alarm threshold   : 13.000 mA
+	Laser bias current low alarm threshold    : 2.000 mA
+	Laser output power high alarm threshold   : 1.7783 mW / 2.50 dBm
+	Laser output power low alarm threshold    : 0.0891 mW / -10.50 dBm
+	Laser output power high warning threshold : 1.4125 mW / 1.50 dBm
+	Laser output power low warning threshold  : 0.1122 mW / -9.50 dBm
+	Module temperature high alarm threshold   : 85.00 degrees C / 185.00 degrees F
+	Module temperature low alarm threshold    : -10.00 degrees C / 14.00 degrees F
+	Module temperature high warning threshold : 75.00 degrees C / 167.00 degrees F
+	Module temperature low warning threshold  : -5.00 degrees C / 23.00 degrees F
+	Module voltage high alarm threshold       : 3.6300 V
+	Module voltage low alarm threshold        : 2.9700 V
+	Module voltage high warning threshold     : 3.4650 V
+	Module voltage low warning threshold      : 3.1350 V
+	Laser rx power high alarm threshold       : 1.7783 mW / 2.50 dBm
+	Laser rx power low alarm threshold        : 0.0355 mW / -14.50 dBm
+	Laser rx power high warning threshold     : 1.4125 mW / 1.50 dBm
+	Laser rx power low warning threshold      : 0.0447 mW / -13.50 dBm

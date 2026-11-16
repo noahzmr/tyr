@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36 2 CPU ✖4  3 Memory ✖9  4 Stor ✖11 5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv            ? help
+ ✖ CRIT  512 GB installed · 480 GB visible · 16 of 32 slots · Multi-bit ECC                           v Table · Slot map
+
+Used █████████░░░░░░░░░░░░░░░░░░░░░ 141 GB of 471 GB · 330 GB available · swap 0 / 8.0 GB
+ECC  ▲ 14 corrected  ✖ 1 uncorrected  node 0 252 GB  node 1 220 GB  poisoned 4 kB
+
+P1 ─────────────────────────────────────────────────────────────── node 0 · 252 GB  │ ✖ P2-DIMMB1
+          slot 1        slot 2                                                      │ ──────────────────────────────────
+ ch A  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Location   P2 · channel B
+ ch B  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Size       32 GB DDR4 DIMM
+ ch C  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Speed      3200 MT/s (rated 3200)
+ ch D  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Vendor     Samsung
+ ch E  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Part       M393A4K40EB3-CWE
+ ch F  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Serial     3A5F0012
+ ch G  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ Asset tag  P2-DIMMB1_AssetTag (da…
+ ch H  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │
+                                                                                    │ Temp      ━━━──────╎┃─ 37°C
+P2 ─────────────────────────────────────────────────────────────── node 1 · 220 GB  │
+          slot 1        slot 2                                                      │ EDAC mc4 dimm2
+ ch A  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ corrected   0
+▌ch B  ▕✖ 32G       ▏▕┄ empty ┄   ▏  ◂ 1 uncorrectable ECC error on P2-DIMMB1       │ uncorrected 1
+ ch C  ▕▲ 32G       ▏▕┄ empty ┄   ▏  ◂ P2-DIMMC1 Temp at 82°C · 14 correctable ECC… │
+ ch D  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ ✖ 1 uncorrectable ECC error on P2…
+ ch E  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │
+ ch F  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │ enter full page
+ ch G  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │
+ ch H  ▕● 32G       ▏▕┄ empty ┄   ▏                                                 │
+                                                                                    │
+● ok  ▲ warn  ✖ crit  ┄ empty ┄ empty slot · ←→ select · a hide empty · enter DIMM …│
+
+Findings · Memory 3 ✖ · 6 ▲ ──────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ sel          1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(CPU2)
+ ✖ memory       4 kB of memory poisoned by the kernel (HardwareCorrupted)
+ ✖ P2-DIMMB1    1 uncorrectable ECC error on P2-DIMMB1
+ ▲ P2-DIMMC1 T… P2-DIMMC1 Temp at 82°C
+ ▲ sel          1 memory event in BMC SEL, latest 2026-11-11 09:00: Correctable ECC @DIMMC1(CPU2)
+ ▲ P2-DIMMC1    14 correctable ECC errors on P2-DIMMC1
+   … 3 more · enter on a row opens its page
+↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  q quit  ? help

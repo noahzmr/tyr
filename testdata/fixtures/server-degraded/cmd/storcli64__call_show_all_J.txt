@@ -1,0 +1,20 @@
+{
+"Controllers":[
+{
+	"Command Status" : {"CLI Version" : "007.2612.0000.0000 Jun 13, 2023","Operating system" : "Linux 6.8.0-49-generic","Controller" : 0,"Status" : "Success","Description" : "None"},
+	"Response Data" : {
+		"Basics" : {"Controller" : 0,"Model" : "AVAGO MegaRAID SAS 9361-8i","Serial Number" : "SK94012345","PCI Address" : "00:5e:00:00"},
+		"Version" : {"Firmware Package Build" : "24.21.0-0151","Firmware Version" : "4.680.00-8527","Driver Name" : "megaraid_sas","Driver Version" : "07.727.03.00-rc1"},
+		"Status" : {"Controller Status" : "Optimal","Memory Correctable Errors" : 0,"Memory Uncorrectable Errors" : 0,"ECC Bucket Count" : 0,"Any Offline VD Cache Preserved" : "No","BBU Status" : 0},
+		"VD LIST" : [{"DG/VD" : "0/0","TYPE" : "RAID5","State" : "Dgrd","Access" : "RW","Consist" : "Yes","Cache" : "RWBD","Cac" : "-","sCC" : "ON","Size" : "5.457 TB","Name" : "archive"}],
+		"PD LIST" : [
+			{"EID:Slt" : "252:0","DID" : 8,"State" : "Onln","DG" : 0,"Size" : "1.818 TB","Intf" : "SATA","Med" : "HDD","SED" : "N","PI" : "N","SeSz" : "512B","Model" : "ST2000NM0055-1V4104","Sp" : "U","Type" : "-"},
+			{"EID:Slt" : "252:1","DID" : 9,"State" : "Onln","DG" : 0,"Size" : "1.818 TB","Intf" : "SATA","Med" : "HDD","SED" : "N","PI" : "N","SeSz" : "512B","Model" : "ST2000NM0055-1V4104","Sp" : "U","Type" : "-"},
+			{"EID:Slt" : "252:2","DID" : 10,"State" : "Failed","DG" : 0,"Size" : "1.818 TB","Intf" : "SATA","Med" : "HDD","SED" : "N","PI" : "N","SeSz" : "512B","Model" : "ST2000NM0055-1V4104","Sp" : "U","Type" : "-"},
+			{"EID:Slt" : "252:3","DID" : 11,"State" : "Onln","DG" : 0,"Size" : "1.818 TB","Intf" : "SATA","Med" : "HDD","SED" : "N","PI" : "N","SeSz" : "512B","Model" : "ST2000NM0055-1V4104","Sp" : "U","Type" : "-"}
+		],
+		"Cachevault_Info" : [{"Model" : "CVPM02","State" : "Optimal","Temp" : "28C","Mode" : "-","MfgDate" : "2021/03/11"}]
+	}
+}
+]
+}

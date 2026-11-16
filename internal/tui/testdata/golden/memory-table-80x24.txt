@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4  3 Memory ✖9  4✖11 5○ 6✖6 7✖6 8○ 9 0                             ? help
+ ✖ CRIT  512 GB installed · 480 GB visible · 16 of 32 slots…  v Table · Slot map
+
+Used █████░░░░░░░░░░░ 141 GB of 471 GB · 330 GB available · swap 0 / 8.0 GB
+ECC  ▲ 14 corrected  ✖ 1 uncorrected  node 0 252 GB  node 1 220 GB  poisoned 4 …
+
+   Slot        Size     Speed   CE  UE  °C Serial
+▌✖ P2-DIMMB1  32 GB 3200/3200    0   1  37 3A5F0012                            ┃
+ ▲ P2-DIMMC1  32 GB 3200/3200   14   0  82 3A5F0014                            ┃
+ ● P1-DIMMA1  32 GB 3200/3200    0   0  34 3A5F0000                            ┃
+ ● P1-DIMMB1  32 GB 3200/3200    0   0  36 3A5F0002                            │
+ ● P1-DIMMC1  32 GB 3200/3200    0   0  38 3A5F0004                            │
+ ● P1-DIMMD1  32 GB 2933/3200    0   0  35 3A5F0006                            │
+ ● P1-DIMME1  32 GB 3200/3200    0   0  37 3A5F0008                            │
+   + 16 empty slots hidden · a show
+
+P2-DIMMB1 Samsung M393A4K40EB3-CWE · DIMM · rank 2 · ECC · S/N 3A5F0012
+  bank P1_Node1_ChannelB_Dimm0 · channel P2-B · EDAC CPU_SrcID#1_MC#0_Chan#1_DI…
+
+Findings · Memory 3 ✖ · 6 ▲ ──────────────────────────────── n next · enter open
+ ✖ sel          1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrecta…
+   … 8 more · enter on a row opens its page
+↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  ? help

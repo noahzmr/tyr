@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36 2 CPU ✖4 3 Mem ✖9  4 Storage ✖11  5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv            ? help
+ ✖ CRIT  7 disks · 26 TB · md1 degraded · 1 RAID controller · 4 filesystems                 v Disks · RAID · Filesystems
+
+   Disk     Type Model                                                   Serial            Size  °C  Wear SMART     Err
+▌✖ sdd      HDD  ST4000NM000A-2HZ100                                     WJG0A004          4 TB  36     – PASSED 33 I/O
+ ▲ nvme1n1  NVMe SAMSUNG MZQL21T9HCJR-00A07                              S64GNE0R100002  1.9 TB  42  93 % PASSED      3
+ ▲ sdc      HDD  ST4000NM000A-2HZ100                                     WJG0A003          4 TB  35     – PASSED     32
+ ● nvme0n1  NVMe SAMSUNG MZQL21T9HCJR-00A07                              S64GNE0R100001  1.9 TB  39   3 % PASSED      0
+ ● sda      ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮SSED      0
+ ● sdb      │ Navigation                    Health                        Data                             │SSED      0
+ ● sde      │ 1–0        switch tab         n          next problem       r          refresh now           │          0
+            │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │
+sdd ────────│ ↑↓ jk      move               o          worst ↔ physical   e          export JSON           │l SMART page
+Model     ST│ ←→ hl      move / regions     v          switch view        s          go to Stress          │
+Serial    WJ│ pgup pgdn  page               /          search             c          copy serial           │
+Firmware  SN│ g G        top / end          t          CPU load ↔ temp    q          quit                  │
+Path      /d│ enter      open / action      a          empty DIMM slots   ctrl+c     stop all and quit     │)
+            │ esc        back · close       h          virtual NICs                                        │
+Findings · S│                                                                                              │· enter open
+ ✖ sdd      │ This tab · Storage                                                                           │
+ ✖ md1      │ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
+ ✖ 0/0      │ counters and / search · c copies the serial                                                  │
+ ✖ 252:2    │ ↑↓ move  enter open  v view  n next problem                                                  │
+ ✖ /data    │                                                                                              │
+ ✖ /data    │ Status                                                                                       │
+ ▲ nvme1n1  │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ▲ nvme1n1  │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ▲ sdc      │                                                                                              │
+ ▲ sdc      │ Any key closes this window.                                                                  │
+ ▲ sdd      ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help

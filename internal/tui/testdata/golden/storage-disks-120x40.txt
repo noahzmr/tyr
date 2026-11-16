@@ -1,0 +1,40 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36 2 CPU ✖4 3 Mem ✖9  4 Storage ✖11  5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv            ? help
+ ✖ CRIT  7 disks · 26 TB · md1 degraded · 1 RAID controller · 4 filesystems                 v Disks · RAID · Filesystems
+
+   Disk     Type Model                                                   Serial            Size  °C  Wear SMART     Err
+▌✖ sdd      HDD  ST4000NM000A-2HZ100                                     WJG0A004          4 TB  36     – PASSED 33 I/O
+ ▲ nvme1n1  NVMe SAMSUNG MZQL21T9HCJR-00A07                              S64GNE0R100002  1.9 TB  42  93 % PASSED      3
+ ▲ sdc      HDD  ST4000NM000A-2HZ100                                     WJG0A003          4 TB  35     – PASSED     32
+ ● nvme0n1  NVMe SAMSUNG MZQL21T9HCJR-00A07                              S64GNE0R100001  1.9 TB  39   3 % PASSED      0
+ ● sda      HDD  ST4000NM000A-2HZ100                                     WJG0A001          4 TB  33     – PASSED      0
+ ● sdb      HDD  ST4000NM000A-2HZ100                                     WJG0A002          4 TB  34     – PASSED      0
+ ● sde      HDD  AVAGO MR9361-8i                                         –                 6 TB   –     – –           0
+
+sdd ───────────────────────────────────────────────────────────────────────────────── md1 member · enter full SMART page
+Model     ST4000NM000A-2HZ100           Temp     ━━━━━────╎──┃─ 36°C            I/O errors    33
+Serial    WJG0A004                      Realloc  0                              SMART errors  0
+Firmware  SN04                          Pending  0                              CRC errors    0
+Path      /dev/sdd · sata               SMART    PASSED                         Power-on      19832 h (2.3 y)
+
+Findings · Storage 6 ✖ · 5 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O errors in kernel log
+ ✖ md1          md1 (raid5) degraded: 3/4 devices, failed sdd1
+ ✖ 0/0          RAID virtual drive 0/0 (RAID5 archive) state Dgrd
+ ✖ 252:2        RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed
+ ✖ /data        /data (xfs) is mounted read-only
+ ✖ /data        /data 96% full
+ ▲ nvme1n1      nvme1n1: 93% of rated endurance used
+ ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
+ ▲ sdc          sdc: 8 pending sectors
+ ▲ sdc          sdc: 24 reallocated sectors
+ ▲ sdd          sdd: 31 I/O errors (ioerr_cnt)
+
+
+
+
+
+
+
+
+↑↓ move  enter open  v view  n next problem  ! problems  q quit  ? help

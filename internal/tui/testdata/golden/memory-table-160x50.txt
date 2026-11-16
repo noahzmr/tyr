@@ -1,0 +1,50 @@
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  14 crit 22 warn   ✖ CRIT
+1 Overview ✖36  2 CPU ✖4   3 Memory ✖9   4 Storage ✖11  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+ ✖ CRIT  512 GB installed · 480 GB visible · 16 of 32 slots · Multi-bit ECC                                                                   v Table · Slot map
+
+Used █████████░░░░░░░░░░░░░░░░░░░░░ 141 GB of 471 GB · 330 GB available · swap 0 / 8.0 GB
+ECC  ▲ 14 corrected  ✖ 1 uncorrected  node 0 252 GB  node 1 220 GB  poisoned 4 kB
+
+   Slot        Size Type     Speed Part number            CE  UE  °C Serial   Rank Vendor            Asset tag  │ ✖ P2-DIMMB1
+▌✖ P2-DIMMB1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   1  37 3A5F0012    2 Samsung           P2-DIMMB1_…│ ──────────────────────────────────────────────
+ ▲ P2-DIMMC1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE       14   0  82 3A5F0014    2 Samsung           P2-DIMMC1_…│ Location   P2 · channel B
+ ● P1-DIMMA1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  34 3A5F0000    2 Samsung           P1-DIMMA1_…│ Size       32 GB DDR4 DIMM
+ ● P1-DIMMB1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  36 3A5F0002    2 Samsung           P1-DIMMB1_…│ Speed      3200 MT/s (rated 3200)
+ ● P1-DIMMC1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  38 3A5F0004    2 Samsung           P1-DIMMC1_…│ Vendor     Samsung
+ ● P1-DIMMD1  32 GB DDR4 2933/3200 MTA36ASF4G72PZ-3G2R1    0   0  35 3A5F0006    2 Micron Technology P1-DIMMD1_…│ Part       M393A4K40EB3-CWE
+ ● P1-DIMME1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  37 3A5F0008    2 Samsung           P1-DIMME1_…│ Serial     3A5F0012
+ ● P1-DIMMF1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  34 3A5F000A    2 Samsung           P1-DIMMF1_…│ Asset tag  P2-DIMMB1_AssetTag (date:21/32)
+ ● P1-DIMMG1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  36 3A5F000C    2 Samsung           P1-DIMMG1_…│
+ ● P1-DIMMH1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  38 3A5F000E    2 Samsung           P1-DIMMH1_…│ Temp      ━━━──────╎┃─ 37°C
+ ● P2-DIMMA1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  35 3A5F0010    2 Samsung           P2-DIMMA1_…│
+ ● P2-DIMMD1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  36 3A5F0016    2 Samsung           P2-DIMMD1_…│ EDAC mc4 dimm2
+ ● P2-DIMME1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  38 3A5F0018    2 Samsung           P2-DIMME1_…│ corrected   0
+ ● P2-DIMMF1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  35 3A5F001A    2 Samsung           P2-DIMMF1_…│ uncorrected 1
+ ● P2-DIMMG1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        0   0  37 3A5F001C    2 Samsung           P2-DIMMG1_…│
+ ● P2-DIMMH1  32 GB DDR4 3200/3200 M393A4K40EB3-CWE        –   –  34 3A5F001E    2 Samsung           P2-DIMMH1_…│ ✖ 1 uncorrectable ECC error on P2-DIMMB1
+   + 16 empty slots hidden · a show                                                                             │
+                                                                                                                │ enter full page
+                                                                                                                │
+
+Findings · Memory 3 ✖ · 6 ▲ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ sel          1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(CPU2)
+ ✖ memory       4 kB of memory poisoned by the kernel (HardwareCorrupted)
+ ✖ P2-DIMMB1    1 uncorrectable ECC error on P2-DIMMB1
+ ▲ P2-DIMMC1 T… P2-DIMMC1 Temp at 82°C
+ ▲ sel          1 memory event in BMC SEL, latest 2026-11-11 09:00: Correctable ECC @DIMMC1(CPU2)
+ ▲ P2-DIMMC1    14 correctable ECC errors on P2-DIMMC1
+ ▲ memory       512 GB installed, OS sees 480 GB
+ ▲ P1-DIMMD1    DIMMs run at different speeds: P1-DIMMD1 at 2933 MT/s, others up to 3200 MT/s
+ ▲ node1        NUMA node 1 has 220 GB, largest node has 252 GB
+
+
+
+
+
+
+
+
+
+
+
+↑↓ move  enter open  v view  a empty slots  n next problem  ! problems  q quit  ? help

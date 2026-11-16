@@ -1,0 +1,24 @@
+ TYR  srv-degraded-01                              fixture  now  14/22   ✖ CRIT
+1✖36 2✖4 3✖9 4✖11 5○ 6✖6 7✖6 8○ 9  0 Inventory                            ? help
+ ✖ CRIT  47 components · 13 with problems · serials visible        v List · Tree
+
+Search ╭─ sdd─────────────────╮  Category  all  f cycles
+
+   Type Location Model                                                 Serial
+▌✖ disk /dev/sdd ST4000NM000A-2HZ100                                   WJG0A004
+   1 of 47 match · esc clears search
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/ search  f category  enter page  c copy serial  v tree  ! problems  ? help
