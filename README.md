@@ -99,8 +99,12 @@ directories; other JSON files are listed as skipped.
 
 In the TUI, `R` opens the Reports dialog: choose the host report, a stress
 result (this session's or an earlier run) or the history of files and
-directories, Markdown or JSON, and view it (scroll, `/` search), save it, or
-both. `e` writes the current snapshot as JSON and Markdown.
+directories, Markdown or JSON, and view it (scroll, `/` search), save it, copy
+it to the clipboard, or a combination. On any report page (and in `tyr view`)
+`c` copies the report: Markdown with the Mermaid charts, or JSON. Copying uses
+OSC 52, so it reaches your local clipboard over SSH too; tmux needs
+`set -g set-clipboard on`, and some terminals cut very large copies (save
+those instead). `e` writes the current snapshot as JSON and Markdown.
 
 ## Fixtures
 

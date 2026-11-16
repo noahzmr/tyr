@@ -21,4 +21,4 @@ Self-test  no failure logged
 Power-on   19 832 h · 41 cycles
 
 SMART attributes ────────────────────────────────────────────────── 8 attributes
-↑↓ pgup pgdn scroll  g G top/end  / search  n N next/prev match  ? help
+↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  ? help

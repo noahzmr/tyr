@@ -372,6 +372,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 			return m.quit()
 		}
 		if !m.page.capturing() && key.Matches(msg, keyCopy) {
+			if m.page.copyText != "" {
+				return m.copyReport(m.page.copyText, m.page.copyKind)
+			}
 			return m.copySerial()
 		}
 		if m.page.update(msg) {
@@ -885,8 +888,10 @@ func (m *Model) footer() string {
 	}
 	if m.page != nil {
 		hints = [][2]string{{"↑↓ pgup pgdn", "scroll"}, {"g G", "top/end"}, {"/", "search"}, {"n N", "next/prev match"}, {"esc", "back"}, {"q", "quit"}}
-		if _, ok := m.tabs[m.active].(serialer); ok {
-			hints = append(hints[:5], append([][2]string{{"c", "copy serial"}}, hints[5:]...)...)
+		if m.page.copyText != "" {
+			hints = append(hints[:3], append([][2]string{{"c", "copy report"}}, hints[3:]...)...)
+		} else if _, ok := m.tabs[m.active].(serialer); ok {
+			hints = append(hints[:3], append([][2]string{{"c", "copy serial"}}, hints[3:]...)...)
 		}
 		if st := m.page.searchStatus(t); st != "" && (m.message == "" || time.Since(m.messageAt) >= 4*time.Second) {
 			toastStr = st

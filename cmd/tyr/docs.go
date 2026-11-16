@@ -135,7 +135,7 @@ func runView(args []string, stdout, stderr io.Writer) int {
 		return 3
 	}
 	paths := fs.Args()
-	var title, md string
+	var title, md, cp string
 	switch {
 	case len(paths) == 1 && strings.EqualFold(filepath.Ext(paths[0]), ".md"):
 		b, err := os.ReadFile(paths[0])
@@ -143,7 +143,7 @@ func runView(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "tyr view:", err)
 			return 3
 		}
-		title, md = filepath.Base(paths[0]), string(b)
+		title, md, cp = filepath.Base(paths[0]), string(b), string(b)
 	default:
 		docs, skipped, ok := loadDocs(paths, *host, stderr, "view")
 		if !ok {
@@ -151,9 +151,10 @@ func runView(args []string, stdout, stderr io.Writer) int {
 		}
 		switch {
 		case len(docs) == 1 && len(paths) == 1 && docs[0].Run != nil:
-			title, md = "stress result "+docs[0].Host(), report.RunWith(docs[0].Run, report.Options{Terminal: true})
+			title, md, cp = "stress result "+docs[0].Host(), report.RunWith(docs[0].Run, report.Options{Terminal: true}), report.Run(docs[0].Run)
 		case len(docs) == 1 && len(paths) == 1:
 			title, md = docs[0].Host()+" report", report.Snapshot(docs[0].Snap)
+			cp = md
 		default:
 			hs := report.BuildHistory(docs)
 			names := make([]string, len(hs))
@@ -161,13 +162,14 @@ func runView(args []string, stdout, stderr io.Writer) int {
 				names[i] = h.Host
 			}
 			title, md = strings.Join(names, ", ")+" history", report.HistoryMarkdownWith(hs, skipped, report.Options{Terminal: true})
+			cp = report.HistoryMarkdown(hs, skipped)
 		}
 	}
 	if !isTTY(os.Stdout) {
 		fmt.Fprint(stdout, md)
 		return 0
 	}
-	if err := tui.ViewDocument(title, md); err != nil {
+	if err := tui.ViewDocument(title, md, cp); err != nil {
 		fmt.Fprintln(stderr, "tyr view:", err)
 		return 3
 	}

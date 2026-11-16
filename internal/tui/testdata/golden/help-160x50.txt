@@ -17,7 +17,7 @@ Serial    WJG0A004              │ Navigation                    Health        
 Firmware  SN04                  │ 1–0        switch tab         n          next problem       r          refresh now           │
 Path      /dev/sdd · sata       │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │(2.3 y)
                                 │ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │
-Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions     v          switch view        c          copy serial           │──────────── n next · enter open
+Findings · Storage 6 ✖ · 5 ▲ ───│ ←→ hl      move / regions     v          switch view        c          copy serial/report    │──────────── n next · enter open
  ✖ sdd          sdd: 2 I/O error│ pgup pgdn  page               /          search             R          reports               │
  ✖ md1          md1 (raid5) degr│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │
  ✖ 0/0          RAID virtual dri│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │

@@ -47,4 +47,4 @@ Findings 1 ✖ · 1 ▲ ──────────────────�
 
 
 
-↑↓ pgup pgdn scroll  g G top/end  / search  n N next/prev match  esc back  c copy serial  q quit  ? help                                  /realloc  match 1 of 2
+↑↓ pgup pgdn scroll  g G top/end  / search  c copy serial  n N next/prev match  esc back  q quit  ? help                                  /realloc  match 1 of 2

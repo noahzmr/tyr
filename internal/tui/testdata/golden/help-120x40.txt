@@ -12,7 +12,7 @@
  ● sde      │ 1–0        switch tab         n          next problem       r          refresh now           │          0
             │ tab ⇧tab   next / prev tab    !          problems only      p          pause / resume        │
 sdd ────────│ ↑↓ jk      move               o          worst ↔ physical   e          export JSON + .md     │l SMART page
-Model     ST│ ←→ hl      move / regions     v          switch view        c          copy serial           │
+Model     ST│ ←→ hl      move / regions     v          switch view        c          copy serial/report    │
 Serial    WJ│ pgup pgdn  page               /          search             R          reports               │
 Firmware  SN│ g G        top / end          t          CPU load ↔ temp    s S F      stress tests          │
 Path      /d│ enter      open / action      a          empty DIMM slots   q ctrl+c   quit · stop all       │)

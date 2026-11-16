@@ -414,10 +414,36 @@ func TestReportsDialog(t *testing.T) {
 	}
 
 	// JSON, view + save
-	run(m, "R", "down", "right", "down", "right", "right")
+	run(m, "R", "down", "right", "down", "right", "right", "right")
 	generate(t, m)
 	if m.page == nil || !strings.Contains(text(m), "schema_version") || !strings.HasSuffix(m.message, ".json") {
 		t.Fatalf("json view+save: %q\n%s", m.message, text(m))
+	}
+	run(m, "esc")
+
+	// Output: Copy puts the report on the clipboard, no page, no file
+	run(m, "R", "down", "down", "right", "right")
+	for m.reports.fields()[m.reports.field] != "generate" {
+		run(m, "down")
+	}
+	if _, cmd := m.Update(press("enter")); cmd == nil || m.page != nil || !strings.Contains(m.message, "copied the report to the clipboard (Markdown") {
+		t.Fatalf("copy output: cmd %v page %v %q", cmd != nil, m.page != nil, m.message)
+	}
+	// c on a report page copies the report; on a component page the serial
+	run(m, "R")
+	generate(t, m)
+	m.message = "" // the copy toast of the step before has expired
+	if !strings.Contains(text(m), "c copy report") {
+		t.Errorf("footer hint\n%s", text(m))
+	}
+	if _, cmd := m.Update(press("c")); cmd == nil || !strings.Contains(m.message, "copied the report") {
+		t.Errorf("c on report page: %q", m.message)
+	}
+	run(m, "esc")
+	focus(t, m, "4", "sdd")
+	run(m, "enter")
+	if _, cmd := m.Update(press("c")); cmd == nil || !strings.Contains(m.message, "copied S/N WJG0A004") {
+		t.Errorf("c on disk page: %q", m.message)
 	}
 	run(m, "esc")
 
@@ -474,6 +500,10 @@ func TestReportsStressResult(t *testing.T) {
 	if s := text(m); m.page == nil || !strings.Contains(s, "CPU stress test") || !strings.Contains(s, "Verdict: ● PASS") {
 		t.Fatalf("stress report\n%s", s)
 	}
+	// the page shows sparklines; what c copies has the Mermaid charts
+	if !strings.Contains(m.page.copyText, "```mermaid\nxychart-beta") || strings.Contains(m.page.body, "xychart-beta") {
+		t.Errorf("copy text should carry Mermaid, the page sparklines")
+	}
 }
 
 func TestDocView(t *testing.T) {
@@ -489,6 +519,10 @@ func TestDocView(t *testing.T) {
 	}
 	if s := ansi.Strip(d.View().Content); !strings.Contains(s, "match 1 of 1") {
 		t.Errorf("search\n%s", s)
+	}
+	d.Update(press("esc")) // leaves the search
+	if _, cmd := d.Update(press("c")); cmd == nil || !strings.Contains(ansi.Strip(d.View().Content), "copied to the clipboard") {
+		t.Errorf("c in view\n%s", ansi.Strip(d.View().Content))
 	}
 	if _, cmd := d.Update(press("q")); cmd == nil {
 		t.Error("q did not quit")

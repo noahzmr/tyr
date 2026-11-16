@@ -54,6 +54,9 @@ type detailPage struct {
 	matches int
 	cur     int   // current match (0-based)
 	lines   []int // line of each match
+	// copyText is what "c" copies on a report page (Markdown with Mermaid
+	// charts, or JSON); empty on component pages, where c copies the serial.
+	copyText, copyKind string
 }
 
 func newDetailPage(t *Theme, title, body string, w, h int) *detailPage {

@@ -23,7 +23,7 @@ type reportDialog struct {
 	run     int // index into runs
 	runs    []*stress.Result
 	format  int // 0 Markdown, 1 JSON
-	output  int // 0 view, 1 save, 2 view + save
+	output  int // index into reportOutputs
 	field   int
 	editing bool
 	input   lineInput
@@ -35,7 +35,7 @@ type reportDialog struct {
 var (
 	reportKinds   = []string{"Host report", "Stress result", "History"}
 	reportFormats = []string{"Markdown", "JSON"}
-	reportOutputs = []string{"View", "Save", "View + save"}
+	reportOutputs = []string{"View", "Save", "Copy", "View + save", "View + copy"}
 )
 
 // openReports opens the dialog; on a stress result it starts there.
@@ -88,6 +88,10 @@ func containsStr(ss []string, s string) bool {
 	return false
 }
 
+func (d *reportDialog) view() bool { return d.output == 0 || d.output >= 3 }
+func (d *reportDialog) save() bool { return d.output == 1 || d.output == 3 }
+func (d *reportDialog) copy() bool { return d.output == 2 || d.output == 4 }
+
 // fields lists the dialog rows for the chosen report.
 func (d *reportDialog) fields() []string {
 	f := []string{"kind"}
@@ -98,7 +102,7 @@ func (d *reportDialog) fields() []string {
 		f = append(f, "paths")
 	}
 	f = append(f, "format", "output")
-	if d.output > 0 {
+	if d.save() {
 		f = append(f, "saveto")
 	}
 	return append(f, "generate")
@@ -174,7 +178,7 @@ func (m *Model) updateReports(msg tea.KeyPressMsg) tea.Cmd {
 			d.input.SetValue(v)
 			d.input.Focus()
 		case "generate":
-			m.generateReport()
+			return m.generateReport()
 		default:
 			change(+1)
 		}
@@ -198,43 +202,70 @@ func (m *Model) reportFile(d *reportDialog) string {
 }
 
 // generateReport builds the report, then views and/or saves it.
-func (m *Model) generateReport() {
+func (m *Model) generateReport() tea.Cmd {
 	d := m.reports
 	d.err = ""
-	// saved Markdown carries Mermaid charts; the page shows sparklines
+	// saved and copied Markdown carries Mermaid charts; the page shows sparklines
 	title, md, js, err := m.buildReport(d, report.Options{})
 	if err != nil {
 		d.err = err.Error()
-		return
+		return nil
 	}
 	_, termMD, _, _ := m.buildReport(d, report.Options{Terminal: true})
 	content := md
 	if d.format == 1 {
 		content = js
 	}
-	saved := ""
-	if d.output > 0 {
+	kind := reportFormats[d.format]
+	var cmd tea.Cmd
+	if d.save() {
 		p := d.saveTo
 		if p == "" {
 			p = m.reportFile(d)
 		}
 		if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
 			d.err = "save failed: " + err.Error()
-			return
+			return nil
 		}
-		saved = p
+		m.flash("saved " + p)
+	}
+	if d.copy() {
+		cmd = m.copyReport(content, kind)
 	}
 	m.reports = nil
-	if saved != "" {
-		m.flash("saved " + saved)
-	}
-	if d.output != 1 {
+	if d.view() {
 		view := termMD
 		if d.format == 1 { // JSON shown as a highlighted code block
 			view = "```json\n" + js + "\n```\n"
 		}
 		m.page = markdownPage(m.theme, "R reports", title, view, m.width, m.contentHeight()+3)
+		m.page.copyText, m.page.copyKind = content, kind
 	}
+	return cmd
+}
+
+// osc52Large is where some terminals start to cut OSC 52 clipboard writes.
+const osc52Large = 100 << 10
+
+// copyReport puts a report on the clipboard (OSC 52: works over SSH, no
+// external helper) and says what was copied.
+func (m *Model) copyReport(content, kind string) tea.Cmd {
+	msg := fmt.Sprintf("copied the report to the clipboard (%s, %s)", kind, sizeText(len(content)))
+	if len(content) > osc52Large {
+		msg += " · large: some terminals cut OSC 52, save it if the paste is incomplete"
+	}
+	m.flash(msg)
+	return tea.SetClipboard(content)
+}
+
+func sizeText(n int) string {
+	if n >= 1<<20 {
+		return fmt.Sprintf("%.1f MB", float64(n)/(1<<20))
+	}
+	if n >= 1<<10 {
+		return fmt.Sprintf("%.1f kB", float64(n)/(1<<10))
+	}
+	return fmt.Sprintf("%d B", n)
 }
 
 // buildReport returns the title, Markdown and JSON of the chosen report.
@@ -355,6 +386,9 @@ func (m *Model) reportsView(base string) string {
 	}
 	if d.err != "" {
 		lines = append(lines, "", t.StatusText(model.StatusCrit, "✖ "+d.err))
+	}
+	if d.copy() {
+		lines = append(lines, strings.Repeat(" ", lw)+t.Sub.Render("copies with OSC 52 (works over SSH; tmux needs set-clipboard on)"))
 	}
 	lines = append(lines, "", t.Sub.Render("↑↓ field · ←→ change · enter edit / generate · esc close"))
 	return overlay(t, base, t.Accent, "Reports", strings.Join(lines, "\n"), m.width, m.height)

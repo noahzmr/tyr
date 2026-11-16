@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
 
+	"github.com/noahzmr/tyr/internal/model"
 	"github.com/noahzmr/tyr/internal/report"
 )
 
@@ -37,6 +38,8 @@ func markdownPage(t *Theme, tab, title, markdown string, w, h int) *detailPage {
 // docView is `tyr view`: one Markdown document full screen, like glow.
 type docView struct {
 	title, markdown string
+	copyText        string // what c copies (Mermaid Markdown); "" = markdown
+	message         string
 	w, h            int
 	dark            bool
 	profile         colorprofile.Profile
@@ -45,9 +48,10 @@ type docView struct {
 }
 
 // ViewDocument shows a Markdown document in a pager: ↑↓ pgup pgdn g G
-// scroll, / search, n N next/previous match, q or esc quits.
-func ViewDocument(title, markdown string) error {
-	_, err := tea.NewProgram(&docView{title: title, markdown: markdown, dark: true, profile: colorprofile.TrueColor}).Run()
+// scroll, / search, n N next/previous match, c copies copyText (or the
+// document) to the clipboard, q or esc quits.
+func ViewDocument(title, markdown, copyText string) error {
+	_, err := tea.NewProgram(&docView{title: title, markdown: markdown, copyText: copyText, dark: true, profile: colorprofile.TrueColor}).Run()
 	return err
 }
 
@@ -87,6 +91,18 @@ func (d *docView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return d, tea.Quit
 		}
+		if !d.page.capturing() && msg.String() == "c" {
+			text := d.copyText
+			if text == "" {
+				text = d.markdown
+			}
+			d.message = "copied to the clipboard (" + sizeText(len(text)) + ", OSC 52)"
+			if len(text) > osc52Large {
+				d.message += " · large: some terminals cut it"
+			}
+			return d, tea.SetClipboard(text)
+		}
+		d.message = ""
 		if d.page.update(msg) {
 			return d, tea.Quit
 		}
@@ -107,11 +123,15 @@ func (d *docView) View() tea.View {
 	}
 	t := d.theme
 	var parts []string
-	for _, h := range [][2]string{{"q esc", "quit"}, {"/", "search"}, {"n N", "next/prev match"}, {"↑↓ pgup pgdn", "scroll"}, {"g G", "top/end"}} {
+	for _, h := range [][2]string{{"q esc", "quit"}, {"c", "copy"}, {"/", "search"}, {"n N", "next/prev match"}, {"↑↓ pgup pgdn", "scroll"}, {"g G", "top/end"}} {
 		parts = append(parts, t.Key.Render(h[0])+" "+t.Dim.Render(h[1]))
 	}
 	foot := strings.Join(parts, "  ")
-	if st := d.page.searchStatus(t); st != "" {
+	st := d.page.searchStatus(t)
+	if d.message != "" {
+		st = toast(t, model.StatusOK, d.message)
+	}
+	if st != "" {
 		foot = truncate(foot, max(10, d.w-lipgloss.Width(st)-2))
 		foot += strings.Repeat(" ", max(2, d.w-lipgloss.Width(foot)-lipgloss.Width(st))) + st
 	}
