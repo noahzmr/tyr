@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  25/24   ✖ CRIT
-1✖49  2 CPU ✖8  3✖9 4✖12 5✖2 6✖6 7✖6 8✖5 9 0                              ? help
+ TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
+1✖52  2 CPU ✖8  3✖9 4✖12 5✖2 6✖9 7✖6 8✖5 9 0                              ? help
  ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · h…  v Grid · Cores · Details
 
 Model      Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz

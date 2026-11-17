@@ -20,7 +20,7 @@ the keys that work here. `?` shows all keys and this tab's own.
 | `3` | Memory | Table · Slot map | DIMMs with an inspector; slots per socket and channel (`a`: empty slots) |
 | `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID (also the drives behind HPE Smart Array from the BMC: bay, endurance, power-on hours, status reasons), filesystems |
 | `5` | Power | - | power supplies with state, input voltage, output and rating; total draw, average, cap, redundancy, the draw over the session; fans (BMC Redfish, else SMBIOS) |
-| `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP (`h`: virtual interfaces); an interface's page explains its drops and losses: where, why, ring size, commands |
+| `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP, VPN interfaces (WireGuard, OpenVPN, Tailscale …) with their peers (`h`: other virtual interfaces); an interface's page explains its drops and losses: where, why, ring size, commands; a VPN's page shows peers with last handshake, the service journal and kernel lines |
 | `7` | GPU/NPU | - | load, memory, power, temperature, PCIe link; NPUs. GPUs on NVLink-C2C (DGX Spark's GB10, GH200) show `C2C` as their link and `shared` memory (the system's RAM); a GPU's page lists the processes holding its memory |
 | `8` | Events | - | one timeline of the BMC's logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages; severity / source chips, search, `space` details, `enter` the whole entry |
 | `9` | Stress | form · confirm · live · result | the stress tests (see [stress-tests.md](stress-tests.md)) |

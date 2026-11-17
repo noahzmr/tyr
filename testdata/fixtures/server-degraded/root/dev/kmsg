@@ -18,3 +18,5 @@
 3,1017,707520000000,-;I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
 6,1018,709200000000,-;ice 0000:4b:00.1 ens1f1: NIC Link is Down
 3,1019,712800000000,-;NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0.
+6,1020,712801000000,-;wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+6,1021,712802000000,-;wireguard: wg0: Handshake for peer 4 (203.0.113.10:51820) did not complete after 5 seconds, retrying (try 2)

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 24 warn   ✖ CRIT
-1 Overview ✖49 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ✖2  6 Network ✖6  7 GPU ✖6 8 Events ✖5 9 Stress 0 Inv         ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 27 warn   ✖ CRIT
+1 Overview ✖52 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ✖2  6 Network ✖9  7 GPU ✖6 8 Events ✖5 9 Stress 0 Inv         ? help
  ✖ CRIT  4 physical ports · 2 up · bond0 1/2 · BMC 10.10.0.121 · 1 virtual hidden
 
    Interface    Kind   Link           Address / LLDP neighbor                               rx        tx traffic
@@ -9,6 +9,7 @@
  ● └─ bond0.100 vlan   up             10.20.0.21/24                                          –         –
  ▲ eno1         port   100M of 1G     10.10.0.21/24 mgmt-sw01 Gi1/0/21                       –         –
  ○ eno2         port   admin down     –                                                      –         –
+ ▲ wg0          vpn    WG 0/2 peers   10.99.0.1/24                                           –         –
    + 1 virtual interface hidden · h show · BMC 10.10.0.121 (Static Address) 3c:ec:ef:10:00:99
 
 bond0 ─────────────────────────────────────────────────────────────────── enter full page: transceiver, counters, graphs
@@ -18,19 +19,18 @@ Driver     n/a                          Duplex     full                         
 PCI        n/a                          Max speed  n/a                          carrier chg  2
 MAC / MTU  b4:96:91:a0:00:10 · 9000                                             rx           n/a
 
-Findings · Network 2 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
+Findings · Network 2 ✖ · 7 ▲ ─────────────────────────────────────────────────────────────────────── n next · enter open
  ✖ bond0        bond0 degraded: ens1f1 down (1/2 members up)
  ✖ ens1f1       ens1f1 link down
  ▲ eno1         eno1 running half duplex
  ▲ eno1         eno1 at 100M, port supports 1G
  ▲ ens1f0       ens1f0: 1532 CRC errors since boot (cable/optics)
  ▲ ens1f0       ens1f0 transceiver rx power -13.90 dBm out of range
-
-
-
-
-
-
+ ▲ wg0          wg0: peer bE9mZmlj… (198.51.100.20:51820) - last handshake 30m0s ago, keepalive 25 s: the tunnel is not
+                up
+ ▲ wg0          wg0: peer ZGVhZFBl… (203.0.113.10:51820) has never completed a handshake
+ ▲ wg0          wg0: 1 error(s) from WireGuard in the last 24 h, last: RTNETLINK answers: Address already in use (wg0
+                listen port 51820)
 
 
 

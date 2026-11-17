@@ -471,6 +471,52 @@ func networkSection(m *md, x *model.Network) {
 			strings.TrimSpace(n.Driver + " " + n.Firmware), xcvr, status(n.Status)})
 	}
 	m.table([]string{"Interface", "Kind", "Adapter", "Link", "MAC", "Serial", "Driver · firmware", "Transceiver", "Status"}, rows)
+	for _, n := range x.Interfaces {
+		if n.Kind == "vpn" && n.VPN != nil {
+			vpnSection(m, n, x.CollectedAt)
+		}
+	}
+}
+
+// vpnSection: a VPN's peers, its service's journal and kernel lines.
+func vpnSection(m *md, n model.NIC, now time.Time) {
+	v := n.VPN
+	m.h(3, fmt.Sprintf("VPN %s (%s)", n.Name, v.Type))
+	port := ""
+	if v.ListenPort != nil {
+		port = fmt.Sprint(*v.ListenPort)
+	}
+	m.kv([2]string{"Addresses", strings.Join(n.Addresses, ", ")}, [2]string{"Public key", v.PublicKey},
+		[2]string{"Listen port", port}, [2]string{"Peer status", v.Note})
+	if len(v.Peers) > 0 {
+		var rows [][]string
+		for _, p := range v.Peers {
+			hs := "never"
+			if !p.LatestHandshake.IsZero() {
+				hs = p.LatestHandshake.UTC().Format("2006-01-02 15:04:05") + fmt.Sprintf(" (%s ago)", now.Sub(p.LatestHandshake).Round(time.Second))
+			}
+			ka := ""
+			if p.KeepaliveS > 0 {
+				ka = fmt.Sprintf("%d s", p.KeepaliveS)
+			}
+			rows = append(rows, []string{p.PublicKey, p.Endpoint, strings.Join(p.AllowedIPs, ", "), hs,
+				bytesGiB(p.RxBytes), bytesGiB(p.TxBytes), ka, status(p.Status)})
+		}
+		m.table([]string{"Peer", "Endpoint", "Allowed IPs", "Last handshake", "Received", "Sent", "Keepalive", "Status"}, rows)
+	}
+	if len(v.Journal) > 0 {
+		m.p("Journal of %s, last 24 h:", strings.Join(v.Services, ", "))
+		var lines []string
+		for _, l := range v.Journal {
+			prio := map[int]string{0: "EMERG", 1: "ALERT", 2: "CRIT", 3: "ERR", 4: "WARN"}[l.Priority]
+			lines = append(lines, strings.TrimSpace(fmt.Sprintf("%s %s %s %s", l.Time.UTC().Format("2006-01-02 15:04:05"), l.Service, prio, l.Message)))
+		}
+		m.p("```text\n%s\n```", strings.Join(lines, "\n"))
+	}
+	if len(v.KernelLines) > 0 {
+		m.p("Kernel log:")
+		m.p("```text\n%s\n```", strings.Join(v.KernelLines, "\n"))
+	}
 }
 
 func accelSection(m *md, x *model.Accel) {

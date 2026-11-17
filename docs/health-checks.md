@@ -293,6 +293,28 @@ Findings include `link_down`, `bond_degraded`, a port below its own or the
 partner's speed, `half_duplex`, `crc_errors`, and `transceiver` optics out of
 range.
 
+#### VPN interfaces
+
+Tunnels are always shown: WireGuard (by its device type), OpenVPN and other
+TUN/TAP devices (by `tun_flags`; Tailscale, ZeroTier and Nebula by name),
+IPsec (xfrm, vti) and PPP. For each:
+
+- **Peers** (WireGuard, `wg show all dump`, as root): endpoint, allowed IPs,
+  last handshake, bytes received and sent, keepalive. The interface's
+  private key and the peers' preshared keys are skipped by the parser and
+  never reach a snapshot; public keys do.
+- **Service journal**: the last 24 hours of the software behind the tunnel
+  (`wg-quick`, OpenVPN, `tailscaled`, `zerotier-one`, strongSwan/`charon`,
+  libreswan/`pluto`, `pppd`), and the messages of NetworkManager and
+  systemd-networkd that name the interface; the last 20 lines.
+- **Kernel log**: lines naming the interface (and the WireGuard module's).
+
+| Code | Level | When |
+|---|---|---|
+| `vpn_down` | WARN | a tunnel with an address has no carrier: its program is not connected |
+| `vpn_peer` | WARN | a WireGuard peer with a keepalive has had no handshake for more than 3 minutes plus the keepalive, or a peer with an endpoint never completed one. Peers without keepalive may idle; peers without endpoint dial in themselves |
+| `vpn_service` | WARN | the service logged errors (priority err or worse) in the last 24 hours |
+
 #### Drops and losses
 
 Every refresh Tyr compares the drop counters with the last one and says, per

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  25/24   ✖ CRIT
-1✖49 2✖8 3✖9 4✖12 5✖2 6✖6 7✖6  8 Events ✖5  9 0                           ? help
+ TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
+1✖52 2✖8 3✖9 4✖12 5✖2 6✖9 7✖6  8 Events ✖5  9 0                           ? help
  ✖ CRIT  System Event Log 6 · BMC Event Log 1 · kernel log 13 · 5 open (30 da…
 
 Severity  all  warn+ crit   Source  all  BMC kernel   since boot (9d 0h)   ╭─ /…

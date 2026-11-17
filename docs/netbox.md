@@ -11,6 +11,7 @@ line (`tyr netbox`), after `tyr accept`, and by itself from the Tyr ISO.
 |---|---|---|
 | Device | found by the system serial number (by host name when the firmware reports a placeholder serial, never by a shared name like the ISO's `tyr-live`); created when missing, with manufacturer, device type, site, role (both created if missing), optional tenant and status | always |
 | Interfaces | every physical port: name, type from the speed and the port (`10gbase-x-sfpp`, `25gbase-x-sfp28` …), description, speed; the MAC address (NetBox 4.2+: a MAC address object, the interface's primary MAC) | `interfaces` |
+| VPN interfaces | WireGuard, OpenVPN, Tailscale … as interfaces of type `virtual` (description: the VPN type, MTU), their addresses as IP addresses assigned to them | `interfaces` |
 | BMC interface and IP | an interface for the management controller (`bmc`, or `iLO`/`iDRAC` if it exists) with its MAC; its IP address, assigned to that interface and set as the device's out-of-band IP | `interfaces` |
 | Inventory items | one per component: CPUs, DIMMs, disks, RAID controllers and their drives, NICs, transceivers, GPUs, NPUs, power supplies, BMC FRUs, cards from the BMC's device inventory. Name, label (slot, bay), manufacturer, part number, serial, a description (model, size, firmware); role per category (`CPU`, `Memory`, `Disk` …, created if missing); marked as discovered | `inventory` |
 | Status | `failed` when a component is critical or the acceptance test failed (the device and the inventory item); back to `active` when healthy again - only from `failed`, so `planned`, `staged` or `offline` stay | `mark_failed` |
@@ -143,6 +144,7 @@ match; the TUI shows them under `f` and while editing a rule.
 | `nics`, `nics_10g` | number | physical ports, ports of 10 Gbit/s or more |
 | `nic_speed_max` | number | fastest port in Mbit/s (link speed, else supported) |
 | `nic_models`, `gpu_model` | text | models, comma-separated |
+| `vpns`, `vpn_types` | number, text | VPN interfaces and their types (`WireGuard, Tailscale`) |
 | `gpus`, `npus`, `psus` | number | accelerators, power supplies |
 | `status` | text | health now: `OK`, `WARN`, `CRIT` |
 | `critical`, `warnings` | number | findings now |

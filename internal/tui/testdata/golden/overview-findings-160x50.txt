@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 24 warn   ✖ CRIT
- 1 Overview ✖49   2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ✖2  6 Network ✖6  7 GPU/NPU ✖6  8 Events ✖5  9 Stress  0 Inventory                        ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 27 warn   ✖ CRIT
+ 1 Overview ✖52   2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ✖2  6 Network ✖9  7 GPU/NPU ✖6  8 Events ✖5  9 Stress  0 Inventory                        ? help
  ✖ CRIT  Needs attention  CPU · Memory · Storage · Power · Network · GPU/NPU · Events  System
 
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
@@ -10,14 +10,14 @@
 │                                     │ │                                     │ │                                     │ │                                     │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
-│ ✖ Network                  CRIT · 6 │ │ ✖ GPU/NPU                  CRIT · 6 │ │ ✖ Events                   CRIT · 5 │ │ ▲ System                   WARN · 1 │
+│ ✖ Network                  CRIT · 9 │ │ ✖ GPU/NPU                  CRIT · 6 │ │ ✖ Events                   CRIT · 5 │ │ ▲ System                   WARN · 1 │
 │ 2/4 up · bond0 1/2                  │ │ 1/2 GPUs OK, max 92°C               │ │ System Event Log 6 · BMC Event Log… │ │ BIOS 1.4b · BMC 1.40                │
 │ ▸ bond0 degraded: ens1f1 down (1/2  │ │ ▸ GPU1 ca:00.0: 2 uncorrectable ECC │ │ ▸ System Event Log 2026-11-15       │ │ ▸ 1 of 2 boots in the last 30 days  │
 │   members up)                       │ │   errors                            │ │   10:00: PS2 Status: Power Supply … │ │   ended without a clean shutdown (… │
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 
-Findings 25 ✖ · 24 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────── i explain · worst first · 1–28 of 49
+Findings 25 ✖ · 27 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────── i explain · worst first · 1–28 of 52
  ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot                                            10:00        ┃
 ▌✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - still runs work: the core is not isolated     10:00        ┃
  ✖ CPU      cpu39         4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (cpu39), in 4 different programs: the core… 10:00        ┃
@@ -33,7 +33,7 @@ Findings 25 ✖ · 24 ▲ ──────────────────
  ✖ Storage  0/0           RAID virtual drive 0/0 (RAID5 archive) state Dgrd                                                                       10:00        ┃
  ✖ Storage  252:2         RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed                                                            10:00        ┃
  ✖ Storage  /data         /data (xfs) is mounted read-only                                                                                        10:00        ┃
- ✖ Storage  /data         /data 96% full                                                                                                          10:00        ┃
+ ✖ Storage  /data         /data 96% full                                                                                                          10:00        │
  ✖ Power    PSU2          PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no AC input: cable, PDU or breaker) · output 0 W                      10:00        │
  ✖ Power    PSU Redundan… PSU Redundancy (N+m): Critical - one more failure and the server loses power                                            10:00        │
  ✖ Network  bond0         bond0 degraded: ens1f1 down (1/2 members up)                                                                            10:00        │

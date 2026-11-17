@@ -149,6 +149,9 @@ func (n *networkTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 type virtualNICsMsg struct{ show bool }
 
 func linkText(x model.NIC) string {
+	if x.Kind == "vpn" {
+		return vpnLinkText(x)
+	}
 	switch {
 	case !x.AdminUp:
 		return "admin down"
@@ -175,6 +178,9 @@ func mbpsText(v int) string {
 // what the port supports (warn), "no link" (crit when the port is up),
 // "admin down" (dimmed, not a failure).
 func linkCell(t *Theme, x model.NIC) string {
+	if x.Kind == "vpn" {
+		return vpnLink(t, x)
+	}
 	switch {
 	case !x.AdminUp:
 		return "admin down"
@@ -349,7 +355,11 @@ func (n *networkTab) detail(t *Theme) string {
 		return ""
 	}
 	x, _ := n.nic(it.key)
-	head := t.HeadingFocus(x.Name, "", "enter full page: transceiver, counters, graphs", n.w)
+	hint := "enter full page: transceiver, counters, graphs"
+	if x.Kind == "vpn" {
+		hint = "enter full page: peers, service journal, kernel log"
+	}
+	head := t.HeadingFocus(x.Name, "", hint, n.w)
 	drv := x.Driver
 	if x.DriverVersion != "" {
 		drv += " " + x.DriverVersion
@@ -389,6 +399,9 @@ func (n *networkTab) detail(t *Theme) string {
 			}
 		}
 		return s
+	}
+	if x.Kind == "vpn" {
+		c1, c2 = vpnStrip(t, x, n.net.CollectedAt)
 	}
 	c := x.Counters
 	c3 := kvBlock(t, []kvPair{{"rx CRC", cn(c.RxCRC, "rx_crc_errors")}, {"rx errors", cn(c.RxErrors, "rx_errors")},
@@ -445,6 +458,7 @@ func (n *networkTab) Detail(t *Theme, w int) (string, string) {
 	if l := x.LLDP; l != nil {
 		doc.kv([2]string{"LLDP neighbor", l.System + " port " + l.Port}, [2]string{"Port description", l.PortDescr}, [2]string{"Neighbor VLAN", l.VLAN})
 	}
+	vpnSections(doc, x, n.net.CollectedAt)
 	if x.RxBps != nil || x.TxBps != nil {
 		doc.section("Traffic", t.Dim.Render("bits/s"))
 		doc.add(pad("rx "+bps(x.RxBps), 14) + t.Message.Render(sparkline(t.sess.history("network/"+x.Name+"/rx"), 40)))

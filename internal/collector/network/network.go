@@ -72,7 +72,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	// with --nic-all.
 	show := func(x *netinfo.Iface) bool {
 		switch x.Kind {
-		case "physical", "wireless", "bond":
+		case "physical", "wireless", "bond", "vpn":
 			return true
 		case "vlan":
 			for _, l := range x.Lowers {
@@ -101,6 +101,9 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 			Counters: x.Stats, Addresses: addrs[x.Name], NUMANode: -1, Driver: x.Driver}
 		if n.Addresses == nil {
 			n.Addresses = []string{}
+		}
+		if x.Kind == "vpn" {
+			n.VPN = &model.VPN{Type: x.VPNType}
 		}
 		switch x.Kind {
 		case "bond":
@@ -160,9 +163,14 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	}
 	c.bmc(ctx, env, out)
 	softnet(env, out)
+	c.vpnDetails(ctx, env, out, h)
 
 	for i := range out.Interfaces {
 		n := &out.Interfaces[i]
+		if n.Kind == "vpn" {
+			n.Status = vpnFindings(h, n, env.Now())
+			continue
+		}
 		n.Status = nicFindings(h, n, prevBy[n.Name])
 	}
 	losses(h, out, prev, prevBy, dt)
@@ -419,6 +427,19 @@ func summary(n *model.Network) string {
 	parts := []string{fmt.Sprintf("%d/%d ports up", up, phys)}
 	parts = append(parts, bonds...)
 	for _, x := range n.Interfaces {
+		if x.Kind == "vpn" && x.VPN != nil {
+			state := x.VPN.Type
+			if len(x.VPN.Peers) > 0 {
+				up := 0
+				for _, p := range x.VPN.Peers {
+					if !p.LatestHandshake.IsZero() && p.Status == model.StatusOK {
+						up++
+					}
+				}
+				state = fmt.Sprintf("%s %d/%d peers", state, up, len(x.VPN.Peers))
+			}
+			parts = append(parts, x.Name+" "+state)
+		}
 		if x.Kind == "wireless" {
 			state := "down"
 			if x.Carrier != nil && *x.Carrier {

@@ -351,6 +351,37 @@
       ],
       "exit": 0,
       "stdout": "cmd/journalctl_MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b_-o_json_--output-fields=_BOOT_ID_--no-pager_-q.txt"
+    },
+    {
+      "argv": [
+        "wg",
+        "show",
+        "all",
+        "dump"
+      ],
+      "exit": 0,
+      "stdout": "cmd/wg_show_all_dump.txt"
+    },
+    {
+      "argv": [
+        "journalctl",
+        "-o",
+        "json",
+        "--no-pager",
+        "-q",
+        "--since=-24h",
+        "-n",
+        "2000",
+        "SYSLOG_IDENTIFIER=wg-quick",
+        "+",
+        "SYSLOG_IDENTIFIER=NetworkManager",
+        "+",
+        "SYSLOG_IDENTIFIER=systemd-networkd",
+        "+",
+        "UNIT=wg-quick@wg0.service"
+      ],
+      "exit": 0,
+      "stdout": "cmd/journalctl_vpn_wg0.txt"
     }
   ],
   "description": "synthetic: same host as server-healthy with faults: cpu7 offline, hot socket 1, throttling, corrected MCEs on cpu12, simulated core-test failure on cpu21",
@@ -377,7 +408,8 @@
     "lldpctl": "/usr/sbin/lldpctl",
     "nvidia-smi": "/usr/bin/nvidia-smi",
     "smartctl": "/usr/sbin/smartctl",
-    "storcli64": "/opt/MegaRAID/storcli/storcli64"
+    "storcli64": "/opt/MegaRAID/storcli/storcli64",
+    "wg": "/usr/bin/wg"
   },
   "virtualization": "none"
 }

@@ -408,6 +408,10 @@ func (s *syncer) interfaces() error {
 	}
 	n := 0
 	for _, x := range nw.Interfaces {
+		if x.Kind == "vpn" {
+			s.vpnInterface(byName[x.Name], x)
+			continue
+		}
 		if x.Kind != "physical" {
 			continue
 		}
@@ -461,6 +465,33 @@ func (s *syncer) interfaces() error {
 		}
 	}
 	return nil
+}
+
+// vpnInterface writes a VPN as a virtual interface with its addresses.
+func (s *syncer) vpnInterface(cur obj, x model.NIC) {
+	typ := "VPN"
+	if x.VPN != nil {
+		typ = x.VPN.Type
+	}
+	body := obj{"description": trunc(typ+" VPN", 200)}
+	if x.MTU > 0 {
+		body["mtu"] = x.MTU
+	}
+	info := "virtual, " + typ
+	if len(x.Addresses) > 0 {
+		info += ", " + strings.Join(x.Addresses, " ")
+	}
+	if x.VPN != nil && len(x.VPN.Peers) > 0 {
+		info += fmt.Sprintf(", %d peers", len(x.VPN.Peers))
+	}
+	iid, err := s.upsertInterface(cur, x.Name, "virtual", false, body, info)
+	if err != nil {
+		s.problem("interface %s: %v", x.Name, err)
+		return
+	}
+	for _, a := range x.Addresses {
+		s.ipOnInterface(iid, a, typ+" "+x.Name, "on "+x.Name+" ("+typ+")")
+	}
 }
 
 func validIP(ip string) bool {
@@ -566,44 +597,52 @@ func (s *syncer) oobIP(iid int, b *model.BMCLan) {
 	if strings.Contains(b.IP, ":") {
 		plen = 64
 	}
-	addr := fmt.Sprintf("%s/%d", b.IP, plen)
-	found, err := s.c.List(s.ctx, "/api/ipam/ip-addresses/", q("address", b.IP))
-	if err != nil {
-		s.problem("BMC IP %s: %v", addr, err)
-		return
-	}
-	ipID := 0
-	for _, a := range found {
-		switch {
-		case str(a["assigned_object_type"]) == "dcim.interface" && id(a["assigned_object_id"]) == iid:
-			ipID = id(a["id"])
-		case a["assigned_object_id"] == nil && ipID == 0:
-			if _, err := s.c.Patch(s.ctx, "/api/ipam/ip-addresses/", id(a["id"]), obj{"assigned_object_type": "dcim.interface", "assigned_object_id": iid}); err != nil {
-				s.problem("BMC IP %s: %v", addr, err)
-				return
-			}
-			ipID = id(a["id"])
-		}
-	}
-	if ipID == 0 {
-		if len(found) > 0 {
-			s.log("  BMC IP %s is assigned to another object in NetBox: left there", addr)
-			return
-		}
-		o, err := s.c.Post(s.ctx, "/api/ipam/ip-addresses/", obj{"address": addr, "status": "active",
-			"assigned_object_type": "dcim.interface", "assigned_object_id": iid, "description": "BMC"})
-		if err != nil {
-			s.problem("BMC IP %s: %v", addr, err)
-			return
-		}
-		ipID = id(o["id"])
-		s.change("IP address", addr, "create", "on the BMC interface, out-of-band IP of the device")
-	}
-	if s.c.AtLeast(4, 0) && id(s.dev["oob_ip"]) != ipID {
+	ipID := s.ipOnInterface(iid, fmt.Sprintf("%s/%d", b.IP, plen), "BMC", "on the BMC interface, out-of-band IP of the device")
+	if ipID != 0 && s.c.AtLeast(4, 0) && id(s.dev["oob_ip"]) != ipID {
 		if _, err := s.c.Patch(s.ctx, "/api/dcim/devices/", s.devID, obj{"oob_ip": ipID}); err != nil {
 			s.problem("out-of-band IP: %v", err)
 		}
 	}
+}
+
+// ipOnInterface makes sure an address (CIDR) exists in NetBox and is
+// assigned to the interface: an unassigned one is assigned, one assigned
+// to another object is left there. Returns its id, 0 when not on iid.
+func (s *syncer) ipOnInterface(iid int, addr, desc, why string) int {
+	host, _, _ := strings.Cut(addr, "/")
+	found, err := s.c.List(s.ctx, "/api/ipam/ip-addresses/", q("address", host))
+	if err != nil {
+		s.problem("IP %s: %v", addr, err)
+		return 0
+	}
+	for _, a := range found {
+		if str(a["assigned_object_type"]) == "dcim.interface" && id(a["assigned_object_id"]) == iid {
+			s.change("IP address", addr, "unchanged", why)
+			return id(a["id"])
+		}
+	}
+	for _, a := range found {
+		if a["assigned_object_id"] == nil {
+			if _, err := s.c.Patch(s.ctx, "/api/ipam/ip-addresses/", id(a["id"]), obj{"assigned_object_type": "dcim.interface", "assigned_object_id": iid}); err != nil {
+				s.problem("IP %s: %v", addr, err)
+				return 0
+			}
+			s.change("IP address", addr, "update", "assigned: "+why)
+			return id(a["id"])
+		}
+	}
+	if len(found) > 0 {
+		s.log("  IP %s is assigned to another object in NetBox: left there", addr)
+		return 0
+	}
+	o, err := s.c.Post(s.ctx, "/api/ipam/ip-addresses/", obj{"address": addr, "status": "active",
+		"assigned_object_type": "dcim.interface", "assigned_object_id": iid, "description": desc})
+	if err != nil {
+		s.problem("IP %s: %v", addr, err)
+		return 0
+	}
+	s.change("IP address", addr, "create", why)
+	return id(o["id"])
 }
 
 // --- inventory items ---------------------------------------------------------

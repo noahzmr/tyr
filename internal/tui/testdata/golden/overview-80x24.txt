@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  25/24   ✖ CRIT
- 1 Overview ✖49  2✖8 3✖9 4✖12 5✖2 6✖6 7✖6 8✖5 9 0                         ? help
+ TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
+ 1 Overview ✖52  2✖8 3✖9 4✖12 5✖2 6✖9 7✖6 8✖5 9 0                         ? help
  ✖ CRIT  Needs attention  CPU Mem Stor Power Net GPU Evt  Sys
 
 Modules ───────────────────────────────────────────────────────── enter open tab
@@ -7,11 +7,11 @@ Modules ────────────────────────
  ✖ Memory   CRIT      9 1 memory event in BMC SEL, latest 2026-11-14 09:00: Un…
  ✖ Storage  CRIT     12 sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:0…
  ✖ Power    CRIT      2 PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no A…
- ✖ Network  CRIT      6 bond0 degraded: ens1f1 down (1/2 members up)
+ ✖ Network  CRIT      9 bond0 degraded: ens1f1 down (1/2 members up)
  ✖ GPU/NPU  CRIT      6 GPU1 ca:00.0: 2 uncorrectable ECC errors
  ✖ Events   CRIT      5 System Event Log 2026-11-15 10:00: PS2 Status: Power S…
  ▲ System   WARN      1 1 of 2 boots in the last 30 days ended without a clean…
-Findings 25 ✖ · 24 ▲ ─────────────────────────────────── worst first · 1–8 of 49
+Findings 25 ✖ · 27 ▲ ─────────────────────────────────── worst first · 1–8 of 52
  ✖ CPU      1 core offline (cpu7); taken offline at runtime - back onl…        ┃
  ✖ CPU      cpu7 is offline, but cpu39 - the other thread of the same …        │
  ✖ CPU      4 of 5 program crashes (invalid opcode, segfault) ran on c…        │

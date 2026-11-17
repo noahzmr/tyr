@@ -283,6 +283,37 @@
       ],
       "exit": 0,
       "stdout": "cmd/journalctl_MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b_-o_json_--output-fields=_BOOT_ID_--no-pager_-q.txt"
+    },
+    {
+      "argv": [
+        "wg",
+        "show",
+        "all",
+        "dump"
+      ],
+      "exit": 0,
+      "stdout": "cmd/wg_show_all_dump.txt"
+    },
+    {
+      "argv": [
+        "journalctl",
+        "-o",
+        "json",
+        "--no-pager",
+        "-q",
+        "--since=-24h",
+        "-n",
+        "2000",
+        "SYSLOG_IDENTIFIER=wg-quick",
+        "+",
+        "SYSLOG_IDENTIFIER=NetworkManager",
+        "+",
+        "SYSLOG_IDENTIFIER=systemd-networkd",
+        "+",
+        "UNIT=wg-quick@wg0.service"
+      ],
+      "exit": 0,
+      "stdout": "cmd/journalctl_vpn_wg0.txt"
     }
   ],
   "description": "synthetic: Supermicro SYS-120U-TNR, 2x Xeon Silver 4314 (64 threads), root, all healthy",
@@ -304,7 +335,8 @@
     "journalctl": "/usr/bin/journalctl",
     "lldpctl": "/usr/sbin/lldpctl",
     "nvidia-smi": "/usr/bin/nvidia-smi",
-    "smartctl": "/usr/sbin/smartctl"
+    "smartctl": "/usr/sbin/smartctl",
+    "wg": "/usr/bin/wg"
   },
   "virtualization": "none"
 }

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 24 warn   ✖ CRIT
-1 Overview ✖49 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ✖2 6 Net ✖6 7 GPU ✖6 8 Events ✖5  9 Stress  0 Inv             ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 27 warn   ✖ CRIT
+1 Overview ✖52 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ✖2 6 Net ✖9 7 GPU ✖6 8 Events ✖5  9 Stress  0 Inv             ? help
  ✖ CRIT  Stress test · machine has 25 critical findings, results may be affected · fixtures mode: tests are simulated
 
 New run ──────────────────────────────────────────────────────────────  Engines ────────────────────────────────────────

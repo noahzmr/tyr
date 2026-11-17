@@ -2,6 +2,8 @@ package network
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,7 +38,7 @@ func nic(n *model.Network, name string) *model.NIC {
 
 func TestHealthy(t *testing.T) {
 	n := collect(t, "server-healthy")
-	if n.Status != model.StatusOK || n.Summary != "3/4 ports up, bond0 OK" || n.Hidden != 1 {
+	if n.Status != model.StatusOK || n.Summary != "3/4 ports up, bond0 OK, wg0 WireGuard 2/2 peers" || n.Hidden != 1 {
 		t.Errorf("%v %q hidden=%d %+v", n.Status, n.Summary, n.Hidden, n.Findings)
 	}
 	e := nic(n, "ens1f0")
@@ -63,7 +65,7 @@ func TestHealthy(t *testing.T) {
 
 func TestDegraded(t *testing.T) {
 	n := collect(t, "server-degraded")
-	if n.Status != model.StatusCrit || n.Summary != "2/4 ports up, bond0 CRIT" {
+	if n.Status != model.StatusCrit || n.Summary != "2/4 ports up, bond0 CRIT, wg0 WireGuard 0/2 peers" {
 		t.Errorf("%v %q", n.Status, n.Summary)
 	}
 	got := map[string]string{}
@@ -129,5 +131,79 @@ func TestLaptop(t *testing.T) {
 	w := nic(n, "wlp194s0")
 	if w == nil || w.Kind != "wireless" || w.Vendor == "" || n.Status != model.StatusOK {
 		t.Errorf("%+v %+v", w, n.Findings)
+	}
+}
+
+func TestVPN(t *testing.T) {
+	n := collect(t, "server-healthy")
+	w := nic(n, "wg0")
+	if w == nil || w.Kind != "vpn" || w.VPN == nil || w.VPN.Type != "WireGuard" || w.Status != model.StatusOK {
+		t.Fatalf("wg0 %+v", w)
+	}
+	v := w.VPN
+	if *v.ListenPort != 51820 || len(v.Peers) != 2 || v.Peers[0].Endpoint != "198.51.100.20:51820" || len(v.Peers[0].AllowedIPs) != 2 ||
+		v.Peers[0].KeepaliveS != 25 || v.Peers[1].Endpoint != "" || v.Peers[0].RxBytes != 1234567890 {
+		t.Errorf("peers %+v", v.Peers)
+	}
+	if len(w.Addresses) != 1 || w.Addresses[0] != "10.99.0.1/24" {
+		t.Errorf("addresses %v", w.Addresses)
+	}
+	// journal: wg-quick and systemd's lines for wg0; NetworkManager's line about a veth is not
+	if len(v.Journal) != 5 || v.Journal[0].Service != "systemd" || !strings.Contains(v.Journal[1].Message, "ip link add wg0") {
+		t.Errorf("journal %+v", v.Journal)
+	}
+	if len(v.KernelLines) != 1 || !strings.Contains(v.KernelLines[0], "WireGuard 1.0.0 loaded") {
+		t.Errorf("kernel %v", v.KernelLines)
+	}
+	// no key but the public ones ever reaches the snapshot
+	b, _ := json.Marshal(n)
+	if strings.Contains(string(b), "FIXTUREPRIVATEKEY") || strings.Contains(string(b), "FIXTUREPRESHAREDKEY") {
+		t.Error("a private or preshared key is in the snapshot")
+	}
+
+	d := nic(collect(t, "server-degraded"), "wg0")
+	if d == nil || d.Status != model.StatusWarn || d.VPN.Peers[0].Status != model.StatusWarn || d.VPN.Peers[1].Status != model.StatusWarn {
+		t.Fatalf("degraded wg0 %+v", d)
+	}
+	if len(d.VPN.KernelLines) != 2 || !strings.Contains(d.VPN.KernelLines[1], "did not complete") {
+		t.Errorf("degraded kernel %v", d.VPN.KernelLines)
+	}
+}
+
+func TestVPNFindings(t *testing.T) {
+	now := time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC)
+	up, down := true, false
+	cases := []struct {
+		name  string
+		nic   model.NIC
+		codes string
+	}{
+		{"tunnel without its daemon", model.NIC{Name: "tun0", Kind: "vpn", AdminUp: true, Carrier: &down, Addresses: []string{"10.8.0.2/24"},
+			VPN: &model.VPN{Type: "OpenVPN/TUN"}}, "vpn_down"},
+		{"admin down is not a finding", model.NIC{Name: "tun0", Kind: "vpn", AdminUp: false, Carrier: &down, Addresses: []string{"10.8.0.2/24"},
+			VPN: &model.VPN{Type: "OpenVPN/TUN"}}, ""},
+		{"idle peer without keepalive", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Peers: []model.VPNPeer{{PublicKey: "k", LatestHandshake: now.Add(-5 * time.Hour)}}}}, ""},
+		{"peer that dials in, not yet", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Peers: []model.VPNPeer{{PublicKey: "k"}}}}, ""},
+		{"stale with keepalive", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Peers: []model.VPNPeer{{PublicKey: "k", Endpoint: "e:1", KeepaliveS: 25, LatestHandshake: now.Add(-4 * time.Minute)}}}}, "vpn_peer"},
+		{"fresh with keepalive", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Peers: []model.VPNPeer{{PublicKey: "k", Endpoint: "e:1", KeepaliveS: 25, LatestHandshake: now.Add(-90 * time.Second)}}}}, ""},
+		{"service warning only", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Journal: []model.VPNLogLine{{Priority: 4, Message: "w"}}}}, ""},
+		{"service error", model.NIC{Name: "wg0", Kind: "vpn", AdminUp: true, Carrier: &up,
+			VPN: &model.VPN{Type: "WireGuard", Journal: []model.VPNLogLine{{Priority: 3, Message: "e"}}}}, "vpn_service"},
+	}
+	for _, c := range cases {
+		var h model.Header
+		vpnFindings(&h, &c.nic, now)
+		var codes []string
+		for _, f := range h.Findings {
+			codes = append(codes, f.Code)
+		}
+		if got := strings.Join(codes, ","); got != c.codes {
+			t.Errorf("%s: %q, want %q", c.name, got, c.codes)
+		}
 	}
 }

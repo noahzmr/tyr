@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Network is the network module section.
@@ -59,7 +60,42 @@ type NIC struct {
 	// Losses explains every drop or loss counter that grew since the last
 	// refresh: where the packets were lost and the likely cause here.
 	Losses []NICLoss `json:"losses,omitempty"`
+	VPN    *VPN      `json:"vpn,omitempty"` // Kind "vpn": WireGuard, OpenVPN, Tailscale …
 	Status Status    `json:"status"`
+}
+
+// VPN is a tunnel interface: its type, the peers (WireGuard), the journal
+// of the service behind it and the kernel's messages about it. Private and
+// preshared keys are never read into it.
+type VPN struct {
+	Type        string       `json:"type"` // WireGuard, Tailscale, ZeroTier, OpenVPN/TUN, TAP, IPsec, PPP
+	PublicKey   string       `json:"public_key,omitempty"`
+	ListenPort  *int         `json:"listen_port,omitempty"`
+	Peers       []VPNPeer    `json:"peers,omitempty"`
+	Note        string       `json:"note,omitempty"`     // why peer status is missing
+	Services    []string     `json:"services,omitempty"` // syslog identifiers whose journal was read
+	Journal     []VPNLogLine `json:"journal,omitempty"`  // last 24 h, newest last
+	KernelLines []string     `json:"kernel_log_lines,omitempty"`
+}
+
+// VPNPeer is one WireGuard peer.
+type VPNPeer struct {
+	PublicKey       string    `json:"public_key"`
+	Endpoint        string    `json:"endpoint,omitempty"`
+	AllowedIPs      []string  `json:"allowed_ips,omitempty"`
+	LatestHandshake time.Time `json:"latest_handshake,omitzero"`
+	RxBytes         uint64    `json:"rx_bytes"`
+	TxBytes         uint64    `json:"tx_bytes"`
+	KeepaliveS      int       `json:"keepalive_seconds,omitempty"`
+	Status          Status    `json:"status"`
+}
+
+// VPNLogLine is one journal message of a VPN service.
+type VPNLogLine struct {
+	Time     time.Time `json:"time,omitzero"`
+	Service  string    `json:"service"`
+	Priority int       `json:"priority"` // syslog level: 3 error, 4 warning, 6 info
+	Message  string    `json:"message"`
 }
 
 // NICLoss is one growing drop/loss counter of an interface.

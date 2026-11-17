@@ -49,6 +49,8 @@ var FactDefs = []FactDef{
 	{"nic_speed_max", kNum, "fastest port, Mbit/s (10 GbE = 10000)"},
 	{"nics_10g", kNum, "ports of 10 Gbit/s or more"},
 	{"nic_models", kStr, "NIC models, comma-separated"},
+	{"vpns", kNum, "VPN interfaces (WireGuard, OpenVPN, Tailscale …)"},
+	{"vpn_types", kStr, "their types, comma-separated"},
 	{"gpus", kNum, "GPUs"},
 	{"gpu_model", kStr, "GPU models, comma-separated"},
 	{"npus", kNum, "NPUs"},
@@ -173,6 +175,17 @@ func ComputeFacts(s *model.Snapshot, r *accept.Result) Facts {
 		}
 		f["nics"], f["nics_10g"], f["nic_speed_max"] = Num(float64(n)), Num(float64(ten)), Num(float64(maxS))
 		f["nic_models"] = Str(strings.Join(models, ", "))
+		var vpns []string
+		nv := 0
+		for _, x := range nw.Interfaces {
+			if x.Kind == "vpn" {
+				nv++
+				if x.VPN != nil && !slices.Contains(vpns, x.VPN.Type) {
+					vpns = append(vpns, x.VPN.Type)
+				}
+			}
+		}
+		f["vpns"], f["vpn_types"] = Num(float64(nv)), Str(strings.Join(vpns, ", "))
 	}
 	if a := s.Accel; a != nil {
 		var models []string

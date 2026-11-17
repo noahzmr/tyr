@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  25/24   ✖ CRIT
-1✖49 2✖8 3✖9 4✖12 5✖2 6✖6 7✖6 8✖5 9  0 Inventory                          ? help
+ TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
+1✖52 2✖8 3✖9 4✖12 5✖2 6✖9 7✖6 8✖5 9  0 Inventory                          ? help
  ✖ CRIT  48 components · 15 with problems · serials visible        v List · Tree
 
    Component                                                  Serial

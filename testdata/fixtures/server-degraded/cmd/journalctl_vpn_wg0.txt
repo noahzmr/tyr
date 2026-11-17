@@ -1,0 +1,4 @@
+{"__REALTIME_TIMESTAMP": "1794812400000000", "SYSLOG_IDENTIFIER": "systemd", "PRIORITY": "6", "MESSAGE": "Starting wg-quick@wg0.service - WireGuard via wg-quick(8) for wg0...", "UNIT": "wg-quick@wg0.service"}
+{"__REALTIME_TIMESTAMP": "1794812401000000", "SYSLOG_IDENTIFIER": "wg-quick", "PRIORITY": "6", "MESSAGE": "[#] ip link add wg0 type wireguard"}
+{"__REALTIME_TIMESTAMP": "1794812401000000", "SYSLOG_IDENTIFIER": "wg-quick", "PRIORITY": "3", "MESSAGE": "RTNETLINK answers: Address already in use (wg0 listen port 51820)"}
+{"__REALTIME_TIMESTAMP": "1794817700000000", "SYSLOG_IDENTIFIER": "systemd-networkd", "PRIORITY": "4", "MESSAGE": "wg0: Could not resolve endpoint vpn-hq.example.net, ignoring: Temporary failure in name resolution"}

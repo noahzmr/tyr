@@ -262,7 +262,7 @@ func TestTreeSlotMapHelpMouse(t *testing.T) {
 
 func TestWindowTitleShowsStatus(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
-	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (25 crit, 24 warn)") {
+	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (25 crit, 27 warn)") {
 		t.Errorf("title %q", title)
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -21,7 +22,8 @@ import (
 // Iface is one entry of /sys/class/net.
 type Iface struct {
 	Name           string
-	Kind           string // physical, wireless, bond, bridge, vlan, virtual, loopback
+	Kind           string // physical, wireless, bond, bridge, vlan, vpn, virtual, loopback
+	VPNType        string // Kind vpn: WireGuard, Tailscale, ZeroTier, OpenVPN/TUN, TAP, IPsec, PPP
 	MAC            string
 	AdminUp        bool
 	OperState      string
@@ -100,6 +102,8 @@ func ReadIfaces(f hostfs.FS) []Iface {
 			x.Kind = "vlan"
 		case devtype == "wlan" || hostfs.Exists(f, d+"/wireless"):
 			x.Kind = "wireless"
+		case vpnType(f, d, n, devtype) != "":
+			x.Kind, x.VPNType = "vpn", vpnType(f, d, n, devtype)
 		case x.DevicePath != "":
 			x.Kind = "physical"
 		default:
@@ -626,4 +630,85 @@ func Softnet(data []byte) (dropped, squeezed uint64, ok bool) {
 		ok = true
 	}
 	return dropped, squeezed, ok
+}
+
+// vpnType recognises a tunnel interface: WireGuard by its device type,
+// TUN/TAP by tun_flags (the owner by its usual name), IPsec (xfrm, vti)
+// and PPP by name or link type. Empty for anything else.
+func vpnType(f hostfs.FS, dir, name, devtype string) string {
+	switch {
+	case devtype == "wireguard":
+		return "WireGuard"
+	case devtype == "xfrm" || strings.HasPrefix(name, "xfrm") || strings.HasPrefix(name, "ipsec") || strings.HasPrefix(name, "vti"):
+		return "IPsec"
+	case devtype == "ppp" || hostfs.StringOr(f, dir+"/type", "") == "512":
+		return "PPP"
+	}
+	flags := hostfs.StringOr(f, dir+"/tun_flags", "")
+	if flags == "" {
+		return ""
+	}
+	switch {
+	case strings.HasPrefix(name, "tailscale"):
+		return "Tailscale"
+	case strings.HasPrefix(name, "zt"):
+		return "ZeroTier"
+	case strings.HasPrefix(name, "nebula"):
+		return "Nebula"
+	}
+	if v, err := strconv.ParseUint(strings.TrimPrefix(flags, "0x"), 16, 32); err == nil && v&0x2 != 0 { // IFF_TAP
+		return "TAP"
+	}
+	return "OpenVPN/TUN"
+}
+
+// WGIface is one WireGuard interface from `wg show all dump`.
+type WGIface struct {
+	PublicKey  string
+	ListenPort *int
+	Peers      []model.VPNPeer
+}
+
+// ParseWGDump parses `wg show all dump`. The interface line carries the
+// private key and every peer line a preshared key: both are skipped and
+// never stored.
+//
+//	wg0  <private>  <public>  <port>  <fwmark>
+//	wg0  <public>  <preshared>  <endpoint>  <allowed-ips>  <handshake>  <rx>  <tx>  <keepalive>
+func ParseWGDump(b []byte) map[string]*WGIface {
+	out := map[string]*WGIface{}
+	for _, line := range strings.Split(string(b), "\n") {
+		f := strings.Split(strings.TrimRight(line, "\r"), "\t")
+		switch len(f) {
+		case 5:
+			w := &WGIface{PublicKey: f[2]}
+			if p, err := strconv.Atoi(f[3]); err == nil && p > 0 {
+				w.ListenPort = &p
+			}
+			out[f[0]] = w
+		case 9:
+			w := out[f[0]]
+			if w == nil {
+				w = &WGIface{}
+				out[f[0]] = w
+			}
+			p := model.VPNPeer{PublicKey: f[1]}
+			if f[3] != "(none)" {
+				p.Endpoint = f[3]
+			}
+			if f[4] != "(none)" && f[4] != "" {
+				p.AllowedIPs = strings.Split(f[4], ",")
+			}
+			if ts, err := strconv.ParseInt(f[5], 10, 64); err == nil && ts > 0 {
+				p.LatestHandshake = time.Unix(ts, 0).UTC()
+			}
+			p.RxBytes, _ = strconv.ParseUint(f[6], 10, 64)
+			p.TxBytes, _ = strconv.ParseUint(f[7], 10, 64)
+			if k, err := strconv.Atoi(f[8]); err == nil {
+				p.KeepaliveS = k
+			}
+			w.Peers = append(w.Peers, p)
+		}
+	}
+	return out
 }
