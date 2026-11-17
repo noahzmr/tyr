@@ -5,10 +5,12 @@
 #   tyr.peer=HOST[:PORT] tyr.token=TOKEN      network test against `tyr net-peer` (DHCP)
 #   tyr.dhcp=1                                DHCP on all wired NICs without a peer
 #   tyr.wait=SECONDS                          countdown before the test (default 15)
+#   tyr.netbox=0                              do not write the result to NetBox
 # Results go to a partition labelled TYR-RESULTS (FAT, exFAT or ext4) when
 # one is present, else to /var/lib/tyr/accept (memory: lost at reboot). The
 # image itself has one (64 MB), so a stick written with dd keeps the results;
-# as a virtual CD it is read-only. accept.json on it overrides the limits.
+# as a virtual CD it is read-only. accept.json on it overrides the limits,
+# netbox.json and tags.json the NetBox settings built into the ISO.
 
 set -u
 export TERM=${TERM:-linux}
@@ -21,6 +23,7 @@ peer=$(arg tyr.peer)
 token=$(arg tyr.token)
 wait_s=$(arg tyr.wait)
 wait_s=${wait_s:-15}
+nb_off=$(arg tyr.netbox)
 results=/mnt/results
 out=""
 
@@ -36,7 +39,24 @@ header() {
 	sn=$(cat /sys/class/dmi/id/product_serial 2>/dev/null)
 	echo "${bold}Tyr live$off $(tyr version 2>/dev/null | cut -d' ' -f2)  ·  $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) $(cat /sys/class/dmi/id/product_name 2>/dev/null)${sn:+  ·  S/N $sn}"
 	echo "${dim}Alt+F2 shell · Alt+F3 live view (tyr) · Alt+F1 back here${ip:+ · $ip}$off"
+	if netbox_on; then
+		echo "${dim}NetBox: $(sed -n 's/.*"url": *"\([^"]*\)".*/\1/p' /etc/tyr/netbox.json | head -1) - the result is written to the device after the test$off"
+	fi
 	echo
+}
+
+# netbox_on: NetBox settings exist (ISO or stick) and tyr.netbox=0 is not set.
+netbox_on() { [[ $nb_off != 0 && -f /etc/tyr/netbox.json ]]; }
+
+# netbox_from_stick: netbox.json / tags.json on TYR-RESULTS replace the ISO's.
+netbox_from_stick() {
+	mountpoint -q "$results" || return 0
+	local f
+	for f in netbox.json tags.json; do
+		if [[ -f $results/$f ]]; then
+			install -D -m 600 "$results/$f" "/etc/tyr/$f" && echo "NetBox: $f from the stick"
+		fi
+	done
 }
 
 # find_results mounts the TYR-RESULTS partition (waits a little: USB sticks
@@ -59,10 +79,13 @@ find_results() {
 }
 
 network() {
-	if [[ -n $peer || $(arg tyr.dhcp) == 1 ]]; then
+	if [[ -n $peer || $(arg tyr.dhcp) == 1 ]] || netbox_on; then
 		mkdir -p /run/systemd/network
 		printf '[Match]\nType=ether\nKind=!*\n\n[Network]\nDHCP=yes\n' >/run/systemd/network/10-tyr-dhcp.network
 		networkctl reload 2>/dev/null
+		# DNS from DHCP through systemd-resolved
+		systemctl start systemd-resolved 2>/dev/null
+		[[ -L /etc/resolv.conf ]] || ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 		echo "network: DHCP on wired NICs, waiting up to 60 s …"
 		/usr/lib/systemd/systemd-networkd-wait-online --any --timeout=60 >/dev/null 2>&1 || echo "${yellow}no address yet$off"
 	fi
@@ -103,6 +126,11 @@ run_accept() {
 	local log=$base/console-$(date -u +%Y%m%dT%H%M%SZ).log
 	local cmd=(tyr accept --profile "$profile" --yes --out "$base" "${limits[@]}")
 	[[ -n $peer ]] && cmd+=(--peer "$peer" --token "$token")
+	if netbox_on; then
+		cmd+=(--netbox)
+	else
+		cmd+=(--no-netbox)
+	fi
 	# script keeps a terminal for tyr (colours, banner) and logs the console
 	script -qfec "$(printf '%q ' "${cmd[@]}")" "$log"
 	rc=$?
@@ -151,7 +179,8 @@ after() {
 
 while true; do
 	header
-	find_results 15 || echo "${yellow}no writable TYR-RESULTS partition: the results stay in memory. Plug in a stick with a partition labelled TYR-RESULTS to keep them.$off"
+	find_results 15 && netbox_from_stick
+	mountpoint -q "$results" || echo "${yellow}no writable TYR-RESULTS partition: the results stay in memory. Plug in a stick with a partition labelled TYR-RESULTS to keep them.$off"
 	network
 	if [[ $profile != none ]]; then
 		echo

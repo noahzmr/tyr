@@ -2,6 +2,8 @@
 # Runs once in the image's chroot at build time (iso/builder.sh).
 set -e
 systemctl enable tyr-live.service tyr-view.service systemd-networkd.service rasdaemon.service lldpd.service
+# DNS for NetBox (started by tyr-live only when DHCP is on)
+systemctl disable systemd-resolved.service 2>/dev/null || true
 systemctl mask getty@tty1.service getty@tty3.service
 # smartd: Tyr reads SMART itself; a second reader skews the error counters
 systemctl disable smartd.service 2>/dev/null || true

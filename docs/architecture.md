@@ -18,7 +18,8 @@ read that snapshot or its JSON.
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
 | Acceptance | `accept` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check |
-| Consumers | `tui`, `cmd/tyr`, `stress`, `accept`, `report` | show, export, load, judge, report |
+| NetBox | `netbox` | facts from a snapshot (and a verdict), tag rules over them, the sync to NetBox's REST API |
+| Consumers | `tui`, `cmd/tyr`, `stress`, `accept`, `netbox`, `report` | show, export, load, judge, report, write to NetBox |
 
 ```mermaid
 flowchart LR
@@ -48,7 +49,9 @@ flowchart LR
 The diagram above shows the main paths; the acceptance test (`tyr accept`,
 [acceptance.md](acceptance.md)) sits on top of the snapshot and the stress
 engine as in the flowchart. The Tyr ISO (`iso/`) is a Debian live system
-that runs it at boot.
+that runs it at boot. `netbox` ([netbox.md](netbox.md)) takes a snapshot
+and, after a test, its result, and writes them to NetBox: the only place
+where Tyr writes to another system (the BMC is only read).
 
 ## Collection
 

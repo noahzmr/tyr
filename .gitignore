@@ -14,3 +14,6 @@ dist/
 /iso/vendor/*
 !/iso/vendor/README.md
 /iso/accept.json
+/iso/netbox.json
+/iso/tags.json
+/iso/ca/

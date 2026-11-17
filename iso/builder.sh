@@ -18,7 +18,7 @@ mkdir -p "$work/staging/live" "$work/staging/boot/grub" "$work/staging/.disk"
 # touch the server's disks.
 pkgs=(
 	"linux-image-$arch" live-boot systemd-sysv systemd-timesyncd udev kmod
-	util-linux bsdextrautils procps iproute2 kbd console-setup less vim-tiny bash-completion
+	util-linux bsdextrautils procps iproute2 kbd console-setup less vim-tiny bash-completion systemd-resolved
 	pciutils usbutils ethtool dmidecode smartmontools nvme-cli sg3-utils ipmitool rasdaemon lldpd
 	stress-ng memtester iperf3 exfatprogs dosfstools openssh-client ca-certificates
 	firmware-linux-free firmware-misc-nonfree firmware-bnx2 firmware-bnx2x firmware-qlogic
@@ -50,6 +50,29 @@ if [[ -f iso/accept.json ]]; then
 	limits_hook=(--customize-hook='cp iso/accept.json "$1/etc/tyr/accept.json"')
 fi
 
+# NetBox: settings and tag rules into /etc/tyr (root-only: the token);
+# after the test tyr-live writes the result to the device's journal.
+netbox_hook=()
+if [[ -f iso/netbox.json ]]; then
+	tags=iso/tags.json
+	[[ -f $tags ]] || tags=/nonexistent/tags.json
+	echo "netbox: iso/netbox.json (the token is in the image: keep this ISO in-house)"
+	/src/dist/tyr-linux-"$arch" netbox --validate --netbox-config iso/netbox.json --tags "$tags"
+	netbox_hook=(--customize-hook='install -m 600 iso/netbox.json "$1/etc/tyr/netbox.json"')
+	[[ -f iso/tags.json ]] && netbox_hook+=(--customize-hook='install -m 600 iso/tags.json "$1/etc/tyr/tags.json"')
+elif [[ -f iso/tags.json ]]; then
+	echo "iso/tags.json without iso/netbox.json: tag rules need NetBox" >&2
+	exit 1
+fi
+# an internal CA (NetBox with a company certificate): iso/ca/*.crt
+ca_hook=()
+cas=(iso/ca/*.crt)
+if ((${#cas[@]})); then
+	echo "CA certificates: ${cas[*]}"
+	ca_hook=(--customize-hook="mkdir -p \"\$1/usr/local/share/ca-certificates/tyr\" && cp ${cas[*]} \"\$1/usr/local/share/ca-certificates/tyr/\""
+		--customize-hook='chroot "$1" update-ca-certificates')
+fi
+
 echo "== root filesystem (Debian trixie, $arch)"
 mmdebstrap --mode=root --variant=minbase --architectures="$arch" \
 	--components="main non-free-firmware" \
@@ -62,7 +85,8 @@ mmdebstrap --mode=root --variant=minbase --architectures="$arch" \
 	--dpkgopt='path-exclude=/usr/share/man/*' --dpkgopt='path-exclude=/usr/share/locale/*' \
 	--customize-hook='sync-in iso/overlay /' \
 	--customize-hook="install -m 755 dist/tyr-linux-$arch \"\$1/usr/local/bin/tyr\"" \
-	"${limits_hook[@]}" "${vendor_hook[@]}" \
+	--customize-hook='mkdir -p "$1/etc/tyr" && chmod 700 "$1/etc/tyr"' \
+	"${limits_hook[@]}" "${netbox_hook[@]}" "${ca_hook[@]}" "${vendor_hook[@]}" \
 	--customize-hook='chroot "$1" sh -e /usr/local/sbin/tyr-live-setup' \
 	--customize-hook='chroot "$1" update-initramfs -u -k all' \
 	trixie "$work/rootfs" "deb $mirror trixie main non-free-firmware" \

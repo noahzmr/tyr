@@ -30,6 +30,8 @@ type Options struct {
 	FixtureName string        // non-empty in --fixtures mode (shown in header)
 	ExportDir   string        // where `e` writes snapshots (default ".")
 	Mouse       bool          // enable mouse (click tabs, wheel scrolls); disables terminal text selection
+	NetBoxFile  string        // NetBox settings (N); "" = netbox.Paths
+	TagsFile    string        // tag rules for NetBox (N); "" = netbox.Paths
 }
 
 // tab is one tab's sub-model.
@@ -82,6 +84,7 @@ type Model struct {
 	page     *detailPage   // full-screen component page (enter), nil when closed
 	showHelp bool          // help overlay
 	reports  *reportDialog // R: generate a report, nil when closed
+	nb       *netboxDialog // N: NetBox settings, tag rules, write, nil when closed
 	blurred  bool          // terminal window not focused: refresh slower
 	lastAt   time.Time     // when the last snapshot arrived
 	tabXs    []int         // right edge of each rendered tab (mouse hit test)
@@ -288,6 +291,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.flash(string(msg))
 		return m, nil
 
+	case netboxDoneMsg:
+		m.netboxDone(msg)
+		return m, nil
+
 	case tea.KeyPressMsg:
 		return m, m.handleKey(msg)
 
@@ -369,6 +376,7 @@ var (
 	keyCopy     = key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy serial"))
 	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "reports"))
 	keyAlerts   = key.NewBinding(key.WithKeys("A", "shift+a"), key.WithHelp("A", "alert reference"))
+	keyNetBox   = key.NewBinding(key.WithKeys("N", "shift+n"), key.WithHelp("N", "NetBox"))
 	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
 
@@ -402,6 +410,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	}
 	if m.reports != nil {
 		return m.updateReports(msg)
+	}
+	if m.nb != nil {
+		return m.updateNetBox(msg)
 	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
@@ -449,6 +460,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	case key.Matches(msg, keyAlerts):
 		m.openAlertReference()
+		return nil
+	case key.Matches(msg, keyNetBox):
+		m.openNetBox()
 		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
@@ -673,6 +687,9 @@ func (m *Model) render() string {
 	b.WriteString(fit(m.footer(), m.width, m.footerHeight()))
 	if m.reports != nil {
 		return m.reportsView(b.String())
+	}
+	if m.nb != nil {
+		return m.netboxView(b.String())
 	}
 	if m.showHelp {
 		return m.helpOverlay(b.String())

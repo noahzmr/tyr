@@ -107,6 +107,7 @@ CZ2D1234AB-20261117T090000Z/
 ├── before.json      snapshot before the load
 ├── after.json       snapshot after the load
 ├── console.log      the console output (ISO)
+├── netbox.log       what was written to NetBox (when configured), netbox.json the outcome
 └── runs/            one result per stress test (.json and .md)
 ```
 
@@ -138,7 +139,8 @@ real servers.
 2. The results go to a partition labelled **`TYR-RESULTS`**. The image has
    one (64 MB, FAT, partition 3): a stick written with dd keeps the results
    itself, and on your desktop it shows up as a second drive. An
-   `accept.json` on it replaces the limits. Virtual media is read-only, so
+   `accept.json` on it replaces the limits, a `netbox.json` / `tags.json`
+   the NetBox settings ([netbox.md](netbox.md)). Virtual media is read-only, so
    there you need a second stick with a `TYR-RESULTS` partition (FAT,
    exFAT or ext4); without one the results stay in memory until you plug
    one in and press `c`.
@@ -175,6 +177,7 @@ Kernel command line (`e` in the boot menu):
 | `tyr.peer=HOST[:PORT] tyr.token=TOKEN` | network test against `tyr net-peer` (turns on DHCP) |
 | `tyr.dhcp=1` | DHCP on all wired NICs without a peer |
 | `tyr.wait=SECONDS` | the countdown before the test (default 15) |
+| `tyr.netbox=0` | do not write the result to NetBox (ISO built with NetBox settings) |
 
 The NICs are up without an address otherwise, so Tyr sees link, speed and
 LLDP neighbours.
@@ -201,6 +204,11 @@ binfmt once: `sudo apt install qemu-user-binfmt`.
   organisation.
 - **NVIDIA GPUs**: the ISO has no NVIDIA driver; Tyr checks those GPUs
   through PCI only (link, errors in the kernel log).
+- **NetBox**: `iso/netbox.json` and `iso/tags.json` become `/etc/tyr/`;
+  after the test the ISO switches on DHCP and writes the device, its parts,
+  the tags and the result as a journal entry to NetBox; `iso/ca/*.crt` adds
+  an internal CA. The token is in the image: keep such an ISO in-house. See
+  [netbox.md](netbox.md#the-iso).
 - `MIRROR=http://…/debian make iso` uses another Debian mirror.
 
 What goes into the image: `iso/builder.sh` (packages), `iso/overlay/`

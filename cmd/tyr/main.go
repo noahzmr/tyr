@@ -39,6 +39,9 @@ Usage:
   tyr accept [flags]     acceptance test: health check, CPU/memory/disk load, second
                          check, judged against limits: PASS, REMARKS, FAIL (--profile
                          quick|burnin|extended, --limits FILE); what the Tyr ISO runs
+  tyr netbox [flags]     write this machine to NetBox: device, interfaces, inventory
+                         items, tags from rules, a journal entry (--dry-run, --facts,
+                         --from RESULTS); settings with N in the TUI
   tyr core-test CPU      test an offline (suspect) CPU: online only for the test,
                          isolated, offline again after; --restore cleans up after a kill
   tyr check-native       compare Tyr's own SMBIOS, NIC and BMC readers with
@@ -76,6 +79,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runStress(args, os.Stdin, stdout, stderr)
 	case "accept":
 		return runAccept(args, stdout, stderr)
+	case "netbox":
+		return runNetBox(args, stdout, stderr)
 	case "core-test":
 		return runCoreTest(args, os.Stdin, stdout, stderr)
 	case "check-native":
@@ -173,6 +178,8 @@ func runTUI(args []string, stderr io.Writer) int {
 	c.register(fs)
 	refresh := fs.Duration("refresh", 5*time.Second, "live sensor refresh interval")
 	mouse := fs.Bool("mouse", false, "enable mouse: click tabs, wheel scrolls (hold Shift to select text)")
+	var nb netboxFiles
+	nb.register(fs)
 	if err := fs.Parse(args); err != nil {
 		return 3
 	}
@@ -187,7 +194,8 @@ func runTUI(args []string, stderr io.Writer) int {
 	if name != "" {
 		fixture.EnableLive(env)
 	}
-	m := tui.New(env, all.Collectors(), all.Implemented, tui.Options{Refresh: *refresh, FixtureName: name, Mouse: *mouse})
+	m := tui.New(env, all.Collectors(), all.Implemented, tui.Options{Refresh: *refresh, FixtureName: name, Mouse: *mouse,
+		NetBoxFile: nb.config, TagsFile: nb.tags})
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Fprintln(stderr, "tyr:", err)
 		return 3

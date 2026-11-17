@@ -7,10 +7,10 @@
  ✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
  ▲│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
  ▲│ pgup pgdn page          v         switch view   R         reports        │
- ●│ g G       top / end     /         search        A         alert refere…  │
- ●│ enter     open / action t         CPU load ↔ t… s S F     stress tests   │
- ●│ esc       back · close  a         empty DIMM s… q ctrl+c  quit · stop …  │
- ●│                         h         virtual NICs                           │
+ ●│ g G       top / end     /         search        N         NetBox         │
+ ●│ enter     open / action t         CPU load ↔ t… A         alert refere…  │
+ ●│ esc       back · close  a         empty DIMM s… s S F     stress tests   │
+ ●│                         h         virtual NICs  q ctrl+c  quit · stop …  │
   │ This tab · Storage                                                       │
 sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
 Mo│ with SMART attributes, counters and / search · c copies the serial       │

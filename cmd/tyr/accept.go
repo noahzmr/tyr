@@ -37,6 +37,10 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 	token := fs.String("token", "", "network test: the token `tyr net-peer` printed")
 	printProfile := fs.Bool("print-profile", false, "print the effective profile as JSON (a template for --limits) and exit")
 	yes := fs.Bool("yes", false, "start without the confirmation prompt")
+	var nbFiles netboxFiles
+	nbFiles.register(fs)
+	toNetBox := fs.Bool("netbox", false, "write the result to NetBox at the end (default: when after_accept is set in the NetBox settings)")
+	noNetBox := fs.Bool("no-netbox", false, "do not write to NetBox")
 	if err := fs.Parse(args); err != nil {
 		return 3
 	}
@@ -181,6 +185,9 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 	os.WriteFile(filepath.Join(dir, "VERDICT"), []byte(string(r.Verdict)+"\n"), 0o644)
 	banner(stdout, r, isTTY(os.Stdout))
 	fmt.Fprintln(stdout, "report: "+filepath.Join(dir, "accept.md"))
+	if c.fixtures == "" || *toNetBox {
+		acceptNetBox(nbFiles, *toNetBox, *noNetBox, r, after, dir, stdout)
+	}
 	return r.Verdict.ExitCode()
 }
 

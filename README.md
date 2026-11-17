@@ -158,6 +158,16 @@ guard that keeps it safe, and gives a verdict you can trust.
   every stress run as a Mermaid gantt.
 - View in the terminal like glow, save, or copy to the clipboard.
 
+### NetBox
+
+- Writes the machine into NetBox: the device (by serial number, created when
+  missing), ports with MAC addresses, the BMC address as out-of-band IP, an
+  inventory item per component, and the test result as a journal entry.
+- Tags from your own rules (`memory_gb >= 192 && nic_speed_max >= 10000`);
+  none by default. Settings and rules in the TUI (`N`) or as JSON files.
+- `tyr netbox`, after `tyr accept`, and by itself from a Tyr ISO built with
+  NetBox settings ([docs/netbox.md](docs/netbox.md)).
+
 ### One static binary
 
 - CGO-free, no runtime dependencies: copy it to a host with `scp` and run it.
@@ -352,6 +362,7 @@ and cron work unchanged.
 | `tyr report` | health report: `--format text\|json\|markdown`, `--from FILE` renders a saved snapshot or stress result |
 | `tyr stress` | stress test: `--component cpu\|memory\|storage\|network\|full` |
 | `tyr accept` | acceptance test: health check, CPU / memory / disk load, second check, judged against limits: PASS, REMARKS, FAIL; `--profile quick\|burnin\|extended`, `--limits FILE` ([docs/acceptance.md](docs/acceptance.md)) |
+| `tyr netbox` | write this machine to NetBox: device, ports, inventory items, tags from rules, a journal entry; `--dry-run`, `--facts`, `--test`, `--from RESULTS` ([docs/netbox.md](docs/netbox.md)) |
 | `tyr core-test CPU` | test an offline (suspect) CPU: online only for the test, isolated, offline again after; `--restore` cleans up after a kill |
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
@@ -430,8 +441,9 @@ second check - and judges the machine against a limits profile: **PASS**,
 ISO (`make iso`, `make iso-arm64`) is a Debian live system with Tyr and every
 tool it uses; booted from BMC virtual media or a USB stick it runs the 4-hour
 burn-in by itself and writes the results to a partition labelled
-`TYR-RESULTS` (a stick written with dd has its own).
-See [docs/acceptance.md](docs/acceptance.md).
+`TYR-RESULTS` (a stick written with dd has its own). Built with NetBox
+settings it also writes the result to the device's journal in NetBox.
+See [docs/acceptance.md](docs/acceptance.md) and [docs/netbox.md](docs/netbox.md).
 
 ---
 
@@ -471,7 +483,7 @@ clipboard over SSH. Details: [docs/reports.md](docs/reports.md).
 
 ```text
 tyr/
-├── cmd/tyr/                 CLI: TUI, report, stress, accept, core-test, history, view, net-peer
+├── cmd/tyr/                 CLI: TUI, report, stress, accept, netbox, core-test, history, view, net-peer
 ├── internal/
 │   ├── collector/           collector interface and the modules
 │   │   ├── system/          identity, BIOS, BMC, PSUs, fans, boot history
@@ -488,6 +500,7 @@ tyr/
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
 │   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
 │   ├── accept/              acceptance test: profiles, limits, verdict, report
+│   ├── netbox/              NetBox sync: settings, tag rules (expressions over facts), REST client
 │   ├── workload/            self-checking compute kernels; the torture test's FFT (Go + AVX asm)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
 │   ├── tui/                 Bubble Tea TUI
@@ -525,6 +538,7 @@ git config core.hooksPath scripts/hooks
 | [docs/health-checks.md](docs/health-checks.md) | operators | modules, sources, limits, findings |
 | [docs/stress-tests.md](docs/stress-tests.md) | operators | engines, guard, verdicts, network peer |
 | [docs/acceptance.md](docs/acceptance.md) | operators | `tyr accept`, limits, verdict; building and booting the Tyr ISO |
+| [docs/netbox.md](docs/netbox.md) | operators | what Tyr writes to NetBox, settings, tag rules and facts, the ISO |
 | [docs/reports.md](docs/reports.md) | operators | Markdown, Mermaid, history, clipboard |
 | [docs/tui.md](docs/tui.md) | users | every tab and key |
 | [docs/tools.md](docs/tools.md) | operators | external tools: which are needed, how to install them, official docs |

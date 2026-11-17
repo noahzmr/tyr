@@ -44,6 +44,7 @@ the serial.
 | `/` | search (Inventory, Events, pages) |
 | `c` | copy the selected serial, or the report on a report page |
 | `R` | Reports dialog |
+| `N` | NetBox: settings, tag rules (with the facts and whether each rule matches now), test, dry run, write this machine ([netbox.md](netbox.md)) |
 | `A` | alert reference: every alert with meaning, causes and how to check |
 | `i` | explain the selected Overview finding: where, what it means, causes, commands |
 | `e` | export the snapshot as JSON and Markdown |

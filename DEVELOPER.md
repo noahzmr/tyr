@@ -50,6 +50,9 @@ the build host's C library because the `net` package then uses cgo.
 flowchart LR
     cmd["cmd/tyr"] --> tui & report & stress & collector & accept["internal/accept"]
     accept --> report & stress
+    cmd --> netbox["internal/netbox"]
+    tui --> netbox
+    netbox --> accept
     tui["internal/tui"] --> report & stress & collector
     report["internal/report"] --> stress & model
     stress["internal/stress"] --> collector & workload["internal/workload"]
@@ -69,6 +72,7 @@ flowchart LR
 | `internal/model` | `Snapshot` and the shared types; the JSON schema |
 | `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series, the isolated offline-core test |
 | `internal/accept` | the acceptance test: built-in profiles, limits files, the verdict from snapshots and stress results, its Markdown report |
+| `internal/netbox` | NetBox: `netbox.json` / `tags.json`, the rule language (`expr.go`: lexer, parser, evaluator), facts from a snapshot, the REST client (dry run), the sync and the journal entry |
 | `internal/workload` | deterministic compute kernels checked against golden values; the torture test's Lucas-Lehmer FFT (Go, plus AVX-512 / AVX2 FMA assembly in `fft_amd64.s`) checked against exact residues |
 | `internal/report` | Markdown reports, Mermaid charts, history, glamour rendering |
 | `internal/tui` | the Bubble Tea front end |
@@ -148,6 +152,7 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 | Workload goldens | `internal/workload` | `make golden` only after changing a kernel; `make ll-table` only after changing the torture cases |
 | FFT paths | `TestKernelsExact` | the Go, AVX2 and AVX-512 butterflies must all give the exact residues; `go test ./internal/workload -bench LL` measures them |
 | Acceptance | `internal/accept` | profiles, limits files (merging, unknown fields rejected), the verdict rules, the report; a whole run without hardware: `tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with `{"durations":{"cpu":"3s","memory":"3s","storage":"3s"}}` in `short.json` |
+| NetBox | `internal/netbox` | the rule language, facts from the fixtures, the files; the sync against an in-memory fake NetBox (`sync_test.go`: new device, second run writes only the journal, failed → active, tag rules next to foreign tags, dry run, wrong token, NetBox before 4.2); the TUI dialog in `internal/tui/netbox_test.go` |
 | GPU tools | `internal/source/gpu/testdata` | `nvidia-smi -q -x` of a DGX Spark (GB10: C2C, no own memory, T.Limit, processes) |
 | Live collectors | `make live` | `TYR_LIVE=1`, read-only, this host |
 | Live clipboard | `TYR_CLIP_LIVE=1 go test ./internal/tui -run TestCopyLiveDesktop` | copies through `xclip`/`wl-copy` and restores the clipboard |

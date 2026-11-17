@@ -13,10 +13,10 @@
  ● sde      │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │          0
             │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
 sdd ────────│ pgup pgdn  page               v          switch view        R          reports               │l SMART page
-Model     ST│ g G        top / end          /          search             A          alert reference       │
-Serial    WJ│ enter      open / action      t          CPU load ↔ temp    s S F      stress tests          │ce boot
-Firmware  SN│ esc        back · close       a          empty DIMM slots   q ctrl+c   quit · stop all       │
-Path      /d│                               h          virtual NICs                                        │
+Model     ST│ g G        top / end          /          search             N          NetBox                │
+Serial    WJ│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │ce boot
+Firmware  SN│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │
+Path      /d│                               h          virtual NICs       q ctrl+c   quit · stop all       │
             │                                                                                              │)
             │ This tab · Storage                                                                           │
 Findings · S│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │· enter open

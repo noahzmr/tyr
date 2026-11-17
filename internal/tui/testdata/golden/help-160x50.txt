@@ -18,10 +18,10 @@ Serial    WJG0A004              │ tab ⇧tab   next / prev tab    i          e
 Firmware  SN04                  │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │
 Path      /dev/sdd · sata       │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
                                 │ pgup pgdn  page               v          switch view        R          reports               │(2.3 y)
-                                │ g G        top / end          /          search             A          alert reference       │
-Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    s S F      stress tests          │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   q ctrl+c   quit · stop all       │lags 0x80700 phys_seg 1 prio
-                class 0         │                               h          virtual NICs                                        │
+                                │ g G        top / end          /          search             N          NetBox                │
+Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │lags 0x80700 phys_seg 1 prio
+                class 0         │                               h          virtual NICs       q ctrl+c   quit · stop all       │
  ✖ sdf          sdf (iSCSI 10.16│                                                                                              │he session, the network path
                 and the target, │ This tab · Storage                                                                           │prio class 0
  ✖ sdf          sdf: iSCSI sessi│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
