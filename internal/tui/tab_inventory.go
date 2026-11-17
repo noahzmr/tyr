@@ -550,6 +550,19 @@ func (l *lineInput) Update(msg tea.KeyPressMsg) {
 	}
 }
 
+// Insert adds text at the end (paste): control characters are dropped,
+// the limit holds.
+func (l *lineInput) Insert(s string) {
+	for _, r := range s {
+		if l.limit > 0 && len(l.value) >= l.limit {
+			return
+		}
+		if r >= 0x20 && r != 0x7f {
+			l.value = append(l.value, r)
+		}
+	}
+}
+
 // Field renders the form variant: "[value█   ]" with border-token
 // brackets, fixed width w, accent block cursor while editing.
 func (l *lineInput) Field(t *Theme, w int) string {

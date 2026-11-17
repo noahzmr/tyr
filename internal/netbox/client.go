@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -243,4 +244,67 @@ func q(kv ...string) url.Values {
 		v.Add(kv[i], kv[i+1])
 	}
 	return v
+}
+
+// Choice is an existing NetBox object offered in a picker.
+type Choice struct {
+	Name   string
+	Detail string // slug, description, custom field type
+}
+
+// choiceKinds maps a picker to its endpoint.
+var choiceKinds = map[string]string{
+	"site":         "/api/dcim/sites/",
+	"role":         "/api/dcim/device-roles/",
+	"tenant":       "/api/tenancy/tenants/",
+	"tag":          "/api/extras/tags/",
+	"custom_field": "/api/extras/custom-fields/",
+}
+
+// Choices lists the existing objects of a kind (site, role, tenant, tag,
+// custom_field - the custom fields of devices), sorted by name. Read only.
+func (c *Client) Choices(ctx context.Context, kind string) ([]Choice, error) {
+	path, ok := choiceKinds[kind]
+	if !ok {
+		return nil, fmt.Errorf("unknown kind %q", kind)
+	}
+	all, err := c.List(ctx, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Choice, 0, len(all))
+	for _, o := range all {
+		ch := Choice{Name: str(o["name"])}
+		switch kind {
+		case "custom_field":
+			if !forDevices(o) {
+				continue
+			}
+			ch.Detail = str(nested(o, "type", "label"))
+			if l := str(o["label"]); l != "" {
+				ch.Detail = l + " · " + ch.Detail
+			}
+		default:
+			ch.Detail = firstNonEmpty(str(o["description"]), str(o["slug"]))
+		}
+		if ch.Name != "" {
+			out = append(out, ch)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
+	return out, nil
+}
+
+// forDevices: a custom field that applies to dcim.device (object_types in
+// NetBox 4, content_types before).
+func forDevices(o obj) bool {
+	for _, k := range []string{"object_types", "content_types"} {
+		ts, _ := o[k].([]any)
+		for _, t := range ts {
+			if s, _ := t.(string); s == "dcim.device" {
+				return true
+			}
+		}
+	}
+	return false
 }

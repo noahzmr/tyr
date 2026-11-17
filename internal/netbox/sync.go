@@ -500,6 +500,9 @@ var roleNames = map[string]string{
 var roleColors = map[string]string{"cpu": "2196f3", "dimm": "4caf50", "disk": "ff9800", "raid_drive": "ff9800",
 	"nic": "9c27b0", "transceiver": "9c27b0", "gpu": "f44336", "npu": "f44336", "psu": "795548"}
 
+// RoleName is the inventory item role of an inventory category.
+func RoleName(cat string) string { return roleName(cat) }
+
 func roleName(cat string) string {
 	if n, ok := roleNames[cat]; ok {
 		return n

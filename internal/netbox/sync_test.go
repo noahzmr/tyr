@@ -448,3 +448,28 @@ func TestConfigFiles(t *testing.T) {
 		t.Error("missing tags file is not empty rules")
 	}
 }
+
+func TestChoices(t *testing.T) {
+	fake := newFake("4.3.2")
+	fake.objs["dcim/sites"] = map[int]obj{1: {"id": 1.0, "name": "Lab", "slug": "lab"}, 2: {"id": 2.0, "name": "DC Frankfurt", "slug": "dc-fra", "description": "main"}}
+	fake.objs["extras/custom-fields"] = map[int]obj{
+		3: {"id": 3.0, "name": "memory", "label": "Memory", "type": obj{"label": "Text"}, "object_types": []any{"dcim.device"}},
+		4: {"id": 4.0, "name": "vlan_note", "object_types": []any{"ipam.vlan"}},
+		5: {"id": 5.0, "name": "old_style", "content_types": []any{"dcim.device", "dcim.site"}},
+	}
+	fake.next = 10
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+	c := NewClient(Config{URL: srv.URL, Token: "secret"}, nil)
+	sites, err := c.Choices(context.Background(), "site")
+	if err != nil || len(sites) != 2 || sites[0].Name != "DC Frankfurt" || sites[0].Detail != "main" {
+		t.Errorf("sites %+v %v", sites, err)
+	}
+	cfs, err := c.Choices(context.Background(), "custom_field")
+	if err != nil || len(cfs) != 2 || cfs[0].Name != "memory" || cfs[0].Detail != "Memory · Text" || cfs[1].Name != "old_style" {
+		t.Errorf("custom fields %+v %v", cfs, err)
+	}
+	if _, err := c.Choices(context.Background(), "nope"); err == nil {
+		t.Error("unknown kind accepted")
+	}
+}

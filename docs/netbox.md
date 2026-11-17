@@ -142,13 +142,24 @@ match; the TUI shows them under `f` and while editing a rule.
 **TUI:** `N` opens the settings. `tab` switches between *Connection* and
 *Tag rules*.
 
-- Connection: `↑↓` field, `←→` change, `enter` edit or run. The buttons:
+- Connection: `↑↓` field, `←→` change, `enter` edit or run. With URL and
+  token set, Site, Role, Tenant and the custom fields are chosen from what
+  NetBox has: a list that narrows as you type; a site or role NetBox does not
+  have yet can be typed (it is created with the first new device), `tab`
+  types any value by hand. The inventory categories are a list with check
+  boxes (`space`). The buttons:
   *Save*, *Test* (URL and token), *Dry run* (what would be written, nothing
   written) and *Write to NetBox* (this machine, as collected now). The result
   opens as a page with the log.
-- Tag rules: every rule shows whether it matches this machine now. `a` adds,
-  `enter` edits (tag, then condition: the match updates as you type), `d`
-  deletes, `J`/`K` move, `f` shows the facts, `s` saves.
+- Tag rules: every rule shows whether it matches this machine now. `a` adds
+  (with NetBox set it starts with NetBox's tags; a new name creates the tag),
+  `enter` edits (tag, then condition: the match updates as you type; `ctrl+l`
+  lists NetBox's tags), `d` deletes, `J`/`K` move, `f` shows the facts, `s`
+  saves.
+- Paste with the terminal (`ctrl+shift+v`, middle click) or `ctrl+v` (reads
+  the clipboard over OSC 52 where the terminal allows it); pasted onto a URL
+  or token field it replaces the value. `ctrl+c` in a field copies it instead
+  of quitting.
 
 **Command line:**
 

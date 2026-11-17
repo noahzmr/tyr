@@ -34,6 +34,8 @@ type netboxDialog struct {
 	showFacts bool
 	factsTop  int
 
+	picker *nbPicker // a list to choose from (sites, roles, tags …)
+
 	dirty   bool
 	confirm bool // esc once with unsaved changes
 	busy    string
@@ -224,6 +226,9 @@ func (m *Model) updateNetBox(msg tea.KeyPressMsg) tea.Cmd {
 		}
 		return nil
 	}
+	if d.picker != nil {
+		return m.updatePicker(msg)
+	}
 	if d.editing {
 		return m.updateNetBoxEdit(msg)
 	}
@@ -283,6 +288,8 @@ func (m *Model) updateNetBox(msg tea.KeyPressMsg) tea.Cmd {
 			return m.netboxAction()
 		case boolOf(&d.cfg, f) != nil || f == "name" || f == "status":
 			change(+1)
+		case d.pickable(f):
+			return m.openPicker(f)
 		default:
 			d.editing = true
 			d.input.SetValue(d.fieldText(f))
@@ -302,6 +309,10 @@ func (m *Model) updateNetBoxEdit(msg tea.KeyPressMsg) tea.Cmd {
 		switch msg.String() {
 		case "esc":
 			d.editing = false
+		case "ctrl+l":
+			if d.editPart == 0 && d.cfg.URL != "" && d.cfg.Token != "" {
+				return m.openPicker("tag")
+			}
 		case "up":
 			d.factsTop = max(0, d.factsTop-1)
 		case "down":
@@ -376,6 +387,9 @@ func (m *Model) updateNetBoxTags(msg tea.KeyPressMsg) tea.Cmd {
 		}
 	case "a", "+":
 		edit(n)
+		if d.cfg.URL != "" && d.cfg.Token != "" { // the tag from NetBox's tags, or a new one
+			return m.openPicker("tag")
+		}
 	case "enter", "e":
 		if n > 0 {
 			edit(d.sel)
@@ -532,9 +546,12 @@ func (m *Model) netboxView(base string) string {
 	}
 	lines := []string{strings.Join(pills, "") + "  " + t.Sub.Render("tab to switch"), ""}
 	inner := min(96, m.width-4) - 4
-	if d.page == 0 {
+	switch {
+	case d.picker != nil:
+		lines = append(lines, m.pickerLines(inner)...)
+	case d.page == 0:
 		lines = append(lines, m.netboxConnLines(inner)...)
-	} else {
+	default:
 		lines = append(lines, m.netboxTagLines(inner)...)
 	}
 	if d.busy != "" {
@@ -598,14 +615,22 @@ func (m *Model) netboxConnLines(inner int) []string {
 		}
 		lines = append(lines, fieldLabel(t, f.label, focused, lw)+v)
 		if focused && f.help != "" {
-			lines = append(lines, strings.Repeat(" ", lw)+t.Sub.Render(truncate(f.help, inner-lw)))
+			help := f.help
+			if d.pickable(f.id) && f.id != "categories" {
+				help = "enter: choose from NetBox · " + help
+			}
+			lines = append(lines, strings.Repeat(" ", lw)+t.Sub.Render(truncate(help, inner-lw)))
 		}
 	}
 	lines = append(lines, "", t.Sub.Render(truncate("files: "+d.cfg.Path+" · "+d.tags.Path, inner)))
 	if d.cfg.Path != "" && !strings.HasPrefix(d.cfg.Path, netbox.SystemDir) {
 		lines = append(lines, t.Sub.Render(truncate("as root (tyr accept, the ISO) Tyr reads "+netbox.SystemDir+"/netbox.json", inner)))
 	}
-	lines = append(lines, t.Sub.Render("↑↓ field · ←→ change · enter edit / run · ctrl+s save · esc close"))
+	if d.editing {
+		lines = append(lines, t.Sub.Render("enter keep · esc cancel · paste: ctrl+shift+v or ctrl+v · ctrl+c copies the field"))
+	} else {
+		lines = append(lines, t.Sub.Render("↑↓ field · ←→ change · enter edit / choose / run · paste onto a field · ctrl+s save · esc close"))
+	}
 	return lines
 }
 
@@ -639,7 +664,11 @@ func (m *Model) netboxTagLines(inner int) []string {
 		}
 		lines = append(lines, "", t.Sub.Render("&& || ! ( )  == != < <= > >=  ~ !~ (regular expression)  \"text\"  numbers  true false"))
 		lines = append(lines, m.factLines(facts, inner, 8)...)
-		lines = append(lines, "", t.Sub.Render("tab tag ↔ condition · ↑↓ facts · enter next / save · esc cancel"))
+		hint := "tab tag ↔ condition · ↑↓ facts · enter next / save · ctrl+v paste · esc cancel"
+		if d.editPart == 0 && d.cfg.URL != "" && d.cfg.Token != "" {
+			hint = "ctrl+l NetBox tags · " + hint
+		}
+		lines = append(lines, "", t.Sub.Render(hint))
 		return lines
 	}
 	if len(d.tags.Rules) == 0 {

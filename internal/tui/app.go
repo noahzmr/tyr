@@ -295,6 +295,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.netboxDone(msg)
 		return m, nil
 
+	case netboxChoicesMsg:
+		m.netboxChoices(msg)
+		return m, nil
+
+	case tea.PasteMsg:
+		return m, m.paste(msg.Content)
+
+	case tea.ClipboardMsg:
+		return m, m.paste(msg.Content)
+
 	case tea.KeyPressMsg:
 		return m, m.handleKey(msg)
 
@@ -402,7 +412,17 @@ func (m *Model) openExplain(a report.Alert) {
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	k := m.keys
 	if msg.String() == "ctrl+c" {
+		if v, ok := m.editingValue(); ok { // in a text field: copy, do not quit
+			cmd, txt := copyCmd(v, "the field")
+			m.flash(txt)
+			return cmd
+		}
 		return m.quit()
+	}
+	if msg.String() == "ctrl+v" {
+		if _, ok := m.editingValue(); ok { // the terminal's clipboard via OSC 52
+			return func() tea.Msg { return tea.ReadClipboard() }
+		}
 	}
 	if m.showHelp {
 		m.showHelp = false // any key closes the help overlay
