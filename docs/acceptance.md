@@ -127,18 +127,26 @@ real servers.
 
 ### Use
 
-1. Optional: a USB stick with a partition labelled **`TYR-RESULTS`** (FAT32,
-   exFAT or ext4) for the results; an `accept.json` on it replaces the
-   limits. Without it the results stay in memory until you plug one in and
-   press `c`.
+1. Boot the ISO from a USB stick or as BMC virtual media (iLO: Virtual
+   Media → CD/DVD, iDRAC: Virtual Console → Virtual Media). Write the stick
+   with dd, not with a tool that copies files:
+
+   ```bash
+   sudo dd if=tyr-live-….iso of=/dev/sdX bs=4M conv=fsync
+   ```
+
+2. The results go to a partition labelled **`TYR-RESULTS`**. The image has
+   one (64 MB, FAT, partition 3): a stick written with dd keeps the results
+   itself, and on your desktop it shows up as a second drive. An
+   `accept.json` on it replaces the limits. Virtual media is read-only, so
+   there you need a second stick with a `TYR-RESULTS` partition (FAT,
+   exFAT or ext4); without one the results stay in memory until you plug
+   one in and press `c`.
 
    ```bash
    sudo mkfs.vfat -n TYR-RESULTS /dev/sdX1
    ```
 
-2. Boot the ISO: as BMC virtual media (iLO: Virtual Media → CD/DVD, iDRAC:
-   Virtual Console → Virtual Media) or from a USB stick
-   (`sudo dd if=tyr-live-….iso of=/dev/sdX bs=4M conv=fsync`).
 3. The boot menu starts the burn-in after 15 seconds. It also offers quick,
    extended, an interactive mode without a test, memtest86+ (amd64; with
    Secure Boot off) and the UEFI settings.

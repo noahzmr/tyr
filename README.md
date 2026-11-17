@@ -428,7 +428,8 @@ second check - and judges the machine against a limits profile: **PASS**,
 **REMARKS**, **FAIL** or **INCOMPLETE**, with a report per machine. The Tyr
 ISO (`make iso`, `make iso-arm64`) is a Debian live system with Tyr and every
 tool it uses; booted from BMC virtual media or a USB stick it runs the 4-hour
-burn-in by itself and writes the results to a stick labelled `TYR-RESULTS`.
+burn-in by itself and writes the results to a partition labelled
+`TYR-RESULTS` (a stick written with dd has its own).
 See [docs/acceptance.md](docs/acceptance.md).
 
 ---

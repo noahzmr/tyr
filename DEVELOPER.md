@@ -92,7 +92,8 @@ More: [docs/architecture.md](docs/architecture.md).
 
 Rule for the image: nothing may write to the server's disks. No automounting,
 no mdadm or LVM, smartd masked; the only partition mounted read-write is the
-one labelled `TYR-RESULTS`.
+one labelled `TYR-RESULTS` (the image's own partition 3 on a stick written
+with dd, or a second stick).
 
 Test a build in QEMU with a results stick (UEFI; drop the two `pflash`
 drives for BIOS; `mcopy`/`mdir` are in mtools):

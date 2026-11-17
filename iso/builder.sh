@@ -103,6 +103,14 @@ cp "/usr/lib/shim/shim$efi.efi.signed" "$work/staging/EFI/boot/boot$efi.efi"
 cp "/usr/lib/shim/mm$efi.efi.signed" "$work/staging/EFI/boot/mm$efi.efi"
 cp "$grubdir/gcd$efi.efi.signed" "$work/staging/EFI/boot/grub$efi.efi"
 
+# results partition: written to a USB stick (dd), the image brings a writable
+# FAT partition labelled TYR-RESULTS, so the boot stick keeps the results.
+# As a virtual CD it stays read-only and unused (no partitions on a CD).
+res=$work/results.img
+mkfs.vfat -C -n TYR-RESULTS "$res" 65536 >/dev/null
+printf 'Tyr acceptance results are written to tyr/ on this partition.\r\nPut an accept.json here to override the limits.\r\n' >"$work/README.txt"
+mcopy -i "$res" "$work/README.txt" ::/README.txt
+
 mkdir -p "$(dirname "$out")"
 if [[ $arch == amd64 ]]; then
 	# BIOS: GRUB El Torito image; the hybrid MBR also boots it from a USB stick
@@ -116,12 +124,14 @@ if [[ $arch == amd64 ]]; then
 		-eltorito-catalog boot/grub/boot.cat \
 		-eltorito-alt-boot -e --interval:appended_partition_2:all:: -no-emul-boot \
 		-append_partition 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B "$esp" \
+		-append_partition 3 0x0c "$res" \
 		"$work/staging"
 else
 	xorriso -as mkisofs -iso-level 3 -full-iso9660-filenames -joliet -joliet-long -rational-rock \
 		-volid TYR_LIVE -appid "Tyr live $version" -o "$out" \
 		-e --interval:appended_partition_2:all:: -no-emul-boot \
 		-append_partition 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B "$esp" \
+		-append_partition 3 0x0c "$res" \
 		"$work/staging"
 fi
 (cd "$(dirname "$out")" && sha256sum "$(basename "$out")" >"$(basename "$out").sha256")

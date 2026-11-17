@@ -5,9 +5,10 @@
 #   tyr.peer=HOST[:PORT] tyr.token=TOKEN      network test against `tyr net-peer` (DHCP)
 #   tyr.dhcp=1                                DHCP on all wired NICs without a peer
 #   tyr.wait=SECONDS                          countdown before the test (default 15)
-# Results go to a partition labelled TYR-RESULTS (FAT32, exFAT or ext4)
-# when one is present, else to /var/lib/tyr/accept (memory: lost at reboot).
-# accept.json on that partition overrides the limits.
+# Results go to a partition labelled TYR-RESULTS (FAT, exFAT or ext4) when
+# one is present, else to /var/lib/tyr/accept (memory: lost at reboot). The
+# image itself has one (64 MB), so a stick written with dd keeps the results;
+# as a virtual CD it is read-only. accept.json on it overrides the limits.
 
 set -u
 export TERM=${TERM:-linux}
@@ -53,7 +54,7 @@ find_results() {
 		echo "results: $dev (TYR-RESULTS) → $results/tyr"
 		return 0
 	fi
-	echo "${yellow}found TYR-RESULTS on $dev but cannot mount it read-write$off"
+	echo "${yellow}found TYR-RESULTS on $dev but cannot mount it read-write (virtual media?)$off"
 	return 1
 }
 
@@ -125,9 +126,18 @@ after() {
 		case "$k" in
 		v) [[ -n $out ]] && tyr view "$out/accept.md" ;;
 		c)
-			if find_results 10 && [[ -n $out && $out != $results/* ]]; then
-				mkdir -p "$results/tyr" && cp -r "$out" "$results/tyr/" && sync && echo "${green}copied to $results/tyr/$(basename "$out")$off"
+			if [[ -z $out ]]; then
+				echo "${yellow}no results to copy$off"
+			elif [[ $out == "$results"/* ]]; then
+				echo "already on TYR-RESULTS: $out"
+			elif ! find_results 10; then
+				echo "${red}no partition labelled TYR-RESULTS found (blkid -L TYR-RESULTS).$off"
+				echo "Plug in a stick with one (sudo mkfs.vfat -n TYR-RESULTS /dev/sdX1) and press c again."
+			elif mkdir -p "$results/tyr" && cp -r "${out%/}" "$results/tyr/" && sync; then
 				out=$results/tyr/$(basename "$out")
+				echo "${green}copied to $out$off"
+			else
+				echo "${red}copy to $results/tyr failed (full or read-only?)$off"
 			fi
 			;;
 		t) tyr --no-smart ;;
@@ -141,7 +151,7 @@ after() {
 
 while true; do
 	header
-	find_results 15 || echo "${dim}no TYR-RESULTS partition (yet): results stay in memory; label a USB stick TYR-RESULTS to keep them$off"
+	find_results 15 || echo "${yellow}no writable TYR-RESULTS partition: the results stay in memory. Plug in a stick with a partition labelled TYR-RESULTS to keep them.$off"
 	network
 	if [[ $profile != none ]]; then
 		echo
