@@ -468,7 +468,8 @@ func (o *overviewTab) cardTrend(t *Theme, mod model.ModuleID, w int) string {
 		}
 		return v
 	}
-	if len(h("cpu/load"))+len(h("cpu/maxtemp"))+len(h("network/total")) == 0 && mod != model.ModSystem && mod != model.ModAccel {
+	if len(h("cpu/load"))+len(h("cpu/maxtemp"))+len(h("network/total"))+len(h("memory/used"))+len(h("power/draw")) == 0 &&
+		mod != model.ModSystem && mod != model.ModAccel {
 		return ""
 	}
 	switch mod {
@@ -476,6 +477,16 @@ func (o *overviewTab) cardTrend(t *Theme, mod model.ModuleID, w int) string {
 		return t.Dim.Render("load ") + spark(h("cpu/load"), w/2-6, 100, t.Series[0]) + t.Dim.Render(" temp ") + spark(h("cpu/maxtemp"), w/2-6, 0, t.Series[1])
 	case model.ModNetwork:
 		return t.Dim.Render("rx+tx ") + spark(h("network/total"), w-7, 0, t.Series[0])
+	case model.ModMemory:
+		if m := o.snap.Memory; m != nil && m.TotalBytes > 0 {
+			pct := fmt.Sprintf(" %.0f%%", float64(m.UsedBytes)/float64(m.TotalBytes)*100)
+			return t.Dim.Render("used  ") + spark(h("memory/used"), w-7-len(pct), float64(m.TotalBytes), t.Series[0]) + t.Dim.Render(pct)
+		}
+	case model.ModPower:
+		if p := o.snap.Power; p != nil && p.ConsumedWatts != nil {
+			now := fmt.Sprintf(" %.0f W", *p.ConsumedWatts)
+			return t.Dim.Render("draw  ") + spark(h("power/draw"), w-7-len(now), 0, t.Series[0]) + t.Dim.Render(now)
+		}
 	case model.ModAccel:
 		if a := o.snap.Accel; a != nil && len(a.GPUs) > 0 {
 			return t.Dim.Render("util  ") + spark(h("accel/"+a.GPUs[0].PCIAddress+"/load"), w-7, 100, t.Series[0])
