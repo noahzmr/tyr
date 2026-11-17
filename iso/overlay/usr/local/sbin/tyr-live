@@ -1,0 +1,159 @@
+#!/bin/bash
+# Tyr live: runs the acceptance test on tty1 after boot and keeps the
+# verdict on screen. Kernel command line:
+#   tyr.profile=burnin|quick|extended|none   (none: no automatic test)
+#   tyr.peer=HOST[:PORT] tyr.token=TOKEN      network test against `tyr net-peer` (DHCP)
+#   tyr.dhcp=1                                DHCP on all wired NICs without a peer
+#   tyr.wait=SECONDS                          countdown before the test (default 15)
+# Results go to a partition labelled TYR-RESULTS (FAT32, exFAT or ext4)
+# when one is present, else to /var/lib/tyr/accept (memory: lost at reboot).
+# accept.json on that partition overrides the limits.
+
+set -u
+export TERM=${TERM:-linux}
+export LANG=C.UTF-8
+
+arg() { tr ' ' '\n' </proc/cmdline | sed -n "s/^$1=//p" | tail -1; }
+profile=$(arg tyr.profile)
+profile=${profile:-burnin}
+peer=$(arg tyr.peer)
+token=$(arg tyr.token)
+wait_s=$(arg tyr.wait)
+wait_s=${wait_s:-15}
+results=/mnt/results
+out=""
+
+bold=$'\e[1m' dim=$'\e[2m' red=$'\e[31m' green=$'\e[32m' yellow=$'\e[33m' off=$'\e[0m'
+
+setterm --blank 0 --powerdown 0 2>/dev/null
+mkdir -p "$results"
+
+header() {
+	clear
+	local ip sn
+	ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $2" "$4}' | paste -sd, -)
+	sn=$(cat /sys/class/dmi/id/product_serial 2>/dev/null)
+	echo "${bold}Tyr live$off $(tyr version 2>/dev/null | cut -d' ' -f2)  ·  $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) $(cat /sys/class/dmi/id/product_name 2>/dev/null)${sn:+  ·  S/N $sn}"
+	echo "${dim}Alt+F2 shell · Alt+F3 live view (tyr) · Alt+F1 back here${ip:+ · $ip}$off"
+	echo
+}
+
+# find_results mounts the TYR-RESULTS partition (waits a little: USB sticks
+# enumerate late).
+find_results() {
+	mountpoint -q "$results" && return 0
+	local dev="" i
+	for i in $(seq 1 "${1:-1}"); do
+		udevadm settle -t 5 2>/dev/null
+		dev=$(blkid -L TYR-RESULTS 2>/dev/null) && break
+		sleep 1
+	done
+	[[ -n $dev ]] || return 1
+	if mount -o rw,noatime "$dev" "$results" 2>/dev/null; then
+		echo "results: $dev (TYR-RESULTS) → $results/tyr"
+		return 0
+	fi
+	echo "${yellow}found TYR-RESULTS on $dev but cannot mount it read-write$off"
+	return 1
+}
+
+network() {
+	if [[ -n $peer || $(arg tyr.dhcp) == 1 ]]; then
+		mkdir -p /run/systemd/network
+		printf '[Match]\nType=ether\nKind=!*\n\n[Network]\nDHCP=yes\n' >/run/systemd/network/10-tyr-dhcp.network
+		networkctl reload 2>/dev/null
+		echo "network: DHCP on wired NICs, waiting up to 60 s …"
+		/usr/lib/systemd/systemd-networkd-wait-online --any --timeout=60 >/dev/null 2>&1 || echo "${yellow}no address yet$off"
+	fi
+}
+
+choose() {
+	echo
+	echo "  ${bold}b$off burn-in (~4 h)   ${bold}q$off quick (~30 min)   ${bold}e$off extended (~24 h)"
+	echo "  ${bold}t$off Tyr TUI   ${bold}s$off shell   ${bold}r$off reboot   ${bold}p$off power off"
+	local k
+	read -rsn1 -p "> " k
+	echo
+	case "$k" in
+	b) profile=burnin ;;
+	q) profile=quick ;;
+	e) profile=extended ;;
+	t) tyr --no-smart; profile=none ;;
+	s) bash -l; profile=none ;;
+	r) systemctl reboot ;;
+	p) systemctl poweroff ;;
+	*) profile=none ;;
+	esac
+}
+
+run_accept() {
+	local limits=() base=/var/lib/tyr/accept
+	if find_results 1; then
+		base=$results/tyr
+	fi
+	if [[ -f $results/accept.json ]] && mountpoint -q "$results"; then
+		limits=(--limits "$results/accept.json")
+		echo "limits: $results/accept.json"
+	elif [[ -f /etc/tyr/accept.json ]]; then
+		limits=(--limits /etc/tyr/accept.json)
+		echo "limits: /etc/tyr/accept.json (built into the ISO)"
+	fi
+	mkdir -p "$base"
+	local log=$base/console-$(date -u +%Y%m%dT%H%M%SZ).log
+	local cmd=(tyr accept --profile "$profile" --yes --out "$base" "${limits[@]}")
+	[[ -n $peer ]] && cmd+=(--peer "$peer" --token "$token")
+	# script keeps a terminal for tyr (colours, banner) and logs the console
+	script -qfec "$(printf '%q ' "${cmd[@]}")" "$log"
+	rc=$?
+	out=$(ls -1dt "$base"/*/ 2>/dev/null | head -1)
+	[[ -n $out ]] && mv "$log" "$out/console.log" 2>/dev/null
+	sync
+	return $rc
+}
+
+after() {
+	while true; do
+		echo
+		[[ -n $out ]] && echo "${dim}results: $out$off"
+		if ! mountpoint -q "$results"; then
+			echo "${yellow}No TYR-RESULTS stick: the results are in memory only. Plug one in and press c to copy them.$off"
+		fi
+		echo "  ${bold}v$off view report   ${bold}c$off copy to TYR-RESULTS   ${bold}t$off Tyr TUI   ${bold}s$off shell   ${bold}a$off run again   ${bold}r$off reboot   ${bold}p$off power off"
+		local k
+		read -rsn1 -p "> " k
+		echo
+		case "$k" in
+		v) [[ -n $out ]] && tyr view "$out/accept.md" ;;
+		c)
+			if find_results 10 && [[ -n $out && $out != $results/* ]]; then
+				mkdir -p "$results/tyr" && cp -r "$out" "$results/tyr/" && sync && echo "${green}copied to $results/tyr/$(basename "$out")$off"
+				out=$results/tyr/$(basename "$out")
+			fi
+			;;
+		t) tyr --no-smart ;;
+		s) bash -l ;;
+		a) return 0 ;;
+		r) systemctl reboot ;;
+		p) systemctl poweroff ;;
+		esac
+	done
+}
+
+while true; do
+	header
+	find_results 15 || echo "${dim}no TYR-RESULTS partition (yet): results stay in memory; label a USB stick TYR-RESULTS to keep them$off"
+	network
+	if [[ $profile != none ]]; then
+		echo
+		echo "Starting the ${bold}$profile$off acceptance test in $wait_s s - press any key for the menu."
+		if read -rsn1 -t "$wait_s"; then
+			choose
+		fi
+	else
+		choose
+	fi
+	[[ $profile == none ]] && continue
+	header
+	run_accept
+	after
+done

@@ -5,6 +5,9 @@ adds data or a test where Linux has no interface Tyr can read itself. What a
 missing tool costs is listed per module under the data sources ("○
 unavailable" with the reason), so nothing is silently missing.
 
+The Tyr ISO ([acceptance.md](acceptance.md)) has every distribution tool
+below built in; vendor tools go into `iso/vendor/` before building it.
+
 Tyr looks for tools in `PATH` and in `/usr/local/sbin`, `/usr/local/bin`,
 `/usr/sbin`, `/usr/bin`, `/sbin`, `/bin`, `/opt/MegaRAID/storcli`,
 `/opt/MegaRAID/perccli`, `/opt/dell/srvadmin/bin` and `/opt/xilinx/xrt/bin`.

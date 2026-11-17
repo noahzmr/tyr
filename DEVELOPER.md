@@ -13,6 +13,7 @@ contributors who build, run, test and extend Tyr.
 | Linux | amd64 or arm64 to run against real hardware; tests run anywhere Go does |
 | root | only for live runs that need serials, SMART, the kernel log or the BMC |
 | Optional | `node` 20+ and [archify](https://github.com/tt-a1i/archify) to re-render the diagrams; `python3` for the SVG export |
+| ISO | Docker to build it; `qemu-system-x86`, OVMF and mtools to boot-test it; `qemu-user-binfmt` for arm64 on an amd64 host |
 
 ---
 
@@ -47,7 +48,8 @@ the build host's C library because the `net` package then uses cgo.
 
 ```mermaid
 flowchart LR
-    cmd["cmd/tyr"] --> tui & report & stress & collector
+    cmd["cmd/tyr"] --> tui & report & stress & collector & accept["internal/accept"]
+    accept --> report & stress
     tui["internal/tui"] --> report & stress & collector
     report["internal/report"] --> stress & model
     stress["internal/stress"] --> collector & workload["internal/workload"]
@@ -66,6 +68,7 @@ flowchart LR
 | `internal/affinity`, `internal/cpuset` | CPU pinning and CPU list parsing for the core tests |
 | `internal/model` | `Snapshot` and the shared types; the JSON schema |
 | `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series, the isolated offline-core test |
+| `internal/accept` | the acceptance test: built-in profiles, limits files, the verdict from snapshots and stress results, its Markdown report |
 | `internal/workload` | deterministic compute kernels checked against golden values; the torture test's Lucas-Lehmer FFT (Go, plus AVX-512 / AVX2 FMA assembly in `fft_amd64.s`) checked against exact residues |
 | `internal/report` | Markdown reports, Mermaid charts, history, glamour rendering |
 | `internal/tui` | the Bubble Tea front end |
@@ -73,6 +76,40 @@ flowchart LR
 | `internal/fixture` | replays a recorded host for tests and `--fixtures` |
 
 More: [docs/architecture.md](docs/architecture.md).
+
+### The ISO
+
+`iso/` builds the live system that runs `tyr accept` (user side:
+[docs/acceptance.md](docs/acceptance.md)).
+
+| File | Role |
+|---|---|
+| `iso/build.sh` | host side: builds Tyr for the architecture, the build image (`iso/Dockerfile`), runs the builder privileged |
+| `iso/builder.sh` | in the container: mmdebstrap root filesystem (package list), vendor packages, squashfs, EFI image with the signed shim and GRUB, BIOS El Torito image (amd64), xorriso |
+| `iso/grub.cfg` | the boot menu for BIOS and UEFI; the profile goes on the kernel command line |
+| `iso/overlay/` | copied into the image: `tyr-live` (the console program on tty1), its services, network and module settings, `tyr-live-setup` (runs once at build time) |
+| `iso/vendor/` | drop-in for vendor `.deb` / `.rpm` packages; ignored by git |
+
+Rule for the image: nothing may write to the server's disks. No automounting,
+no mdadm or LVM, smartd masked; the only partition mounted read-write is the
+one labelled `TYR-RESULTS`.
+
+Test a build in QEMU with a results stick (UEFI; drop the two `pflash`
+drives for BIOS; `mcopy`/`mdir` are in mtools):
+
+```bash
+cp /usr/share/OVMF/OVMF_VARS_4M.fd /tmp/vars.fd
+truncate -s 64M /tmp/stick.img && mkfs.vfat -n TYR-RESULTS /tmp/stick.img
+echo '{"durations":{"cpu":"1m","memory":"1m","storage":"1m"}}' > /tmp/accept.json
+mcopy -i /tmp/stick.img /tmp/accept.json ::/accept.json
+truncate -s 2G /tmp/disk.img
+qemu-system-x86_64 -enable-kvm -machine q35 -m 4096 -smp 4 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd -drive if=pflash,format=raw,file=/tmp/vars.fd \
+  -cdrom dist/tyr-live-*-amd64.iso -drive file=/tmp/disk.img,format=raw,if=none,id=d0 \
+  -device ahci,id=ahci -device ide-hd,drive=d0,bus=ahci.0 \
+  -drive file=/tmp/stick.img,format=raw,if=none,id=s -device qemu-xhci -device usb-storage,drive=s
+mdir -i /tmp/stick.img ::/tyr     # the results after the run
+```
 
 ---
 
@@ -109,6 +146,8 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 | Golden screens | `internal/tui/testdata/golden` | 22 screens × 80×24, 120×40, 160×50; dark, light and NO_COLOR must match |
 | Workload goldens | `internal/workload` | `make golden` only after changing a kernel; `make ll-table` only after changing the torture cases |
 | FFT paths | `TestKernelsExact` | the Go, AVX2 and AVX-512 butterflies must all give the exact residues; `go test ./internal/workload -bench LL` measures them |
+| Acceptance | `internal/accept` | profiles, limits files (merging, unknown fields rejected), the verdict rules, the report; a whole run without hardware: `tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with `{"durations":{"cpu":"3s","memory":"3s","storage":"3s"}}` in `short.json` |
+| GPU tools | `internal/source/gpu/testdata` | `nvidia-smi -q -x` of a DGX Spark (GB10: C2C, no own memory, T.Limit, processes) |
 | Live collectors | `make live` | `TYR_LIVE=1`, read-only, this host |
 | Live clipboard | `TYR_CLIP_LIVE=1 go test ./internal/tui -run TestCopyLiveDesktop` | copies through `xclip`/`wl-copy` and restores the clipboard |
 | Screen dumps | `TYR_SHOW=server-degraded:4,6+enter:120x40 go test ./internal/tui -run TestDumpTabs -v` | prints screens; `TYR_STRESS=server-degraded:120x40` dumps a stress run |
@@ -217,3 +256,5 @@ sentences.
 2. `make cross` - the version comes from `git describe`.
 3. Attach `dist/tyr-linux-amd64`, `dist/tyr-linux-arm64` and `dist/SHA256SUMS`
    to the release.
+4. `make iso iso-arm64` and attach the ISOs and their `.sha256` files - only
+   when `iso/vendor/` is empty (vendor tools may not be redistributed).

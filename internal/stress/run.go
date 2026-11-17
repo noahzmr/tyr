@@ -557,14 +557,10 @@ func (r *Run) verdict(env *Env, base, after *model.Snapshot, baseCounters map[st
 		if d <= 0 {
 			continue
 		}
-		switch {
-		case strings.HasPrefix(k, "mce.") || strings.HasSuffix(k, ".ue") || k == "mem.hardware_corrupted_bytes" ||
-			(strings.Contains(k, ".smart.") && !strings.HasSuffix(k, "power_on_hours")) || strings.HasSuffix(k, ".io_errors") ||
-			strings.HasSuffix(k, ".kernel_errors") || strings.HasSuffix(k, "ecc.ue"):
+		switch CounterClass(k) {
+		case model.StatusCrit:
 			fail = append(fail, fmt.Sprintf("%s +%d", k, d))
-		case strings.HasSuffix(k, ".ce") || strings.HasPrefix(k, "throttle.") || strings.Contains(k, "crc") ||
-			strings.HasSuffix(k, "rx_errors") || strings.HasSuffix(k, "tx_errors") || strings.HasSuffix(k, "carrier_changes") ||
-			strings.HasSuffix(k, "link_failures"):
+		case model.StatusWarn:
 			warn = append(warn, fmt.Sprintf("%s +%d", k, d))
 		}
 	}
@@ -685,4 +681,23 @@ func History(env *Env, limit int) []Result {
 		out = out[:limit]
 	}
 	return out
+}
+
+// CounterClass says what growth of a snapshot counter means: StatusCrit
+// for hardware errors (machine checks, uncorrectable ECC, SMART, I/O and
+// driver errors), StatusWarn for signs worth a look (correctable ECC,
+// throttling, CRC and link errors), StatusOK for counters that grow in
+// normal operation.
+func CounterClass(k string) model.Status {
+	switch {
+	case strings.HasPrefix(k, "mce.") || strings.HasSuffix(k, ".ue") || k == "mem.hardware_corrupted_bytes" ||
+		(strings.Contains(k, ".smart.") && !strings.HasSuffix(k, "power_on_hours")) || strings.HasSuffix(k, ".io_errors") ||
+		strings.HasSuffix(k, ".kernel_errors") || strings.HasSuffix(k, "ecc.ue"):
+		return model.StatusCrit
+	case strings.HasSuffix(k, ".ce") || strings.HasPrefix(k, "throttle.") || strings.Contains(k, "crc") ||
+		strings.HasSuffix(k, "rx_errors") || strings.HasSuffix(k, "tx_errors") || strings.HasSuffix(k, "carrier_changes") ||
+		strings.HasSuffix(k, "link_failures"):
+		return model.StatusWarn
+	}
+	return model.StatusOK
 }

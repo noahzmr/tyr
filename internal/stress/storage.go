@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,7 +42,7 @@ func readTargets(cfg Config, env *Env) ([]model.Disk, string) {
 	}
 	var out []model.Disk
 	for _, d := range st.Disks {
-		if d.Kind == "virtual" && cfg.Target == "all" {
+		if cfg.Target == "all" && (d.Kind == "virtual" || slices.Contains(cfg.Exclude, d.Name) || slices.Contains(cfg.Exclude, d.Path)) {
 			continue
 		}
 		if cfg.Target == "all" || cfg.Target == d.Path || cfg.Target == d.Name {

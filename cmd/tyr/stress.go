@@ -131,17 +131,24 @@ func worseExit(a, b int) int {
 }
 
 func stressOne(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufio.Reader, stdout, stderr io.Writer, yes bool) (int, string) {
+	code, line, _ := stressRun(ctx, env, cfg, in, stdout, stderr, yes)
+	return code, line
+}
+
+// stressRun runs one stress test with progress on stdout; the result is nil
+// when the test did not start.
+func stressRun(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufio.Reader, stdout, stderr io.Writer, yes bool) (int, string, *stress.Result) {
 	fmt.Fprintf(stdout, "\n== %s stress (%s), %s\n", cfg.Component, cfg.Engine, cfg.Duration)
 	fmt.Fprintln(stdout, "collecting baseline …")
 	plan, test, err := stress.Prepare(ctx, env, cfg)
 	if err != nil {
 		fmt.Fprintln(stderr, "tyr stress:", err)
-		return 3, fmt.Sprintf("%s: could not run (%v)", cfg.Component, err)
+		return 3, fmt.Sprintf("%s: could not run (%v)", cfg.Component, err), nil
 	}
 	printPlan(stdout, plan)
 	if plan.Blocked != "" {
 		fmt.Fprintln(stdout, "cannot run: "+plan.Blocked)
-		return 3, fmt.Sprintf("%s: could not run (%s)", cfg.Component, plan.Blocked)
+		return 3, fmt.Sprintf("%s: could not run (%s)", cfg.Component, plan.Blocked), nil
 	}
 	if !yes {
 		want := "yes"
@@ -150,19 +157,19 @@ func stressOne(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufi
 		}
 		if !isTTY(os.Stdin) {
 			fmt.Fprintln(stderr, "tyr stress: not a terminal; pass --yes to start without confirmation")
-			return 3, fmt.Sprintf("%s: not confirmed", cfg.Component)
+			return 3, fmt.Sprintf("%s: not confirmed", cfg.Component), nil
 		}
 		fmt.Fprintf(stdout, "Type %q to start: ", want)
 		line, _ := in.ReadString('\n')
 		if strings.TrimSpace(line) != want {
 			fmt.Fprintln(stdout, "not started")
-			return 3, fmt.Sprintf("%s: not started", cfg.Component)
+			return 3, fmt.Sprintf("%s: not started", cfg.Component), nil
 		}
 	}
 	r, err := stress.Start(ctx, env, cfg, plan, test)
 	if err != nil {
 		fmt.Fprintln(stderr, "tyr stress:", err)
-		return 3, fmt.Sprintf("%s: could not run (%v)", cfg.Component, err)
+		return 3, fmt.Sprintf("%s: could not run (%v)", cfg.Component, err), nil
 	}
 	go func() {
 		<-ctx.Done()
@@ -197,7 +204,7 @@ func stressOne(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufi
 	if res.File != "" {
 		fmt.Fprintln(stdout, "result: "+res.File)
 	}
-	return res.Verdict.ExitCode(), res.SummaryLine()
+	return res.Verdict.ExitCode(), res.SummaryLine(), res
 }
 
 func printPlan(w io.Writer, p *stress.Plan) {

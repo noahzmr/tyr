@@ -10,6 +10,7 @@ Deeper documentation that doesn't belong in the top-level `README.md`
 | [architecture.md](architecture.md) | engineers | packages, the snapshot, the refresh loop, design rules |
 | [health-checks.md](health-checks.md) | operators | every module: sources, checks, limits, findings |
 | [stress-tests.md](stress-tests.md) | operators | lifecycle, engines, guard rules, verdicts, the network peer |
+| [acceptance.md](acceptance.md) | operators | the acceptance test (`tyr accept`), limits files, the verdict; building and booting the Tyr ISO |
 | [reports.md](reports.md) | operators | Markdown reports, Mermaid charts, history, viewing and copying |
 | [tui.md](tui.md) | users | every tab, view and key; layouts and themes |
 | [tools.md](tools.md) | operators | external tools: what Tyr reads itself, what to install from the distribution or the vendor, official docs |

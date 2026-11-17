@@ -1,0 +1,13 @@
+# Wired NICs up (link state, speed, LLDP) without an address. tyr-live adds
+# DHCP with tyr.peer= or tyr.dhcp=1.
+[Match]
+Type=ether
+Kind=!*
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+DHCP=no

@@ -7,6 +7,9 @@ Tyr watches the whole machine, then compares the machine before and after. The
 point is to push the hardware to its limits and find out whether it still
 computes, stores and transmits correctly there.
 
+`tyr accept` runs them all unattended and judges the machine against limits
+(the acceptance test and the Tyr ISO): [acceptance.md](acceptance.md).
+
 ## Lifecycle
 
 ```mermaid

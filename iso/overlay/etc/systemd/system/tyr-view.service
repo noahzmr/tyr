@@ -1,0 +1,21 @@
+[Unit]
+Description=Tyr live view (tty3)
+After=systemd-user-sessions.service
+Conflicts=getty@tty3.service
+
+[Service]
+Type=idle
+Environment=TERM=linux LANG=C.UTF-8
+# --no-smart: SMART queries of a second Tyr process would count as disk
+# errors in the acceptance run on controllers that reject them
+ExecStart=/usr/local/bin/tyr --no-smart
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty3
+TTYReset=yes
+TTYVHangup=yes
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

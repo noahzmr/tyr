@@ -1,0 +1,14 @@
+#!/bin/sh
+# Runs once in the image's chroot at build time (iso/builder.sh).
+set -e
+systemctl enable tyr-live.service tyr-view.service systemd-networkd.service rasdaemon.service lldpd.service
+systemctl mask getty@tty1.service getty@tty3.service
+# smartd: Tyr reads SMART itself; a second reader skews the error counters
+systemctl disable smartd.service 2>/dev/null || true
+systemctl mask smartd.service apt-daily.timer apt-daily-upgrade.timer e2scrub_all.timer e2scrub_reap.service fstrim.timer 2>/dev/null || true
+# the console is the access control: root without a password on tty2
+passwd -d root
+echo "Tyr live" > /etc/issue
+# serial console for BMC virtual serial ports (iLO VSP, iDRAC SOL)
+systemctl enable serial-getty@ttyS0.service 2>/dev/null || true
+mkdir -p /etc/tyr /var/lib/tyr/accept

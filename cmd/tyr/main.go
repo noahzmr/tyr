@@ -36,6 +36,9 @@ Usage:
   tyr [flags]            interactive TUI (default when stdout is a terminal)
   tyr report [flags]     non-interactive health report (text or JSON)
   tyr stress [flags]     stress test: --component cpu|memory|storage|network|full
+  tyr accept [flags]     acceptance test: health check, CPU/memory/disk load, second
+                         check, judged against limits: PASS, REMARKS, FAIL (--profile
+                         quick|burnin|extended, --limits FILE); what the Tyr ISO runs
   tyr core-test CPU      test an offline (suspect) CPU: online only for the test,
                          isolated, offline again after; --restore cleans up after a kill
   tyr check-native       compare Tyr's own SMBIOS, NIC and BMC readers with
@@ -71,6 +74,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "stress":
 		return runStress(args, os.Stdin, stdout, stderr)
+	case "accept":
+		return runAccept(args, stdout, stderr)
 	case "core-test":
 		return runCoreTest(args, os.Stdin, stdout, stderr)
 	case "check-native":

@@ -17,7 +17,8 @@ read that snapshot or its JSON.
 | Workloads | `workload` | the verified compute kernels of the core and CPU tests; the torture test's Lucas-Lehmer FFT (AVX-512 / AVX2 FMA or Go) |
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
-| Consumers | `tui`, `cmd/tyr`, `stress`, `report` | show, export, load, report |
+| Acceptance | `accept` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check |
+| Consumers | `tui`, `cmd/tyr`, `stress`, `accept`, `report` | show, export, load, judge, report |
 
 ```mermaid
 flowchart LR
@@ -34,12 +35,20 @@ flowchart LR
         snap --> stress["stress engine"]
         stress --> res[("result JSON")]
         res --> rep["report"]
+        snap --> acc["accept: limits → verdict"]
+        res --> acc
+        acc --> rep
         cli --> rep
     end
     sys --> src
     tools --> src
     bmc -. fallback .-> src
 ```
+
+The diagram above shows the main paths; the acceptance test (`tyr accept`,
+[acceptance.md](acceptance.md)) sits on top of the snapshot and the stress
+engine as in the flowchart. The Tyr ISO (`iso/`) is a Debian live system
+that runs it at boot.
 
 ## Collection
 

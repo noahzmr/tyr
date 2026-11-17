@@ -11,7 +11,7 @@ DIST        := dist
 
 export CGO_ENABLED=0
 
-.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross diagrams clean
+.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross iso iso-arm64 diagrams clean
 
 PREFIX  ?= /usr/local
 ARCHIFY ?= $(HOME)/src/archify
@@ -86,6 +86,13 @@ cross:
 		else GOOS=linux GOARCH=$$arch go build ./... || exit 1; fi; \
 	done
 	@cd $(DIST) && sha256sum $(BINARY)-linux-* > SHA256SUMS && cat SHA256SUMS
+
+# Bootable live ISO that runs `tyr accept` (docs/acceptance.md); needs Docker.
+iso:
+	iso/build.sh amd64
+
+iso-arm64:
+	iso/build.sh arm64
 
 # Re-render the archify diagrams (docs/diagrams/*.json → .html) and export
 # the dual-theme SVGs the docs embed. ARCHIFY points at an archify checkout

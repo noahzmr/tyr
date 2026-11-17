@@ -141,6 +141,8 @@ guard that keeps it safe, and gives a verdict you can trust.
 - The memory test locks its buffer in RAM and goes up to 100 % of available
   memory.
 - `S` on any tab stresses the selected component, `F` runs the full test.
+- `tyr accept` and the Tyr ISO: unattended burn-in judged against limits,
+  one verdict per machine ([docs/acceptance.md](docs/acceptance.md)).
 - Offline (suspect) cores: Tyr shows since when and how, whether the other
   thread of the core still runs, whether they stay offline after a reboot, and
   their machine check history across boots and crash records. Stress tests
@@ -205,6 +207,7 @@ into Markdown. Details: [docs/architecture.md](docs/architecture.md).
 | Go | 1.26 or newer, to build |
 | Linux | amd64 or arm64; any distribution (the binary is static) |
 | root | recommended: serials (SMBIOS, PCI VPD), SMART, the kernel log, the BMC |
+| Docker | only to build the Tyr ISO (`make iso`, [docs/acceptance.md](docs/acceptance.md)) |
 
 Tyr runs without any other tool: it reads the SMBIOS table, the NICs and the
 BMC itself, and `dmidecode`, `ethtool` and `ipmitool` are only fallbacks.
@@ -242,6 +245,14 @@ Without hardware at hand, look at a recorded server:
 
 ```bash
 tyr --fixtures testdata/fixtures/server-degraded
+```
+
+Is the machine fit for production? The 30-minute acceptance test, or the
+Tyr ISO for machines without an OS ([docs/acceptance.md](docs/acceptance.md)):
+
+```bash
+sudo tyr accept --profile quick
+make iso              # dist/tyr-live-<version>-amd64.iso, needs Docker
 ```
 
 ---
@@ -339,6 +350,7 @@ and cron work unchanged.
 | `tyr` | TUI (text report when stdout is not a terminal) |
 | `tyr report` | health report: `--format text\|json\|markdown`, `--from FILE` renders a saved snapshot or stress result |
 | `tyr stress` | stress test: `--component cpu\|memory\|storage\|network\|full` |
+| `tyr accept` | acceptance test: health check, CPU / memory / disk load, second check, judged against limits: PASS, REMARKS, FAIL; `--profile quick\|burnin\|extended`, `--limits FILE` ([docs/acceptance.md](docs/acceptance.md)) |
 | `tyr core-test CPU` | test an offline (suspect) CPU: online only for the test, isolated, offline again after; `--restore` cleans up after a kill |
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
@@ -363,17 +375,18 @@ TUI only: `--refresh 5s`, `--mouse`. Report: `--section cpu,memory,…`,
 `--inventory`, `--core-test`, `--charts mermaid|text`. Stress: `--duration`,
 `--engine`, `--cpus`, `--mem-percent` (up to 100), `--mode read|file`,
 `--fft small|large|blend` (torture engine), `--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
-`--include-suspect-cores`. Core test: `--duration`, `--yes`, `--restore`.
+`--include-suspect-cores`. Accept: `--profile`, `--limits`, `--out`,
+`--peer`, `--token`, `--print-profile`, `--yes`. Core test: `--duration`, `--yes`, `--restore`.
 Net peer: `--listen`, `--token`, `--idle`.
 
 ### Exit codes
 
-| Code | Report | Stress |
-|---|---|---|
-| 0 | OK | PASS |
-| 1 | WARN | WARN |
-| 2 | CRIT | FAIL |
-| 3 | UNKNOWN or error | aborted or not run |
+| Code | Report | Stress | Accept |
+|---|---|---|---|
+| 0 | OK | PASS | PASS |
+| 1 | WARN | WARN | REMARKS |
+| 2 | CRIT | FAIL | FAIL |
+| 3 | UNKNOWN or error | aborted or not run | INCOMPLETE |
 
 ---
 
@@ -407,6 +420,16 @@ All keys per tab: [docs/tui.md](docs/tui.md).
 | **ABORTED** | stopped with `esc`, or could not run |
 
 Engines, guard rules and the network peer: [docs/stress-tests.md](docs/stress-tests.md).
+
+### Acceptance test and the ISO
+
+`tyr accept` chains it all - health check, CPU, memory and disk load, a
+second check - and judges the machine against a limits profile: **PASS**,
+**REMARKS**, **FAIL** or **INCOMPLETE**, with a report per machine. The Tyr
+ISO (`make iso`, `make iso-arm64`) is a Debian live system with Tyr and every
+tool it uses; booted from BMC virtual media or a USB stick it runs the 4-hour
+burn-in by itself and writes the results to a stick labelled `TYR-RESULTS`.
+See [docs/acceptance.md](docs/acceptance.md).
 
 ---
 
@@ -446,7 +469,7 @@ clipboard over SSH. Details: [docs/reports.md](docs/reports.md).
 
 ```text
 tyr/
-├── cmd/tyr/                 CLI: TUI, report, stress, core-test, history, view, net-peer
+├── cmd/tyr/                 CLI: TUI, report, stress, accept, core-test, history, view, net-peer
 ├── internal/
 │   ├── collector/           collector interface and the modules
 │   │   ├── system/          identity, BIOS, BMC, PSUs, fans, boot history
@@ -462,11 +485,13 @@ tyr/
 │   ├── explain/             the alert catalog: meaning, causes, commands
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
 │   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
+│   ├── accept/              acceptance test: profiles, limits, verdict, report
 │   ├── workload/            self-checking compute kernels; the torture test's FFT (Go + AVX asm)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
 │   ├── tui/                 Bubble Tea TUI
 │   ├── netpeer/, netproto/  network test peer and protocol
 │   └── execx/, hostfs/, …   safe tool execution, read-only host access
+├── iso/                     the live ISO: build scripts, boot menu, overlay (tyr-live), vendor/ drop-in
 ├── testdata/fixtures/       recorded hosts (server-degraded, server-healthy, …)
 ├── docs/                    architecture, health checks, stress, reports, TUI
 │   ├── diagrams/            archify sources (.json) and pages (.html)
@@ -497,6 +522,7 @@ git config core.hooksPath scripts/hooks
 | [docs/architecture.md](docs/architecture.md) | engineers | packages, data flow, refresh loop |
 | [docs/health-checks.md](docs/health-checks.md) | operators | modules, sources, limits, findings |
 | [docs/stress-tests.md](docs/stress-tests.md) | operators | engines, guard, verdicts, network peer |
+| [docs/acceptance.md](docs/acceptance.md) | operators | `tyr accept`, limits, verdict; building and booting the Tyr ISO |
 | [docs/reports.md](docs/reports.md) | operators | Markdown, Mermaid, history, clipboard |
 | [docs/tui.md](docs/tui.md) | users | every tab and key |
 | [docs/tools.md](docs/tools.md) | operators | external tools: which are needed, how to install them, official docs |

@@ -57,6 +57,8 @@ type Config struct {
 	Token         string `json:"-"`                        // net-peer token (not stored)
 	Streams       int    `json:"streams,omitempty"`        // network
 	Reverse       bool   `json:"reverse,omitempty"`        // network: peer sends
+	// Exclude leaves these disks (name or /dev path) out of target "all".
+	Exclude []string `json:"exclude,omitempty"`
 
 	// IncludeSuspect also loads online CPUs whose other thread is offline
 	// (a core someone took out of service); off by default.

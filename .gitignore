@@ -9,3 +9,8 @@ dist/
 /tyr-report-*
 /tyr-stress-*
 /tyr-history-*
+
+# vendor tools for the ISO (not redistributable)
+/iso/vendor/*
+!/iso/vendor/README.md
+/iso/accept.json
