@@ -23,6 +23,8 @@ func MetricTitle(name string) string {
 		return "NIC tx"
 	case "throttle":
 		return "Throttle events"
+	case "fft_iterations_per_s":
+		return "FFT iterations/s"
 	case "verified_kernels_per_s":
 		return "Verified kernels/s"
 	case "verified_bytes_per_s":

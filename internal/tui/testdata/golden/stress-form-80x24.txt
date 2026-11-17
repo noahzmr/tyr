@@ -6,7 +6,7 @@ New run ────────────────────────
 
 ▌Test        CPU  Memory  Storage  Network  Full test
 
- Engine      builtin  offline-core
+ Engine      builtin  torture  offline-core
              Tyr kernels on every core, each result checked against a golden va…
             ○ stress-ng fixtures mode: external engines are not run
             ○ mprime fixtures mode: external engines are not run

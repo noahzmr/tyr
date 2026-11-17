@@ -225,6 +225,12 @@ func (s *stressTab) formLeft(t *Theme, w int) string {
 		case "stmode":
 			row(i, "Mode", pill(t, "read-only scan", s.stMode == 0)+pill(t, "file write + verify", s.stMode == 1),
 				[]string{"never writes", "temporary file, removed after"}[s.stMode])
+		case "fft":
+			var ps string
+			for j, m := range stress.FFTModes {
+				ps += pill(t, m, s.fft == j)
+			}
+			row(i, "FFTs", ps, []string{"cores, caches and memory in turn", "in cache: the most heat", "MBs per CPU: memory controller, DIMMs"}[s.fft])
 		case "sttarget":
 			ts := s.targets()
 			v := "–"
@@ -380,6 +386,8 @@ func (s *stressTab) formRight(t *Theme, w int) string {
 			switch {
 			case e.Name == stress.EngBuiltin:
 				lines = append(lines, t.Dot(model.StatusOK)+" "+pad(e.Name, 10)+t.Sub.Render("always · verifies results"))
+			case e.Name == stress.EngTorture:
+				lines = append(lines, t.Dot(model.StatusOK)+" "+pad(e.Name, 10)+t.Sub.Render("always · Prime95-style FFTs"))
 			case e.Name == stress.EngOfflineCore && e.Available:
 				lines = append(lines, truncate(t.Dot(model.StatusWarn)+" "+pad("offline-core", 13)+t.Sub.Render("guarded, for offline CPUs"), w))
 			case e.Available:

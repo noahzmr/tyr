@@ -129,8 +129,10 @@ guard that keeps it safe, and gives a verdict you can trust.
 ### Stress tests
 
 - CPU, memory, storage and network, one at a time or as a full test.
-- Built-in engines that verify every result, plus `stress-ng`, `mprime`,
-  `memtester` and `iperf3` when installed; the TUI installs the packaged ones.
+- Built-in engines that verify every result, among them a Prime95-style
+  torture test (Lucas-Lehmer FFTs with round-off and residue checks, small /
+  large / blend), plus `stress-ng`, `mprime`, `memtester` and `iperf3` when
+  installed; the TUI installs the packaged ones.
 - Baseline snapshot → load under a safety guard → after snapshot → verdict.
 - The guard lets a CPU run at its own limit and stops it 5 °C beyond; drives,
   DIMMs and GPUs stop at their critical temperature; any new machine check or
@@ -359,7 +361,7 @@ and cron work unchanged.
 TUI only: `--refresh 5s`, `--mouse`. Report: `--section cpu,memory,…`,
 `--inventory`, `--core-test`, `--charts mermaid|text`. Stress: `--duration`,
 `--engine`, `--cpus`, `--mem-percent` (up to 100), `--mode read|file`,
-`--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
+`--fft small|large|blend` (torture engine), `--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
 `--include-suspect-cores`. Core test: `--duration`, `--yes`, `--restore`.
 Net peer: `--listen`, `--token`, `--idle`.
 

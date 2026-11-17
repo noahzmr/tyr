@@ -35,6 +35,7 @@ type stressTab struct {
 	cpus     string
 	memPct   int
 	stMode   int // 0 read, 1 file
+	fft      int // torture engine: index into stress.FFTModes
 	stTarget int
 	peer     string
 	token    string
@@ -167,6 +168,9 @@ func (s *stressTab) fields() []string {
 	f := []string{"test", "engine", "duration"}
 	switch s.component() {
 	case stress.CompCPU:
+		if s.config(stress.CompCPU).Engine == stress.EngTorture {
+			f = append(f, "fft")
+		}
 		f = append(f, "cpus")
 	case stress.CompMemory:
 		f = append(f, "mempct")
@@ -207,7 +211,7 @@ func (s *stressTab) storageEnv() *stress.Env {
 }
 
 func (s *stressTab) config(c stress.Component) stress.Config {
-	cfg := stress.Config{Component: c, Engine: stress.EngBuiltin, Duration: durations[s.duration], CPUs: s.cpus,
+	cfg := stress.Config{Component: c, Engine: stress.EngBuiltin, Duration: durations[s.duration], CPUs: s.cpus, FFT: stress.FFTModes[s.fft],
 		MemoryPercent: s.memPct, Target: s.peer, Token: s.token, Streams: s.streams, Reverse: s.reverse}
 	if s.component() != "" {
 		if es := s.engines(); s.engine[c] < len(es) {
@@ -385,6 +389,8 @@ func (s *stressTab) change(f string, d int) {
 		s.memPct = min(100, max(10, s.memPct+10*d))
 	case "stmode":
 		s.stMode, s.stTarget = cycle(s.stMode, d, 2), 0
+	case "fft":
+		s.fft = cycle(s.fft, d, len(stress.FFTModes))
 	case "sttarget":
 		s.stTarget = cycle(s.stTarget, d, len(s.targets()))
 	case "streams":

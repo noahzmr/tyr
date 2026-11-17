@@ -49,6 +49,7 @@ type Config struct {
 	DurationMS int64         `json:"duration_ms"`
 
 	CPUs          string `json:"cpus,omitempty"`           // "" = all allowed CPUs, else a cpu list "0-7"
+	FFT           string `json:"fft,omitempty"`            // torture engine: blend, small, large
 	MemoryPercent int    `json:"memory_percent,omitempty"` // of MemAvailable (memory)
 	StorageMode   string `json:"storage_mode,omitempty"`   // "read" (device surface) or "file" (write+verify on a filesystem)
 	Target        string `json:"target,omitempty"`         // /dev/sdX, a mountpoint, or peer host:port

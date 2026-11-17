@@ -49,6 +49,7 @@ sequenceDiagram
 | CPU | **builtin** | integer, floating point, FMA, vector, SHA-256, CRC32C and matrix kernels on every selected CPU; every result is compared with a precomputed golden value, so a core that computes wrong under load is named |
 | | `stress-ng` | `--cpu`, all methods, `--verify` |
 | | `mprime` | Prime95 torture test, self-checking FFTs |
+| | `torture` | Prime95-style torture test, built in: Lucas-Lehmer FFT squaring, round-off and residues checked - see [torture](#torture-prime95-style) |
 | | `offline-core` | one offline (suspect) CPU, online only for the test and isolated: see [offline cores](#offline-cores) |
 | Memory | **builtin** | walking bits, random data, moving inversions, address-in-address; one thread per CPU; the buffer is locked in RAM |
 | | `stress-ng` | `--vm`, all methods, `--verify` |
@@ -135,6 +136,37 @@ tyr stress --component network --target peer.example:7300 --token s3cret
 In the TUI, enter the peer and token on the Stress form. Without a peer the
 network test cannot run and the full test skips it.
 
+## Torture (Prime95-style)
+
+The `torture` engine does what Prime95's torture test does, without
+installing anything: Lucas-Lehmer iterations s → s² − 2 mod 2^p − 1 on
+Mersenne numbers of 4,000 to 7 million bits, the squaring done with
+floating-point FFTs, on every selected CPU at once.
+
+| `--fft` | FFT sizes | Loads | Checked against |
+|---|---|---|---|
+| `small` | 1K-4K, in the CPU caches | cores, FPU, L1/L2: the most heat and power | the full test of Mersenne primes M4253 … M23209: the residue must be 0 |
+| `large` | 256K-1M, 4-16 MiB per CPU | caches, memory controller, DIMMs | partial runs of M1257787 … M6972593 against residues computed with exact integer arithmetic |
+| `blend` (default) | both in turn | both | both |
+
+Two checks catch a core that computes wrong:
+
+- **Round-off.** Every FFT result must be close to a whole number; Tyr's
+  sizes keep the error below 0.001, so anything above 0.40 is a hardware
+  error (Prime95: "ROUNDOFF > 0.40"). This check applies to every iteration,
+  also when the test ends before a run finishes.
+- **Residue.** Every finished run must end at its known value. A wrong
+  result names the CPU, the exponent, the FFT size and the residues.
+
+The FFT is portable Go without hand-written AVX code, so it runs cooler than
+Prime95 / mprime, whose AVX-512 code draws the most power a CPU can. For the
+hottest test install mprime and choose the `mprime` engine.
+
+```bash
+tyr stress --component cpu --engine torture --fft small --duration 30m   # heat
+tyr stress --component cpu --engine torture --fft large --duration 1h    # memory path
+```
+
 ## Offline cores
 
 A CPU someone took offline after errors cannot be tested while it is offline.
@@ -185,7 +217,7 @@ online, unless a boot unit takes it out).
 
 | Where | How |
 |---|---|
-| TUI, Stress tab (`9`) | the form: test, engine, duration, size; Start; type `yes` |
+| TUI, Stress tab (`9`) | the form: test, engine, duration, size, FFTs for the torture engine; Start; type `yes` |
 | TUI, any module tab | `S` stresses the selected component (a CPU and its sibling, a disk, a filesystem, memory, network); on an offline CPU, the offline-core test |
 | TUI, anywhere | `F` runs the full test with defaults |
 | CLI | `tyr stress --component cpu --duration 30m` (asks for `yes`; `--yes` skips the prompt) |

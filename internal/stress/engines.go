@@ -18,6 +18,7 @@ type EngineInfo struct {
 var engineDescs = map[Component][]EngineInfo{
 	CompCPU: {
 		{Name: EngBuiltin, Desc: "Tyr kernels on every core, each result checked against a golden value"},
+		{Name: EngTorture, Desc: "Prime95-style torture: Lucas-Lehmer FFTs, round-off and residues checked (small / large / blend)"},
 		{Name: EngStressNG, Desc: "stress-ng --cpu, all methods, --verify"},
 		{Name: EngMprime, Desc: "Prime95 torture test (mprime), self-checking FFTs"},
 		{Name: EngOfflineCore, Desc: "an offline (suspect) core: online only for the test, isolated, offline again after"},
@@ -51,10 +52,10 @@ func Engines(c Component, env *Env) []EngineInfo {
 				e.Available, e.Reason = false, "needs root"
 			}
 		case env != nil && env.Simulated():
-			if e.Name != EngBuiltin {
+			if e.Name != EngBuiltin && e.Name != EngTorture {
 				e.Available, e.Reason = false, "fixtures mode: external engines are not run"
 			}
-		case e.Name != EngBuiltin:
+		case e.Name != EngBuiltin && e.Name != EngTorture:
 			if _, err := env.Collector.Exec.LookPath(e.Name); err != nil {
 				e.Available, e.Reason = false, e.Name+" is not installed"
 			}
@@ -97,6 +98,8 @@ func testFor(cfg Config, env *Env) (Test, error) {
 			return cpuStressNG{}, nil
 		case EngMprime:
 			return cpuMprime{}, nil
+		case EngTorture:
+			return cpuTorture{}, nil
 		}
 		return cpuBuiltin{}, nil
 	case CompMemory:

@@ -22,10 +22,10 @@ import (
 
 // stressFlags are the options of `tyr stress`.
 type stressFlags struct {
-	component, engine, cpus, mode, target, size, token, runDir string
-	duration                                                   time.Duration
-	memPct, streams                                            int
-	reverse, yes, simError, suspect                            bool
+	component, engine, cpus, mode, target, size, token, runDir, fft string
+	duration                                                        time.Duration
+	memPct, streams                                                 int
+	reverse, yes, simError, suspect                                 bool
 }
 
 func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -35,7 +35,8 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	c.register(fs)
 	var f stressFlags
 	fs.StringVar(&f.component, "component", "", "cpu, memory, storage, network, or full (all of them, one after another)")
-	fs.StringVar(&f.engine, "engine", stress.EngBuiltin, "builtin, stress-ng, mprime (cpu), memtester (memory), iperf3 (network)")
+	fs.StringVar(&f.engine, "engine", stress.EngBuiltin, "builtin, torture (Prime95-style), stress-ng, mprime (cpu); memtester (memory); iperf3 (network)")
+	fs.StringVar(&f.fft, "fft", "blend", "torture engine: small (in cache, most heat), large (memory), blend")
 	fs.DurationVar(&f.duration, "duration", 5*time.Minute, "load duration per component")
 	fs.StringVar(&f.cpus, "cpus", "", "CPU list to load, e.g. 0-7 (default: all online)")
 	fs.IntVar(&f.memPct, "mem-percent", 70, "memory test size in percent of available memory, up to 100 (a reserve of max(1 GiB, 5 % of RAM) always stays free)")
@@ -81,7 +82,7 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	for _, comp := range comps {
 		cfg := stress.Config{Component: comp, Engine: f.engine, Duration: f.duration, CPUs: f.cpus, MemoryPercent: f.memPct,
 			StorageMode: f.mode, Target: f.target, SizeBytes: size, Token: f.token, Streams: f.streams, Reverse: f.reverse, SimError: f.simError,
-			IncludeSuspect: f.suspect}
+			IncludeSuspect: f.suspect, FFT: f.fft}
 		if len(comps) > 1 {
 			cfg.Engine = stress.EngBuiltin
 			if comp == stress.CompStorage && f.target == "" {
