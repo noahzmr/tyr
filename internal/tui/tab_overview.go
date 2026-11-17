@@ -607,7 +607,7 @@ func (o *overviewTab) rightColumn(t *Theme, w, h int) string {
 		for _, c := range rising[:min(5, len(rising))] {
 			v := fmt.Sprintf("%d", c.Value)
 			g := t.StatusText(model.StatusWarn, fmt.Sprintf("↑+%d", c.SinceStart))
-			add(padCell(" "+c.Key, w-lipgloss.Width(v)-lipgloss.Width(g)-2, false) + " " + v + " " + g)
+			add(padCell(" "+counterLabel(o.snap, c.Key), w-lipgloss.Width(v)-lipgloss.Width(g)-2, false) + " " + v + " " + g)
 		}
 		add("")
 	}
@@ -688,4 +688,37 @@ func worstSensor(ss []model.Sensor) model.Status {
 		st = model.Worst(st, s.Status)
 	}
 	return st
+}
+
+// counterLabel names a session counter for people: "cpe rx dropped (bond:
+// members' sum)", "eno5np0 lost in NIC", "sda SCSI cmd errors".
+func counterLabel(s *model.Snapshot, key string) string {
+	parts := strings.SplitN(key, ".", 3)
+	if len(parts) < 3 {
+		return key
+	}
+	what := parts[2]
+	if n, ok := counterNames[what]; ok {
+		what = n
+	}
+	if parts[0] == "net" {
+		what = map[string]string{"rx_missed": "lost in the NIC", "rx_dropped": "rx dropped", "tx_dropped": "tx dropped", "rx_errors": "rx errors",
+			"tx_errors": "tx errors", "rx_crc_errors": "CRC errors", "carrier_changes": "link flaps", "dropped": "backlog drops"}[parts[2]]
+		if what == "" {
+			what = strings.ReplaceAll(parts[2], "_", " ")
+		}
+		if s != nil && s.Network != nil {
+			if x := s.Network.Interface(parts[1]); x != nil {
+				switch {
+				case x.Kind == "bond":
+					what += " (bond: members' sum)"
+				case x.Master != "":
+					if m := s.Network.Interface(x.Master); m != nil && m.Bond != nil && strings.Contains(m.Bond.Mode, "active-backup") && m.Bond.ActiveSlave != x.Name {
+						what += " (bond backup)"
+					}
+				}
+			}
+		}
+	}
+	return parts[1] + " " + what
 }

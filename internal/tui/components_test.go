@@ -203,3 +203,19 @@ func TestAlertKeys(t *testing.T) {
 		t.Fatalf("A from a page did not open the reference")
 	}
 }
+
+func TestCounterLabel(t *testing.T) {
+	s := &model.Snapshot{Network: &model.Network{Interfaces: []model.NIC{
+		{Name: "cpe", Kind: "bond", Bond: &model.Bond{Mode: "fault-tolerance (active-backup)", ActiveSlave: "eno5np0"}},
+		{Name: "eno5np0", Kind: "physical", Master: "cpe"}, {Name: "eno6np1", Kind: "physical", Master: "cpe"}}}}
+	for key, want := range map[string]string{
+		"net.cpe.rx_dropped":     "cpe rx dropped (bond: members' sum)",
+		"net.eno5np0.rx_missed":  "eno5np0 lost in the NIC",
+		"net.eno6np1.rx_dropped": "eno6np1 rx dropped (bond backup)",
+		"disk.sda.io_errors":     "sda SCSI cmd errors (excl. Tyr)",
+	} {
+		if got := counterLabel(s, key); got != want {
+			t.Errorf("%s: %q, want %q", key, got, want)
+		}
+	}
+}

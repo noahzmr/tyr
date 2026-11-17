@@ -9,6 +9,7 @@ import (
 	"net"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/noahzmr/tyr/internal/check"
 	"github.com/noahzmr/tyr/internal/collector"
@@ -20,10 +21,13 @@ import (
 )
 
 // Collector is the network collector.
-type Collector struct{}
+type Collector struct {
+	mu   sync.Mutex
+	ring map[string]ringInfo // ethtool -g / -l, read once per interface
+}
 
 // New returns a network collector.
-func New() *Collector { return &Collector{} }
+func New() *Collector { return &Collector{ring: map[string]ringInfo{}} }
 
 func (*Collector) ID() model.ModuleID { return model.ModNetwork }
 
@@ -118,6 +122,9 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 				n.Serial, n.PartNumber = vpdIDs(f, d)
 			}
 			c.ethtool(ctx, env, &n, haveEthtool == nil)
+			if haveEthtool == nil && n.Kind == "physical" {
+				c.rings(ctx, env, &n)
+			}
 			for _, chip := range hwmon {
 				if chip.Device == x.DevicePath {
 					for _, s := range chip.Sensors {
@@ -145,11 +152,13 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		out.Interfaces = append(out.Interfaces, n)
 	}
 	c.bmc(ctx, env, out)
+	softnet(env, out)
 
 	for i := range out.Interfaces {
 		n := &out.Interfaces[i]
 		n.Status = nicFindings(h, n, prevBy[n.Name])
 	}
+	losses(h, out, prev, prevBy, dt)
 	h.Summary = summary(out)
 	h.Rollup()
 	return out, nil

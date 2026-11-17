@@ -181,7 +181,7 @@ func TestSessionNewResolvedRising(t *testing.T) {
 	snap.Storage.Findings = keep
 	m.Update(snapshotMsg{snap: snap})
 	s := text(m)
-	for _, want := range []string{"sdc: 5 I/O errors", "NEW", "Rising counters", "disk.sdc.io_errors", "Resolved this session", "/data (xfs) is mounted read-only"} {
+	for _, want := range []string{"sdc: 5 I/O errors", "NEW", "Rising counters", "sdc SCSI cmd errors (excl. Tyr)", "Resolved this session", "/data (xfs) is mounted read-only"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("overview missing %q\n%s", want, s)
 		}

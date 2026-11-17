@@ -550,3 +550,78 @@ func moduleDate(v string) string {
 	}
 	return "20" + y + "-" + m + "-" + d
 }
+
+// --- rings, queues, softnet --------------------------------------------------------------
+
+// Ring is `ethtool -g`: the receive ring size now and at most.
+type Ring struct{ RX, RXMax int }
+
+// ParseRing parses `ethtool -g <if>` (RX lines of "Pre-set maximums" and
+// "Current hardware settings").
+func ParseRing(data []byte) (Ring, bool) {
+	var r Ring
+	cur := false
+	for _, l := range strings.Split(string(data), "\n") {
+		t := strings.TrimSpace(l)
+		switch {
+		case strings.HasPrefix(t, "Current hardware settings"):
+			cur = true
+		case strings.HasPrefix(t, "RX:"):
+			n, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(t, "RX:")))
+			if err != nil {
+				continue
+			}
+			if cur {
+				r.RX = n
+			} else {
+				r.RXMax = n
+			}
+		}
+	}
+	return r, r.RX > 0
+}
+
+// ParseChannels parses `ethtool -l <if>`: the receive queues in use
+// (combined, else RX).
+func ParseChannels(data []byte) (int, bool) {
+	cur, n := false, 0
+	for _, l := range strings.Split(string(data), "\n") {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "Current hardware settings") {
+			cur = true
+			continue
+		}
+		if !cur {
+			continue
+		}
+		for _, k := range []string{"Combined:", "RX:"} {
+			if strings.HasPrefix(t, k) {
+				if v, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(t, k))); err == nil && v > n {
+					n = v
+				}
+			}
+		}
+	}
+	return n, n > 0
+}
+
+// Softnet sums /proc/net/softnet_stat over all CPUs: packets the kernel's
+// per-CPU receive backlog dropped (netdev_max_backlog full) and how often
+// the receive softirq ran out of budget (time_squeeze).
+func Softnet(data []byte) (dropped, squeezed uint64, ok bool) {
+	for _, l := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		f := strings.Fields(l)
+		if len(f) < 3 {
+			continue
+		}
+		d, err1 := strconv.ParseUint(f[1], 16, 64)
+		s, err2 := strconv.ParseUint(f[2], 16, 64)
+		if err1 != nil || err2 != nil {
+			continue
+		}
+		dropped += d
+		squeezed += s
+		ok = true
+	}
+	return dropped, squeezed, ok
+}

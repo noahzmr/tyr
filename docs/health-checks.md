@@ -278,6 +278,26 @@ Findings include `link_down`, `bond_degraded`, a port below its own or the
 partner's speed, `half_duplex`, `crc_errors`, and `transceiver` optics out of
 range.
 
+#### Drops and losses
+
+Every refresh Tyr compares the drop counters with the last one and says, per
+interface, how many packets, how fast, what share of the traffic, where they
+were lost and why that usually happens on this kind of interface:
+
+| Counter | Where | Usual cause | Finding |
+|---|---|---|---|
+| `rx_missed` | in the NIC | the receive ring (size from `ethtool -g`, queues from `ethtool -l`) filled before the CPUs emptied it | `rx_missed` ▲ |
+| `rx_dropped` | in the kernel | frames nobody wants: LLDP/CDP/STP, VLANs without an interface, multicast without a listener | `rx_dropped` ● below 1 % of the traffic, ▲ above |
+| `rx_dropped` | bond backup member | an active-backup bond's backup drops what it receives, by design | ● |
+| any | bond | the bond repeats the sum of its members' counters: the loss is in a member | ● |
+| `tx_dropped` | in the kernel | the transmit queue or ring was full, or the link down | `tx_dropped` ▲ |
+| softnet `dropped` | in the kernel | the per-CPU receive backlog (`netdev_max_backlog`) overflowed | `softnet_drops` ▲ |
+
+The interface page (enter on the Network tab) shows the same per counter with
+the session's growth and the commands to look closer. The Overview's
+"Rising counters" names counters for people (`eno5np0 lost in the NIC`,
+`cpe rx dropped (bond: members' sum)`).
+
 ### GPU / NPU
 
 PCI inventory and link (width and generation against the device's maximum),

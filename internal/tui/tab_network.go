@@ -489,7 +489,89 @@ func (n *networkTab) Detail(t *Theme, w int) (string, string) {
 			doc.add(t.StatusText(model.StatusWarn, pad(k, 34)) + fmt.Sprint(x.ErrorCounters[k]))
 		}
 	}
+	lossSection(doc, n.net, &x)
 	doc.counters(t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "net."+x.Name+".") }), "net."+x.Name+".")
 	doc.findings(model.ModNetwork, relatedFindings(n.net.Findings, x.Name))
 	return "Interface " + x.Name, doc.String()
+}
+
+// lossSection explains the interface's drop and loss counters: how many,
+// how many this session, what share of the traffic, where they are lost,
+// the likely cause here, and the commands to look closer.
+func lossSection(doc *doc, net *model.Network, x *model.NIC) {
+	t := doc.t
+	c := x.Counters
+	type ctr struct {
+		key, label string
+		total      uint64
+		packets    uint64
+	}
+	ctrs := []ctr{{"rx_missed", "lost in the NIC (rx_missed)", c.RxMissed, c.RxPackets},
+		{"rx_dropped", "dropped on receive (rx_dropped)", c.RxDropped, c.RxPackets},
+		{"tx_dropped", "dropped on send (tx_dropped)", c.TxDropped, c.TxPackets}}
+	any := false
+	for _, k := range ctrs {
+		any = any || k.total > 0
+	}
+	if !any {
+		return
+	}
+	growth := map[string]uint64{}
+	for _, ch := range t.sess.counters(func(k string) bool { return strings.HasPrefix(k, "net."+x.Name+".") || k == "net.softnet.dropped" }) {
+		growth[strings.TrimPrefix(ch.Key, "net."+x.Name+".")] = ch.SinceStart
+	}
+	softnetRising := growth["net.softnet.dropped"] > 0
+	doc.section("Drops and losses", t.Dim.Render("since boot · this session · where · why"))
+	for _, k := range ctrs {
+		if k.total == 0 {
+			continue
+		}
+		where, cause, benign := net.LossCause(x, k.key, softnetRising)
+		st := model.StatusOK
+		if g := growth[k.key]; g > 0 && !benign && k.key != "rx_dropped" {
+			st = model.StatusWarn
+		}
+		share := float64(k.total) / float64(k.packets+k.total) * 100
+		head := t.Dot(st) + " " + t.Bold.Render(pad(k.label, 32)) + padCell(grouped(k.total), 12, true) +
+			t.Dim.Render(fmt.Sprintf("  %.3f %% of the packets", share))
+		if g := growth[k.key]; g > 0 {
+			head += "  " + t.StatusText(model.Worst(st, model.StatusWarn), fmt.Sprintf("+%d this session", g))
+		}
+		doc.add(head)
+		doc.add(hang("     "+t.Dim.Render(pad("where", 7)), where, doc.w-1))
+		doc.add(hang("     "+t.Dim.Render(pad("why", 7)), cause, doc.w-1))
+	}
+	if x.RingRX != nil {
+		r := fmt.Sprintf("%d entries", *x.RingRX)
+		if x.RingRXMax != nil {
+			r += fmt.Sprintf(" of %d", *x.RingRXMax)
+		}
+		if x.RxQueues != nil {
+			r += fmt.Sprintf(" · %d receive queues", *x.RxQueues)
+		}
+		doc.kv([2]string{"Receive ring", r})
+	}
+	if net.SoftnetDropped != nil {
+		doc.kv([2]string{"Kernel backlog", fmt.Sprintf("%s dropped since boot (all CPUs)", grouped(*net.SoftnetDropped))})
+	}
+	cmds := []string{"ethtool -S " + x.Name + " | grep -iE 'drop|miss|discard|no_buf|fifo'   # which queue or reason"}
+	if x.Kind == "physical" {
+		cmds = append(cmds, "ethtool -g "+x.Name+"   # ring size; a larger ring: ethtool -G "+x.Name+" rx <max> (may reset the link briefly)",
+			"ethtool -l "+x.Name+"   # receive queues (RSS)")
+	}
+	cmds = append(cmds, "awk '{print NR-1, strtonum(\"0x\"$2)}' /proc/net/softnet_stat   # backlog drops per CPU")
+	if x.Kind == "bond" || x.Master != "" {
+		b := x.Name
+		if x.Master != "" {
+			b = x.Master
+		}
+		cmds = append(cmds, "cat /proc/net/bonding/"+b+"   # mode, active member")
+	}
+	for i, cmd := range cmds {
+		label := ""
+		if i == 0 {
+			label = "Check"
+		}
+		doc.add(hang("   "+t.Dim.Render(pad(label, 8)), cmd, doc.w-1, t.Key.Render))
+	}
 }
