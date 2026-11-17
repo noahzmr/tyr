@@ -510,9 +510,17 @@ func (m *Model) netboxDone(msg netboxDoneMsg) {
 		fmt.Fprintf(&b, "**Not written:** %s\n\n", msg.err)
 	}
 	if r := msg.rep; r != nil {
-		if r.DeviceURL != "" {
+		switch {
+		case r.DeviceURL != "":
 			fmt.Fprintf(&b, "Device **%s**: %s\n\n", r.Device, r.DeviceURL)
+		case r.Device != "":
+			fmt.Fprintf(&b, "Device **%s** (new)\n\n", r.Device)
 		}
+		sum := r.Summary()
+		if msg.dry {
+			sum = "would " + sum
+		}
+		fmt.Fprintf(&b, "%s\n\n", sum)
 		if len(r.Tags) > 0 {
 			fmt.Fprintf(&b, "Tags: %s\n\n", strings.Join(r.Tags, ", "))
 		}
@@ -523,6 +531,9 @@ func (m *Model) netboxDone(msg netboxDoneMsg) {
 			}
 			b.WriteString("\n")
 		}
+	}
+	if msg.rep != nil && len(msg.rep.Changes) > 0 {
+		b.WriteString(changeTables(msg.rep.Changes, msg.dry))
 	}
 	b.WriteString("## Log\n\n```text\n" + strings.Join(msg.log, "\n") + "\n```\n")
 	m.nb = nil
@@ -716,4 +727,36 @@ func (m *Model) factLines(f netbox.Facts, inner, n int) []string {
 		lines = append(lines, " "+t.Key.Render(pad(fd.Name, 17))+pad(v, 27)+t.Sub.Render(truncate(fd.Help, max(10, inner-46))))
 	}
 	return lines
+}
+
+// changeTables renders what was (or would be) written, one table per kind
+// of object, in the order they were written.
+func changeTables(changes []netbox.Change, dry bool) string {
+	var order []string
+	by := map[string][]netbox.Change{}
+	for _, c := range changes {
+		if _, ok := by[c.Object]; !ok {
+			order = append(order, c.Object)
+		}
+		by[c.Object] = append(by[c.Object], c)
+	}
+	act := map[string]string{"create": "new", "update": "change", "unchanged": "same", "set": "set", "remove": "remove", "delete": "delete"}
+	if dry {
+		act["create"], act["update"], act["delete"] = "would create", "would change", "would delete"
+	}
+	cell := func(s string) string { return strings.ReplaceAll(s, "|", "\\|") }
+	var b strings.Builder
+	b.WriteString("## " + map[bool]string{true: "Plan", false: "Written"}[dry] + "\n\n")
+	for _, o := range order {
+		title := o
+		if n := len(by[o]); n > 1 {
+			title = fmt.Sprintf("%s (%d)", o, n)
+		}
+		fmt.Fprintf(&b, "### %s\n\n| | Name | Values |\n|---|---|---|\n", strings.ToUpper(title[:1])+title[1:])
+		for _, c := range by[o] {
+			fmt.Fprintf(&b, "| %s | %s | %s |\n", act[c.Action], cell(c.Name), cell(c.Detail))
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
 }

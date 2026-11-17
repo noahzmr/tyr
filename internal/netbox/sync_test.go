@@ -347,11 +347,26 @@ func TestSyncDryRunAndErrors(t *testing.T) {
 	}
 	// dry run: no writes at all
 	cfg.Site, cfg.Role = "Lab", "Server"
-	if _, err := Sync(ctx, cfg, Tags{Rules: []TagRule{{"x", "cores > 0"}}}, Input{Snap: snap}, true, nil); err != nil {
+	rep, err := Sync(ctx, cfg, Tags{Rules: []TagRule{{"x", "cores > 0"}}}, Input{Snap: snap}, true, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
 	if len(fake.writes) != 0 {
 		t.Errorf("dry run wrote %v", fake.writes)
+	}
+	// a new device: no lookups by its placeholder id, the whole plan
+	if len(rep.Problems) > 0 || rep.DeviceURL != "" {
+		t.Errorf("dry run of a new device: problems %v, url %q", rep.Problems, rep.DeviceURL)
+	}
+	kinds := map[string]int{}
+	for _, c := range rep.Changes {
+		kinds[c.Object+" "+c.Action]++
+	}
+	if kinds["device create"] != 1 || kinds["interface create"] == 0 || kinds["inventory item create"] < 5 || kinds["tag set"] != 1 || kinds["journal entry create"] != 1 {
+		t.Errorf("plan %v", kinds)
+	}
+	if !strings.HasPrefix(rep.Summary(), "create ") {
+		t.Errorf("summary %q", rep.Summary())
 	}
 	// the live ISO: no serial, host name tyr-live - never matched by name
 	live := *snap

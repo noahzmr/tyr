@@ -60,13 +60,6 @@ func (e *APIError) Error() string {
 func (c *Client) do(ctx context.Context, method, path string, q url.Values, body any) (obj, error) {
 	if c.DryRun && method != http.MethodGet {
 		c.fakeID--
-		desc := ""
-		if m, ok := body.(obj); ok {
-			if n, ok := m["name"].(string); ok {
-				desc = " " + n
-			}
-		}
-		c.log("  (dry run) %s %s%s", method, path, desc)
 		return obj{"id": float64(c.fakeID)}, nil
 	}
 	u := c.base + path

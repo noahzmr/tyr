@@ -32,6 +32,36 @@ type Report struct {
 	Journal   bool     `json:"journal,omitempty"`
 	DryRun    bool     `json:"dry_run,omitempty"`
 	Problems  []string `json:"problems,omitempty"` // parts that failed; the rest was written
+	Changes   []Change `json:"changes,omitempty"`  // what was (dry run: would be) written, and what was already right
+}
+
+// Summary counts the changes: "create 31, update 2, 12 unchanged".
+func (r *Report) Summary() string {
+	n := map[string]int{}
+	for _, c := range r.Changes {
+		n[c.Action]++
+	}
+	var parts []string
+	for _, a := range []string{"create", "update", "set", "remove", "delete"} {
+		if n[a] > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", a, n[a]))
+		}
+	}
+	if len(parts) == 0 {
+		parts = append(parts, "change nothing")
+	}
+	if n["unchanged"] > 0 {
+		parts = append(parts, fmt.Sprintf("%d unchanged", n["unchanged"]))
+	}
+	return strings.Join(parts, ", ")
+}
+
+// Change is one object written or checked.
+type Change struct {
+	Object string `json:"object"` // device, interface, inventory item, IP address, tag, custom field, journal
+	Name   string `json:"name"`
+	Action string `json:"action"` // create, update, unchanged, set, remove, delete
+	Detail string `json:"detail,omitempty"`
 }
 
 type syncer struct {
@@ -87,10 +117,15 @@ func Sync(ctx context.Context, cfg Config, tags Tags, in Input, dryRun bool, log
 	if cfg.Journal {
 		s.step("journal", s.journal)
 	}
+	where := firstNonEmpty(s.rep.DeviceURL, "new device "+s.rep.Device)
+	sum := s.rep.Summary()
+	if dryRun {
+		sum = "would " + sum
+	}
 	if n := len(s.rep.Problems); n > 0 {
-		log("done with %d problem(s): %s", n, s.rep.DeviceURL)
+		log("done with %d problem(s), %s: %s", n, sum, where)
 	} else {
-		log("done: %s", s.rep.DeviceURL)
+		log("done, %s: %s", sum, where)
 	}
 	return s.rep, nil
 }
@@ -100,6 +135,28 @@ func (s *syncer) step(name string, f func() error) {
 		s.problem("%s: %v", name, err)
 	}
 }
+
+// change records what is written; created and changed objects go to the
+// log with their values.
+func (s *syncer) change(object, name, action, detail string) {
+	s.rep.Changes = append(s.rep.Changes, Change{Object: object, Name: name, Action: action, Detail: detail})
+	if action == "unchanged" {
+		return
+	}
+	verb := action
+	if s.c.DryRun {
+		verb = "would " + action
+	}
+	line := fmt.Sprintf("  %s %s %s", verb, object, name)
+	if detail != "" {
+		line += ": " + detail
+	}
+	s.log("%s", line)
+}
+
+// newDevice: a dry run against a device that does not exist yet - it has
+// no interfaces or items to look up.
+func (s *syncer) newDevice() bool { return s.devID < 0 }
 
 func (s *syncer) problem(f string, a ...any) {
 	msg := fmt.Sprintf(f, a...)
@@ -164,6 +221,7 @@ func (s *syncer) device() error {
 	if dev != nil {
 		s.dev, s.devID = dev, id(dev["id"])
 		s.log("device %s (id %d)", str(dev["name"]), s.devID)
+		s.change("device", str(dev["name"]), "unchanged", "found by "+map[bool]string{true: "serial " + serial, false: "name"}[serial != ""])
 	} else {
 		if s.cfg.Site == "" || s.cfg.Role == "" {
 			return fmt.Errorf("serial %s is not in NetBox, and site and role for a new device are not set", serial)
@@ -174,12 +232,14 @@ func (s *syncer) device() error {
 	}
 	s.rep.DeviceID = s.devID
 	s.rep.Device = str(s.dev["name"])
-	s.rep.DeviceURL = fmt.Sprintf("%s/dcim/devices/%d/", s.cfg.URL, s.devID)
+	if !s.newDevice() {
+		s.rep.DeviceURL = fmt.Sprintf("%s/dcim/devices/%d/", s.cfg.URL, s.devID)
+	}
 	return nil
 }
 
 func (s *syncer) createDevice(name, serial string, y *model.System) error {
-	vendor := firstNonEmpty(strings.TrimSpace(y.Vendor), "Unknown")
+	vendor := firstNonEmpty(Manufacturer(y.Vendor, ""), "Unknown")
 	product := firstNonEmpty(strings.TrimSpace(y.Product), "Unknown")
 	mid, err := s.manufacturer(vendor)
 	if err != nil {
@@ -228,7 +288,11 @@ func (s *syncer) createDevice(name, serial string, y *model.System) error {
 		dev["name"] = body["name"]
 	}
 	s.dev, s.devID, s.rep.Created = dev, id(dev["id"]), true
-	s.log("device %s created (id %d) in %s as %s", body["name"], s.devID, s.cfg.Site, s.cfg.Role)
+	detail := fmt.Sprintf("%s %s, serial %s, site %s, role %s, status %s", vendor, product, firstNonEmpty(serial, "-"), s.cfg.Site, s.cfg.Role, body["status"])
+	if s.cfg.Tenant != "" {
+		detail += ", tenant " + s.cfg.Tenant
+	}
+	s.change("device", fmt.Sprint(body["name"]), "create", detail)
 	return nil
 }
 
@@ -260,19 +324,33 @@ func (s *syncer) getOrCreate(path string, find map[string][]string, create obj) 
 		}
 		return 0, err
 	}
-	s.log("  created %s %v", strings.TrimSuffix(strings.TrimPrefix(path, "/api/"), "/"), firstNonEmpty(str(create["name"]), str(create["model"])))
+	kind := strings.TrimSuffix(strings.TrimPrefix(path, "/api/"), "/")
+	kind = strings.TrimSuffix(kind[strings.LastIndex(kind, "/")+1:], "s")
+	s.change(strings.ReplaceAll(kind, "-", " "), firstNonEmpty(str(create["name"]), str(create["model"])), "create", "")
 	return id(o["id"]), nil
 }
 
+// manufacturer finds a manufacturer by slug or by name (any case) before
+// it creates one, so "Supermicro" and "SUPERMICRO" stay one entry.
 func (s *syncer) manufacturer(name string) (int, error) {
-	if v, ok := s.manuf[name]; ok {
+	if v, ok := s.manuf[strings.ToLower(name)]; ok {
 		return v, nil
 	}
-	v, err := s.getOrCreate("/api/dcim/manufacturers/", q("name", name), obj{"name": name, "slug": slugify(name)})
-	if err == nil {
-		s.manuf[name] = v
+	o, err := s.c.First(s.ctx, "/api/dcim/manufacturers/", q("slug", slugify(name)))
+	if err == nil && o == nil {
+		o, err = s.c.First(s.ctx, "/api/dcim/manufacturers/", q("name__ie", name))
 	}
-	return v, err
+	if err != nil {
+		return 0, err
+	}
+	v := 0
+	if o != nil {
+		v = id(o["id"])
+	} else if v, err = s.getOrCreate("/api/dcim/manufacturers/", q("slug", slugify(name)), obj{"name": name, "slug": slugify(name)}); err != nil {
+		return 0, err
+	}
+	s.manuf[strings.ToLower(name)] = v
+	return v, nil
 }
 
 // --- interfaces --------------------------------------------------------------
@@ -317,9 +395,12 @@ func (s *syncer) interfaces() error {
 	if nw == nil {
 		return nil
 	}
-	existing, err := s.c.List(s.ctx, "/api/dcim/interfaces/", q("device_id", fmt.Sprint(s.devID)))
-	if err != nil {
-		return err
+	var existing []obj
+	if !s.newDevice() {
+		var err error
+		if existing, err = s.c.List(s.ctx, "/api/dcim/interfaces/", q("device_id", fmt.Sprint(s.devID))); err != nil {
+			return err
+		}
 	}
 	byName := map[string]obj{}
 	for _, e := range existing {
@@ -335,7 +416,17 @@ func (s *syncer) interfaces() error {
 		if sp := nicSpeed(x); sp > 0 && x.SpeedMbps != nil && *x.SpeedMbps > 0 {
 			body["speed"] = *x.SpeedMbps * 1000 // kbit/s
 		}
-		iid, err := s.upsertInterface(byName[x.Name], x.Name, ifType(x), false, body)
+		info := []string{ifType(x)}
+		if x.MAC != "" {
+			info = append(info, "MAC "+strings.ToUpper(x.MAC))
+		}
+		if x.SpeedMbps != nil && *x.SpeedMbps > 0 {
+			info = append(info, fmt.Sprintf("%d Mbit/s", *x.SpeedMbps))
+		}
+		if desc != "" {
+			info = append(info, desc)
+		}
+		iid, err := s.upsertInterface(byName[x.Name], x.Name, ifType(x), false, body, strings.Join(info, ", "))
 		if err != nil {
 			s.problem("interface %s: %v", x.Name, err)
 			continue
@@ -354,7 +445,11 @@ func (s *syncer) interfaces() error {
 				break
 			}
 		}
-		iid, err := s.upsertInterface(byName[name], name, "1000base-t", true, obj{"description": "management controller"})
+		info := "management only"
+		if b.MAC != "" {
+			info += ", MAC " + strings.ToUpper(b.MAC)
+		}
+		iid, err := s.upsertInterface(byName[name], name, "1000base-t", true, obj{"description": "management controller"}, info)
 		if err != nil {
 			return fmt.Errorf("BMC interface: %w", err)
 		}
@@ -373,14 +468,14 @@ func validIP(ip string) bool {
 	return p != nil && !p.IsUnspecified()
 }
 
-func (s *syncer) upsertInterface(cur obj, name, typ string, mgmt bool, body obj) (int, error) {
+func (s *syncer) upsertInterface(cur obj, name, typ string, mgmt bool, body obj, info string) (int, error) {
 	if cur == nil {
 		body["device"], body["name"], body["type"], body["mgmt_only"], body["enabled"] = s.devID, name, typ, mgmt, true
 		o, err := s.c.Post(s.ctx, "/api/dcim/interfaces/", body)
 		if err != nil {
 			return 0, err
 		}
-		s.log("  interface %s created", name)
+		s.change("interface", name, "create", info)
 		return id(o["id"]), nil
 	}
 	iid := id(cur["id"])
@@ -388,8 +483,32 @@ func (s *syncer) upsertInterface(cur obj, name, typ string, mgmt bool, body obj)
 		if _, err := s.c.Patch(s.ctx, "/api/dcim/interfaces/", iid, ch); err != nil {
 			return iid, err
 		}
+		s.change("interface", name, "update", describeChanges(ch))
+		return iid, nil
 	}
+	s.change("interface", name, "unchanged", info)
 	return iid, nil
+}
+
+// describeChanges lists changed fields with their new values.
+func describeChanges(ch obj) string {
+	keys := make([]string, 0, len(ch))
+	for k := range ch {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var parts []string
+	for _, k := range keys {
+		switch v := ch[k].(type) {
+		case string:
+			parts = append(parts, fmt.Sprintf("%s %q", k, v))
+		case int, bool:
+			parts = append(parts, fmt.Sprintf("%s %v", k, v))
+		default:
+			parts = append(parts, k)
+		}
+	}
+	return strings.Join(parts, ", ")
 }
 
 // mac records a MAC address on an interface: NetBox 4.2 and later keep
@@ -478,7 +597,7 @@ func (s *syncer) oobIP(iid int, b *model.BMCLan) {
 			return
 		}
 		ipID = id(o["id"])
-		s.log("  BMC IP %s created", addr)
+		s.change("IP address", addr, "create", "on the BMC interface, out-of-band IP of the device")
 	}
 	if s.c.AtLeast(4, 0) && id(s.dev["oob_ip"]) != ipID {
 		if _, err := s.c.Patch(s.ctx, "/api/dcim/devices/", s.devID, obj{"oob_ip": ipID}); err != nil {
@@ -557,6 +676,65 @@ func describe(c model.Component) string {
 	return trunc(strings.Join(parts, " · "), 200)
 }
 
+// mergeCards makes one item of the ports of one network card: NICs with
+// the same model and serial number (a dual-port card reports its serial on
+// every port). The item is named after the card's PCI slot, the ports go
+// into its label.
+func mergeCards(comps []model.Component) []model.Component {
+	out := make([]model.Component, 0, len(comps))
+	at := map[string]int{}
+	ports := map[int][]string{}
+	for _, c := range comps {
+		if c.Category != "nic" || c.Serial == "" {
+			out = append(out, c)
+			continue
+		}
+		port, pci, _ := strings.Cut(c.Location, " ")
+		key := c.Model + "|" + c.Serial
+		if i, ok := at[key]; ok {
+			ports[i] = append(ports[i], port)
+			out[i].Status = model.Worst(out[i].Status, c.Status)
+			continue
+		}
+		if i := strings.LastIndexByte(pci, '.'); i > 0 {
+			pci = pci[:i] // 03:00.1 -> 03:00: the card, not the function
+		}
+		at[key] = len(out)
+		ports[len(out)] = []string{port}
+		c.Location = pci
+		out = append(out, c)
+	}
+	for i, ps := range ports {
+		d := "ports " + strings.Join(ps, ", ")
+		if len(ps) == 1 {
+			d = "port " + ps[0]
+		}
+		out[i].Detail = strings.TrimSpace(strings.TrimSpace(out[i].Detail+" · ") + " " + d)
+		out[i].Detail = strings.TrimPrefix(out[i].Detail, "· ")
+	}
+	return out
+}
+
+// itemInfo is what Tyr knows about a part, for the log and the plan.
+func itemInfo(c model.Component) string {
+	var parts []string
+	add := func(k, v string) {
+		if v = strings.TrimSpace(v); v != "" {
+			parts = append(parts, k+v)
+		}
+	}
+	add("", Manufacturer(c.Vendor, c.Model))
+	add("", c.Model)
+	add("part ", c.PartNumber)
+	add("S/N ", c.Serial)
+	add("firmware ", c.Firmware)
+	add("", c.Detail)
+	if c.Status == model.StatusCrit {
+		parts = append(parts, "FAILED")
+	}
+	return strings.Join(parts, " · ")
+}
+
 func trunc(s string, n int) string {
 	r := []rune(s)
 	if len(r) <= n {
@@ -576,9 +754,13 @@ func (s *syncer) inventory() error {
 			comps = append(comps, c)
 		}
 	}
-	existing, err := s.c.List(s.ctx, "/api/dcim/inventory-items/", q("device_id", fmt.Sprint(s.devID)))
-	if err != nil {
-		return err
+	comps = mergeCards(comps)
+	var existing []obj
+	if !s.newDevice() {
+		var err error
+		if existing, err = s.c.List(s.ctx, "/api/dcim/inventory-items/", q("device_id", fmt.Sprint(s.devID))); err != nil {
+			return err
+		}
 	}
 	byName, bySerial := map[string]obj{}, map[string]obj{}
 	for _, e := range existing {
@@ -598,7 +780,7 @@ func (s *syncer) inventory() error {
 		used[name] = true
 		body := obj{"label": trunc(c.Location, 64), "part_id": trunc(firstNonEmpty(c.PartNumber, c.Model), 50),
 			"serial": trunc(c.Serial, 50), "description": describe(c), "discovered": true}
-		if v := strings.TrimSpace(c.Vendor); v != "" {
+		if v := Manufacturer(c.Vendor, c.Model); v != "" {
 			if mid, err := s.manufacturer(v); err == nil {
 				body["manufacturer"] = mid
 			}
@@ -624,6 +806,7 @@ func (s *syncer) inventory() error {
 				body["status"] = "active"
 			}
 		}
+		info := itemInfo(c)
 		if cur == nil {
 			body["device"], body["name"] = s.devID, name
 			o, err := s.c.Post(s.ctx, "/api/dcim/inventory-items/", body)
@@ -633,6 +816,7 @@ func (s *syncer) inventory() error {
 			}
 			seen[id(o["id"])] = true
 			created++
+			s.change("inventory item", name, "create", info)
 			continue
 		}
 		seen[id(cur["id"])] = true
@@ -643,7 +827,10 @@ func (s *syncer) inventory() error {
 				continue
 			}
 			updated++
+			s.change("inventory item", name, "update", describeChanges(ch))
+			continue
 		}
+		s.change("inventory item", name, "unchanged", info)
 	}
 	s.log("inventory items: %d parts, %d new, %d changed%s", len(comps), created, updated,
 		map[bool]string{true: fmt.Sprintf(", %d marked failed", failed)}[failed > 0])
@@ -667,7 +854,7 @@ func (s *syncer) inventory() error {
 			continue
 		}
 		removed++
-		s.log("  removed %s (no longer reported)", str(e["name"]))
+		s.change("inventory item", str(e["name"]), "delete", "no longer reported")
 	}
 	if removed > 0 {
 		s.log("inventory items: %d removed", removed)
@@ -717,10 +904,10 @@ func (s *syncer) deviceFields() error {
 		switch {
 		case s.devCrit && cur != "failed":
 			body["status"] = "failed"
-			s.log("device status: failed (%s)", s.failReason())
+			s.change("device", s.rep.Device, "update", "status failed: "+s.failReason())
 		case !s.devCrit && cur == "failed" && s.healthAssessable():
 			body["status"] = "active"
-			s.log("device status: active again (was failed)")
+			s.change("device", s.rep.Device, "update", "status active again (was failed)")
 		}
 	}
 	// tags: rules own their tags; other tags stay as they are
@@ -744,7 +931,7 @@ func (s *syncer) deviceFields() error {
 		if r.Match != keep[sl] {
 			changed = true
 			keep[sl] = r.Match
-			s.log("tag %s: %s", r.Rule.Tag, map[bool]string{true: "set", false: "removed"}[r.Match])
+			s.change("tag", r.Rule.Tag, map[bool]string{true: "set", false: "remove"}[r.Match], r.Rule.When)
 		}
 	}
 	var tagNames []string
@@ -786,6 +973,7 @@ func (s *syncer) deviceFields() error {
 			val := Expand(v, s.facts)
 			if str(curCF[k]) != val {
 				cf[k] = val
+				s.change("custom field", k, "set", val)
 			}
 		}
 		if len(cf) > 0 {
@@ -832,7 +1020,8 @@ func (s *syncer) journal() error {
 		"assigned_object_id": s.devID, "kind": kind, "comments": text})
 	if err == nil {
 		s.rep.Journal = true
-		s.log("journal entry written (%s)", kind)
+		title, _, _ := strings.Cut(text, "\n")
+		s.change("journal entry", kind, "create", strings.TrimLeft(title, "# "))
 	}
 	return err
 }

@@ -18,6 +18,19 @@ line (`tyr netbox`), after `tyr accept`, and by itself from the Tyr ISO.
 | Custom fields | values from templates with facts: `"memory": "{memory_gb} GB"` | `custom_fields` |
 | Journal entry | the acceptance test's summary (verdict, failures, remarks, steps, counters, limits) as success, warning or danger; without a test the health check's warnings and errors | `journal` |
 
+Manufacturers are written under one name per company, whatever SMBIOS,
+PCI, SMART or a transceiver call it (`GenuineIntel` and `Intel Corporation`
+are Intel, `SUPERMICRO` is Supermicro, `FINISAR CORP.` is Finisar); a drive
+that reports only its model gets its maker from it (`ST4000…` Seagate,
+`MZQL…` Samsung). An existing manufacturer is found by slug or by name in
+any case before a new one is created. A network card with several ports is
+one inventory item, named after its PCI slot, with its ports in the
+description.
+
+A dry run (`--dry-run`, *Dry run* in the TUI) lists every object it would
+create or change with the values, and the objects that are already right;
+the TUI shows it as tables per kind of object.
+
 NetBox 4.3 deprecated inventory items in favour of modules and plans to
 remove them in a later release; they still work in 4.7. Tyr (like Logica)
 uses them until then.
