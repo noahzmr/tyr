@@ -7,7 +7,7 @@ or from saved JSON:
 
 | Report | From | Contains |
 |---|---|---|
-| **Host report** | a snapshot | status, alerts by severity, component health, age and power state, what the alerts mean (with where and how to check), offline CPUs and the machine check history, every logical CPU, system, CPU, memory, storage, network, GPU/NPU, the inventory with health, data sources not used |
+| **Host report** | a snapshot | status, alerts by severity, component health, age and power state, what the alerts mean (with where and how to check), system with power supplies, fans and the boot history; CPU with offline CPUs, program crashes by core, the machine check history and crash records, every logical CPU; memory, storage, network, GPU/NPU; power (supplies with input and output, draw, cap, redundancy); event logs (open BMC events, newest warnings and errors); the inventory with health; data sources not used |
 | **Stress result** | a result file | verdict and reasons, scope, charts of the metrics over time, min / avg / max, wrong results, counters that changed, new alerts, component health after the test (and every core after a CPU test), the log |
 | **History** | any number of snapshots and result files | per host: component health now, status over time, alert timeline, counter and sensor trends, hardware and firmware changes, the stress runs |
 

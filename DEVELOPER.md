@@ -58,11 +58,13 @@ flowchart LR
 |---|---|
 | `cmd/tyr` | flags and subcommands (stdlib `flag`) |
 | `internal/collector` | the collector interface, the shared environment, parallel collection |
-| `internal/collector/{system,cpu,memory,storage,network,accel}` | one module each; fill a section and its findings |
-| `internal/source/*` | readers and parsers: sysfs, dmidecode, SMART, IPMI, RAID, PCI, GPU tools, kernel log, netinfo |
+| `internal/collector/{system,cpu,memory,storage,power,network,accel,events}` | one module each; fill a section and its findings |
+| `internal/source/*` | readers and parsers: sysfs, dmidecode, SMART, IPMI, Redfish, RAID, PCI, GPU tools, kernel log, netinfo |
 | `internal/check` | thresholds and status evaluation |
+| `internal/explain` | the alert catalog: meaning, causes and commands for every finding code (a test keeps it in step with the collectors) |
+| `internal/affinity`, `internal/cpuset` | CPU pinning and CPU list parsing for the core tests |
 | `internal/model` | `Snapshot` and the shared types; the JSON schema |
-| `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series |
+| `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series, the isolated offline-core test |
 | `internal/workload` | deterministic compute kernels checked against golden values |
 | `internal/report` | Markdown reports, Mermaid charts, history, glamour rendering |
 | `internal/tui` | the Bubble Tea front end |
@@ -112,16 +114,28 @@ environment and the clipboard tool.
 
 ### Fixtures
 
-A fixture is a recorded host: `manifest.json`, `root/{proc,sys,dev}` and the
-output of each tool in `cmd/*.txt`.
+A fixture is a recorded host: `manifest.json`, `root/{proc,sys,dev,var}` and
+the output of each tool in `cmd/*.txt`; optionally a Redfish tree in
+`redfish/v1/**.json` (one file per resource, `index.json` for `/redfish/v1/`).
+
+The synthetic fixtures come from `tools/genfixture` (`make fixtures`); edit the
+scenarios there, never the generated files. `server-degraded` carries the
+faults the checks are tested against, among them an offline CPU with its
+machine check history in the journal and a pstore crash record, program
+crashes clustered on one core, an unclean boot, iSCSI path errors, and a
+Redfish tree with event logs and a power supply without AC input.
 
 ```bash
 sudo scripts/capture-fixtures.sh --redact /tmp/myhost "1U server, 2× Xeon"
 tyr --fixtures /tmp/myhost
 ```
 
-The script runs read-only commands only. `--redact` replaces serials, UUIDs,
-MAC addresses and the hostname; review the output before committing it.
+The script runs read-only commands only - the same ones Tyr runs, including
+the journal queries for earlier boots, the boot history, `ras-mc-ctl --errors`,
+pstore and `ethtool -g`/`-l`. It does not record Redfish (that needs BMC
+credentials). `--redact` replaces serials, UUIDs, MAC addresses and the
+hostname; review the output before committing it - kernel log lines and crash
+records can name hosts and paths.
 
 ---
 

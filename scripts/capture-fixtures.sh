@@ -115,7 +115,10 @@ done
 cap /proc/cpuinfo /proc/stat /proc/meminfo /proc/interrupts /proc/mdstat /proc/vmstat \
 	/proc/swaps /proc/partitions /proc/cmdline /proc/version \
 	/proc/uptime /proc/loadavg /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io \
-	/proc/sys/kernel/dmesg_restrict
+	/proc/sys/kernel/dmesg_restrict /proc/sys/kernel/random/boot_id /proc/net/softnet_stat
+# crash records (pstore) and where they are archived
+capdir "/sys/fs/pstore"
+capdir "/var/lib/systemd/pstore/*"
 cap /sys/devices/system/cpu/{present,possible,online,offline,kernel_max} \
 	/sys/devices/system/cpu/smt/control /sys/devices/system/cpu/smt/active \
 	"/sys/devices/system/cpu/cpu[0-9]*/online" \
@@ -232,6 +235,11 @@ cap /dev/ipmi0 /dev/ipmi/0 /dev/ipmidev/0  # markers; /dev/kmsg is written below
 echo "running read-only commands ..." >&2
 run dmidecode
 run journalctl -k -b -o json --no-pager --output-fields=MESSAGE,PRIORITY,__REALTIME_TIMESTAMP
+# earlier boots: machine checks, panics, program crashes; the boot history
+run journalctl _TRANSPORT=kernel -o json --no-pager -q --output-fields=MESSAGE --since=-365d -g "Hardware Error|Kernel panic|likely on CPU"
+run journalctl --list-boots -o json --no-pager
+run journalctl MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b -o json --output-fields=_BOOT_ID --no-pager -q
+run ras-mc-ctl --errors
 if timeout 1 head -c 1 /dev/kmsg >/dev/null 2>&1; then
 	# store kmsg records as lines; replaces the empty device marker
 	mkdir -p "$ROOT/dev"
@@ -275,6 +283,8 @@ for n in /sys/class/net/*; do
 	run ethtool -i "$i"
 	run ethtool -S "$i"
 	run ethtool -m "$i"
+	run ethtool -g "$i"
+	run ethtool -l "$i"
 done
 run lldpctl -f json
 run ip -j addr show
@@ -286,7 +296,7 @@ for p in /sys/bus/pci/drivers/amdxdna/0000:*; do
 done
 
 TOOLS=""
-for t in dmidecode journalctl dmesg ipmiutil ipmitool smartctl nvme mdadm lsblk storcli storcli64 perccli perccli64 ssacli \
+for t in dmidecode journalctl dmesg ipmiutil ipmitool smartctl nvme mdadm lsblk storcli storcli64 perccli perccli64 ssacli ras-mc-ctl \
 	ethtool ip lldpctl iperf3 df nvidia-smi xrt-smi; do
 	p=$(command -v "$t" 2>/dev/null) || continue
 	TOOLS+="${TOOLS:+, }$(json_str "$t"): $(json_str "$p")"

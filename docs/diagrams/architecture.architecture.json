@@ -40,7 +40,7 @@
       "id": "bmc",
       "type": "external",
       "label": "BMC",
-      "sublabel": "IPMI read-only",
+      "sublabel": "IPMI · Redfish, read-only",
       "pos": [
         40,
         360
@@ -55,7 +55,7 @@
       "id": "collectors",
       "type": "backend",
       "label": "Collectors",
-      "sublabel": "6 modules, parallel",
+      "sublabel": "8 modules, parallel",
       "pos": [
         270,
         230
@@ -303,8 +303,8 @@
       "title": "Sources",
       "items": [
         "Local Linux interfaces first",
-        "dmidecode, smartctl/nvme, storcli, nvidia-smi when present",
-        "IPMI only where Linux has no answer (PSUs, SEL)"
+        "dmidecode, smartctl/nvme, storcli, nvidia-smi, journalctl when present",
+        "BMC (IPMI, Redfish) only where Linux has no answer: PSUs, power, event logs"
       ]
     },
     {

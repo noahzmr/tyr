@@ -589,13 +589,13 @@
         <rect x="40" y="360" width="150" height="60" rx="6" class="c-mask"/>
         <rect x="40" y="360" width="150" height="60" rx="6" class="c-external" stroke-width="1.5"/>
         <text x="115" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">BMC</text>
-        <text x="115" y="404" class="t-muted" font-size="9" text-anchor="middle">IPMI read-only</text>
+        <text x="115" y="404" class="t-muted" font-size="9" text-anchor="middle">IPMI · Redfish, read-only</text>
         <text x="115" y="412" class="t-external" font-size="7" text-anchor="middle">fallback</text>
 
         <rect x="270" y="230" width="150" height="80" rx="6" class="c-mask"/>
         <rect x="270" y="230" width="150" height="80" rx="6" class="c-backend" stroke-width="1.5"/>
         <text x="345" y="268" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Collectors</text>
-        <text x="345" y="284" class="t-muted" font-size="9" text-anchor="middle">6 modules, parallel</text>
+        <text x="345" y="284" class="t-muted" font-size="9" text-anchor="middle">8 modules, parallel</text>
 
         <rect x="270" y="400" width="150" height="60" rx="6" class="c-mask"/>
         <rect x="270" y="400" width="150" height="60" rx="6" class="c-security" stroke-width="1.5"/>
@@ -688,8 +688,8 @@
         </div>
         <ul>
           <li>&bull; Local Linux interfaces first</li>
-          <li>&bull; dmidecode, smartctl/nvme, storcli, nvidia-smi when present</li>
-          <li>&bull; IPMI only where Linux has no answer (PSUs, SEL)</li>
+          <li>&bull; dmidecode, smartctl/nvme, storcli, nvidia-smi, journalctl when present</li>
+          <li>&bull; BMC (IPMI, Redfish) only where Linux has no answer: PSUs, power, event logs</li>
         </ul>
       </div>
 

@@ -11,9 +11,10 @@ read that snapshot or its JSON.
 | Layer | Packages | Job |
 |---|---|---|
 | Host access | `hostfs`, `execx` | read-only `/proc`, `/sys`, `/dev`; tools without a shell, with deadlines |
-| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data |
-| Collectors | `collector/system`, `cpu`, `memory`, `storage`, `network`, `accel` | combine sources into a section with findings |
+| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data |
+| Collectors | `collector/system`, `cpu`, `memory`, `storage`, `power`, `network`, `accel`, `events` | combine sources into a section with findings |
 | Checks | `check` | thresholds → `OK` / `WARN` / `CRIT` / `UNKNOWN` |
+| Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
 | Consumers | `tui`, `cmd/tyr`, `stress`, `report` | show, export, load, report |
 
@@ -21,8 +22,8 @@ read that snapshot or its JSON.
 flowchart LR
     subgraph host["Host"]
         sys["sysfs · hwmon · procfs · /dev/kmsg"]
-        tools["dmidecode · smartctl · nvme · storcli · nvidia-smi · ethtool · lldpctl"]
-        bmc["BMC (IPMI, read-only)"]
+        tools["dmidecode · smartctl · nvme · storcli · nvidia-smi · ethtool · lldpctl · journalctl"]
+        bmc["BMC: IPMI and Redfish (read-only)"]
     end
     subgraph tyr["tyr"]
         src["source/*"] --> col["collector/* (parallel)"]
@@ -48,9 +49,17 @@ reason, `not_applicable`, `skipped`). The previous snapshot is passed in, so
 counters can be turned into rates and slow data (caches, flags, firmware) can
 be carried over.
 
-Power and Events have no collector yet; the TUI shows them as ○ unavailable
-with that reason, and their data (PSU inventory, fans) comes from the System
-module.
+Some data is expensive and changes slowly, so it is read once or cached:
+
+| Data | Read | Why |
+|---|---|---|
+| SMART | every `--smart-interval` (5 min), `r` and stress snapshots fresh | every rejected query counts as a SCSI error on the disk |
+| Machine checks and program crashes of earlier boots, crash records (pstore), rasdaemon, boot history | once per process | they only change with a reboot |
+| Receive ring and queue size of each NIC (`ethtool -g` / `-l`) | once per interface | configuration |
+| Redfish event logs / power | every 2 min / 15 s, in the background | a BMC answers slowly; a collection round never waits longer than its timeout, the data arrives with the next refresh |
+
+The Redfish client is found once per process: the BMC's host interface
+(SMBIOS type 42) first, then a configured address.
 
 ## The refresh loop
 
@@ -92,8 +101,10 @@ histories for the sparklines.
   "cpu":     { "status": "CRIT", "logical": [], "package_temps": [], "…": "…" },
   "memory":  { "…": "…" },
   "storage": { "…": "…" },
+  "power":   { "supplies": [], "consumed_watts": 412, "redundancy": [], "…": "…" },
   "network": { "…": "…" },
   "accel":   { "…": "…" },
+  "events":  { "logs": [], "entries": [], "…": "…" },
   "inventory": [ { "category": "dimm", "location": "P2-DIMMB1", "serial": "…", "status": "CRIT" } ]
 }
 ```
@@ -105,9 +116,13 @@ any of them back (see [reports.md](reports.md)).
 ## Design rules
 
 - **Read-only.** Collectors never write; IPMI runs an allowlist of read-only
-  commands; the boot configuration is never touched. The only writes are the
-  storage file test's temporary file, result and export files, and - after a
-  confirmation - package installs started from the Stress tab.
+  commands and Redfish only GET requests; the boot configuration is never
+  touched. The only writes are the storage file test's temporary file, result
+  and export files, the Redfish certificate pin appended to its config file,
+  and - each after a confirmation - package installs started from the Stress
+  tab and the offline-core test, which brings one CPU online in an isolated
+  cpuset partition and puts everything back (a state file in `/run` makes
+  that recoverable after a kill).
 - **Local first.** Linux interfaces before tools, tools before the BMC.
 - **Nothing silent.** Unusable sources are listed with their reason.
 - **Limits of the part first.** A sensor's own threshold wins; defaults fill gaps.

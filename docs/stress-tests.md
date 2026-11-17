@@ -88,6 +88,12 @@ FAIL with the rule's reason.
 | SMART errors | storage | growing error counters on the disks under test |
 | Memory pressure | memory | an OOM kill; available memory below half the reserve; the test's own memory in swap; thrashing (PSI full > 25 %, or > 1 GiB swapped back in without PSI) |
 
+CPU tests leave **suspect cores** alone: online CPUs whose other thread is
+offline (a core someone took out of service) are not loaded, and the plan
+says so; `--include-suspect-cores` loads them anyway. Disk command errors that
+rise on every disk of a controller at once (a monitoring agent's rejected
+query) are not counted against any test.
+
 Swapping out idle memory of other programs is the kernel making room and does
 not stop a memory test; it is noted in the log. During a memory test Tyr makes
 itself the OOM killer's first choice, so a service is never the victim.

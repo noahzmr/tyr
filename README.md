@@ -107,12 +107,12 @@ guard that keeps it safe, and gives a verdict you can trust.
 
 | Module | What Tyr looks at |
 |---|---|
-| CPU | online cores, per-core temperature and clock, throttling, machine checks, microcode, an optional per-core compute test |
+| CPU | online cores, per-core temperature and clock, throttling, microcode, an optional per-core compute test; machine checks across boots (journal, pstore crash records, rasdaemon, BMC) by unit; program crashes per core; offline cores: since when, whether the core is fully out of service, whether that survives a reboot |
 | Memory | DIMMs per slot, ECC corrected / uncorrected (EDAC), poisoned pages, DIMM temperatures, memory the OS cannot see |
-| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors in the kernel log, md RAID, MegaRAID/PERC, filesystems; iSCSI / FC volumes with their session and path |
-| Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, transceiver optics, LLDP neighbours, BMC LAN |
+| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, filesystems; iSCSI / FC volumes with their session and path |
+| Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, drops and losses with where and why (NIC ring, kernel, bond), transceiver optics, LLDP neighbours, BMC LAN |
 | GPU/NPU | PCIe link width and speed, temperatures, power, ECC, retired/remapped rows, driver errors (Xid) |
-| System | identity, BIOS, BMC, PSU inventory, fans and chassis temperatures |
+| System | identity, BIOS, BMC, PSU inventory, fans (also HPE duty cycle) and chassis temperatures, boot history with crashes and resets |
 | Power | power supplies with state, input voltage, output and rating; total draw and cap; redundancy (BMC Redfish, else SMBIOS) |
 | Events | the BMC's event logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages in one timeline |
 
@@ -173,6 +173,10 @@ guard that keeps it safe, and gives a verdict you can trust.
 | **Network**: bonds, VLANs, transceivers, LLDP | **GPU/NPU**: load, memory, power, PCIe link |
 | ![Inventory tree](docs/images/tui/inventory-tree.png) | ![Disk page](docs/images/tui/disk-page.png) |
 | **Inventory**: topology tree with serials | **Detail page**: a disk with SMART attributes |
+| ![Power](docs/images/tui/power.png) | ![Events](docs/images/tui/events.png) |
+| **Power**: supplies with input and output, draw, redundancy, fans | **Events**: BMC logs and kernel messages in one timeline |
+| ![Offline CPU](docs/images/tui/cpu-offline.png) | ![Alert explained](docs/images/tui/alert-explain.png) |
+| **Offline core**: how, other thread, crashes, machine check history | **`i` on an alert**: where, meaning, causes, commands |
 | ![Stress form](docs/images/tui/stress-form.png) | ![Reports dialog](docs/images/tui/reports-dialog.png) |
 | **Stress**: form, engines, recent runs | **Reports**: host, stress result or history |
 
@@ -207,10 +211,18 @@ Optional tools Tyr uses when they are installed:
 | `smartctl`, `nvme` | SMART and NVMe health |
 | `storcli` / `perccli` | MegaRAID / PERC hardware RAID |
 | `ipmitool` or `ipmiutil` | BMC sensors, SEL, FRU (read-only commands only) |
+| `journalctl` | kernel log, earlier boots (machine checks, program crashes), boot history |
+| `ras-mc-ctl` (rasdaemon) | machine check records rasdaemon kept |
 | `nvidia-smi`, `xrt-smi` | NVIDIA GPUs, AMD NPUs |
 | `ethtool`, `lldpctl` | transceiver data, LLDP neighbours |
 | `stress-ng`, `memtester`, `iperf3`, `mprime` | extra stress engines |
 | `wl-copy`, `xclip` or `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) |
+
+The BMC's Redfish service (event logs, live power readings) needs no tool but
+an account: `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or
+`/etc/tyr/redfish.conf`, reached through the BMC's host interface (HPE iLO
+Virtual NIC) or `--redfish HOST`. See
+[docs/health-checks.md](docs/health-checks.md#redfish-access).
 
 ---
 
@@ -431,19 +443,22 @@ clipboard over SSH. Details: [docs/reports.md](docs/reports.md).
 
 ```text
 tyr/
-├── cmd/tyr/                 CLI: TUI, report, stress, history, view, net-peer
+├── cmd/tyr/                 CLI: TUI, report, stress, core-test, history, view, net-peer
 ├── internal/
 │   ├── collector/           collector interface and the modules
-│   │   ├── system/          identity, BIOS, BMC, PSUs, fans
-│   │   ├── cpu/             sockets, cores, temperatures, MCE, AMD limits
+│   │   ├── system/          identity, BIOS, BMC, PSUs, fans, boot history
+│   │   ├── cpu/             sockets, cores, temperatures, MCE history, offline cores, AMD limits
 │   │   ├── memory/          DIMMs, EDAC, poisoned pages
-│   │   ├── storage/         disks, SMART, RAID, filesystems
-│   │   ├── network/         ports, bonds, counters, transceivers, LLDP
-│   │   └── accel/           GPUs and NPUs
-│   ├── source/              readers and parsers: sysfs, dmi, smart, ipmi, raid, pci, gpu, kernellog, netinfo
+│   │   ├── storage/         disks, SMART, RAID, filesystems, disk location
+│   │   ├── power/           power supplies, draw, redundancy (Redfish, SMBIOS)
+│   │   ├── network/         ports, bonds, counters, losses, transceivers, LLDP
+│   │   ├── accel/           GPUs and NPUs
+│   │   └── events/          BMC event logs and kernel messages
+│   ├── source/              readers and parsers: sysfs, dmi, smart, ipmi, redfish, raid, pci, gpu, kernellog, netinfo
 │   ├── check/               thresholds → OK / WARN / CRIT
+│   ├── explain/             the alert catalog: meaning, causes, commands
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
-│   ├── stress/              lifecycle, guard, engines, install planner, series
+│   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
 │   ├── workload/            self-checking compute kernels (golden values)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
 │   ├── tui/                 Bubble Tea TUI
@@ -491,6 +506,11 @@ git config core.hooksPath scripts/hooks
 |---|---|
 | **BMC / IPMI** | the server's management controller and its protocol; Tyr only runs read-only IPMI commands |
 | **SEL** | the BMC's system event log |
+| **Redfish** | the BMC's HTTPS API; Tyr only reads (GET) |
+| **IML** | HPE's Integrated Management Log: the server's hardware event log in iLO |
+| **pstore** | the kernel's last messages before a crash, kept across the reboot |
+| **Suspect core** | a physical core with one of its two threads offline; stress tests leave it alone |
+| **rx_missed / rx_dropped** | packets the NIC lost for lack of buffers / packets the kernel did not deliver |
 | **ECC: CE / UE** | corrected / uncorrected memory errors; growing CE is a warning, any UE is critical |
 | **EDAC** | the Linux driver framework that counts ECC errors per DIMM |
 | **MCE** | machine check exception: the CPU reporting a hardware error |

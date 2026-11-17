@@ -15,12 +15,12 @@ the keys that work here. `?` shows all keys and this tab's own.
 
 | Key | Tab | Views (`v`) | Shows |
 |---|---|---|---|
-| `1` | Overview | - | a card per module, then all findings worst first; `n` or `↓` past the cards enters the findings, `enter` opens the component |
-| `2` | CPU | Grid · Cores · Details | every logical CPU by socket and thread (`t`: load ↔ temperature), per-core table, socket details and graphs |
+| `1` | Overview | - | a card per module (from 150 columns with a sparkline: CPU load and temperature, memory in use, network traffic, power draw, GPU load), then all findings worst first - `n` or `↓` enters them, `enter` opens the component, `i` explains the alert; on the right the counters that grew this session (with readable names), what resolved, missing data sources |
+| `2` | CPU | Grid · Cores · Details | every logical CPU by socket and thread (`t`: load ↔ temperature), per-core table, socket details and graphs; an offline CPU's page shows how and since when it went offline, the other thread of its core, program crashes on that core and its machine check history |
 | `3` | Memory | Table · Slot map | DIMMs with an inspector; slots per socket and channel (`a`: empty slots) |
 | `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID, filesystems |
 | `5` | Power | - | power supplies with state, input voltage, output and rating; total draw, average, cap, redundancy, the draw over the session; fans (BMC Redfish, else SMBIOS) |
-| `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP (`h`: virtual interfaces) |
+| `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP (`h`: virtual interfaces); an interface's page explains its drops and losses: where, why, ring size, commands |
 | `7` | GPU/NPU | - | load, memory, power, temperature, PCIe link; NPUs |
 | `8` | Events | - | one timeline of the BMC's logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages; severity / source chips, search, `space` details, `enter` the whole entry |
 | `9` | Stress | form · confirm · live · result | the stress tests (see [stress-tests.md](stress-tests.md)) |
@@ -62,7 +62,12 @@ Component pages end with **About these alerts**: per kind of alert on the
 component its meaning, usual causes and the commands to check it, filled in
 for that component. Disk pages also show where the disk is attached
 (controller, SATA/SAS port, enclosure bay) and the kernel log lines that name
-it.
+it; interface pages a **Drops and losses** section; offline CPU pages the
+**Offline**, **Program crashes on this core** and **Machine check history**
+sections.
+
+`S` on a page starts the same test as on its row. Pages opened from the
+Overview (`i`) or the alert reference (`A`) copy their Markdown with `c`.
 
 Tab-specific: `t` (CPU), `a` (Memory), `h` (Network), `f` `s` `space`
 (Events: severity, source, details), `f` (Inventory: category), `i`
@@ -92,5 +97,7 @@ dark, light and NO_COLOR show the same text.
 | ![Memory slot map](images/tui/memory-slotmap.png) | ![Storage](images/tui/storage.png) |
 | ![Network](images/tui/network.png) | ![GPU/NPU](images/tui/gpu-npu.png) |
 | ![Inventory tree](images/tui/inventory-tree.png) | ![Disk page](images/tui/disk-page.png) |
+| ![Power](images/tui/power.png) | ![Events](images/tui/events.png) |
+| ![Offline CPU](images/tui/cpu-offline.png) | ![Alert explained](images/tui/alert-explain.png) |
 | ![Stress form](images/tui/stress-form.png) | ![Reports dialog](images/tui/reports-dialog.png) |
 | ![Help](images/tui/help.png) | |

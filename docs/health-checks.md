@@ -69,11 +69,11 @@ Findings: `fan_failed` ✖, `fan_low` ▲, temperatures past their limits, and:
 
 | Code | Status | When |
 |---|---|---|
-| `psu_status` | ▲ / ✖ | SMBIOS reports a power supply as non-critical or critical; the message adds the BMC's latest power supply event (AC lost or a failed unit), since SMBIOS alone does not tell them apart |
 | `unclean_shutdown` | ▲ / ✖ | boots of the last 30 days that ended without journald's "Journal stopped" - a crash, hard reset or power loss; ✖ from two on (a crash loop) |
 
 Fans that the BMC reports as a duty cycle in percent (HPE iLO) count as fans.
-The report lists every boot the journal knows with how it ended.
+The report lists every boot the journal knows with how it ended. Power supply
+state and its alerts are in the [Power](#power) module.
 
 ### CPU
 
@@ -367,4 +367,7 @@ with the next refresh. `--no-redfish` turns it off.
 ## Without root
 
 Tyr runs, and every module lists what it skipped. Root adds: serials and DIMM
-slots (dmidecode), PCI VPD, SMART on most drives, `/dev/kmsg`, IPMI, PPIN.
+slots (dmidecode), PCI VPD, SMART on most drives, `/dev/kmsg`, IPMI, PPIN,
+crash records (pstore), the full journal of earlier boots (members of the
+`adm` or `systemd-journal` group can read it too), and the config file with
+the Redfish credentials. The offline-core test always needs root.

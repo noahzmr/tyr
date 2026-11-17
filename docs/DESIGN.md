@@ -1,7 +1,9 @@
 # Tyr: Design Proposal (Step 1)
 
-Status: **draft, awaiting confirmation**. Covers package structure, shared data
-model, JSON schema, and the stress-test interface. Nothing is implemented yet.
+Status: **historical** - the original proposal, kept for its reasoning. It
+covered package structure, shared data model, JSON schema, and the stress-test
+interface; the current behaviour is described in [README.md](../README.md),
+[architecture.md](architecture.md) and the other documents in this folder.
 
 Module path: `github.com/noahzmr/tyr`
 
