@@ -36,6 +36,7 @@ type scenario struct {
 	Kmsg         []kmsgLine
 	Journal      []journalLine     // kernel messages of earlier boots
 	Pstore       map[string]string // crash records: path -> content
+	Boots        []bootSpec        // earlier boots (the current one is added)
 	Sim          map[string]any
 
 	// memory
@@ -65,6 +66,12 @@ type selRec struct {
 type dimmSpec struct {
 	Manufacturer, Part string
 	Speed, Configured  int
+}
+
+type bootSpec struct {
+	ID         string
+	Start, End time.Time
+	Clean      bool
 }
 
 type journalLine struct {
@@ -163,6 +170,10 @@ func scenarios() []scenario {
 				"<4>[690112.402124] mce: [Hardware Error]: PROCESSOR 0:606a6 TIME 1794041280 SOCKET 0 APIC e microcode d0003e7\n" +
 				"<0>[690112.402130] Kernel panic - not syncing: Fatal machine check\n" +
 				"<0>[690112.402302] Kernel Offset: 0xd400000 from 0xffffffff81000000\n",
+		},
+		Boots: []bootSpec{
+			{"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c", boot.Add(-25 * 24 * time.Hour), boot.Add(-12 * 24 * time.Hour), true},
+			{"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", boot.Add(-12*24*time.Hour + time.Hour), boot.Add(-12 * time.Minute), false}, // the fatal MCE
 		},
 		Sim:           map[string]any{"core_test_fail": []int{21}},
 		DIMMOverride:  map[string]dimmSpec{"P1-DIMMD1": {"Micron Technology", "MTA36ASF4G72PZ-3G2R1", 3200, 2933}},
@@ -520,6 +531,25 @@ func (g *gen) history() {
 		b.WriteByte('\n')
 	}
 	g.cmd([]string{"journalctl", "_TRANSPORT=kernel", "-o", "json", "--no-pager", "-q", "--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic|likely on CPU"}, b.String(), 0)
+	// boots: earlier ones, then this one; "Journal stopped" for clean ends
+	boots := g.s.Boots
+	if boots == nil {
+		boots = []bootSpec{{"a5c1e7f30b2d4c6e9a8b7c6d5e4f3a21", boot.Add(-30 * 24 * time.Hour), boot.Add(-10 * time.Minute), true}}
+	}
+	boots = append(boots, bootSpec{"9e4c2a7f1b3d4c5e8f6a0b1c2d3e4f5a", boot, now, false})
+	var list []map[string]any
+	var stopped strings.Builder
+	for i, bt := range boots {
+		list = append(list, map[string]any{"index": i - len(boots) + 1, "boot_id": bt.ID, "first_entry": bt.Start.UnixMicro(), "last_entry": bt.End.UnixMicro()})
+		if bt.Clean {
+			j, _ := json.Marshal(map[string]string{"_BOOT_ID": bt.ID, "__REALTIME_TIMESTAMP": strconv.FormatInt(bt.End.UnixMicro(), 10)})
+			stopped.Write(j)
+			stopped.WriteByte('\n')
+		}
+	}
+	lb, _ := json.Marshal(list)
+	g.cmd([]string{"journalctl", "--list-boots", "-o", "json", "--no-pager"}, string(lb)+"\n", 0)
+	g.cmd([]string{"journalctl", "MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b", "-o", "json", "--output-fields=_BOOT_ID", "--no-pager", "-q"}, stopped.String(), 0)
 	paths := make([]string, 0, len(g.s.Pstore))
 	for p := range g.s.Pstore {
 		paths = append(paths, p)

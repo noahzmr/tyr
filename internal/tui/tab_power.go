@@ -51,26 +51,13 @@ func (p *powerTab) fans() []model.Sensor {
 	return p.snap.System.Fans
 }
 
-// psuStatus reads SMBIOS type 39 status text ("Present, OK").
-func psuStatus(x model.PSUFRU) model.Status {
-	low := strings.ToLower(x.StatusText)
-	switch {
-	case !x.Present:
-		return model.StatusUnknown
-	case strings.Contains(low, "critical") || strings.Contains(low, "fail") || strings.Contains(low, "lost"):
-		return model.StatusCrit
-	case strings.Contains(low, "non-critical") || strings.Contains(low, "degraded"):
-		return model.StatusWarn
-	case strings.Contains(low, "ok"):
-		return model.StatusOK
-	}
-	return model.StatusUnknown
-}
+// psuStatus is the PSU state from SMBIOS.
+func psuStatus(x model.PSUFRU) model.Status { return x.Health() }
 
 func (p *powerTab) arrange() {
 	var items []listItem
 	for _, x := range p.psus() {
-		items = append(items, listItem{key: x.Location, alt: []string{x.Name, x.Serial}, status: psuStatus(x)})
+		items = append(items, listItem{key: x.Label(), alt: []string{x.Name, x.Serial}, status: psuStatus(x)})
 	}
 	p.list.arrange(items)
 }
@@ -249,5 +236,5 @@ func (p *powerTab) PageInfo() (pageInfo, bool) {
 		return pageInfo{}, false
 	}
 	x, _ := p.psu(it.key)
-	return pageInfo{path: []string{x.Location}, status: psuStatus(x), facts: nonEmpty(x.Model, sn(x.Serial))}, true
+	return pageInfo{path: []string{x.Label()}, status: psuStatus(x), facts: nonEmpty(x.Model, sn(x.Serial))}, true
 }

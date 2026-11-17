@@ -307,6 +307,12 @@ var entries = map[string]Entry{
 		Causes: []string{"the slot, a riser, or a bad seat"}, Check: []string{"lspci -vv -s {dev} | grep -E 'LnkCap|LnkSta'"}},
 
 	// --- system -------------------------------------------------------------
+	"system/unclean_shutdown": {Title: "Boots ended without a clean shutdown", Meaning: "journald logs \"Journal stopped\" when the system shuts down in order. Boots without it ended in a kernel crash, a hard reset (watchdog, BMC, power button) or a power loss. Several short boots in a row are a crash loop.",
+		Causes: []string{"kernel panics: a defective CPU or memory (see the CPU and memory alerts)", "the BMC's watchdog or someone resetting the server", "power loss"},
+		Check:  []string{"journalctl --list-boots", "journalctl -b -1 -n 50   # the last lines before the crash", "ls /var/lib/systemd/pstore   # crash records", "ipmitool sel elist   # the BMC's view: resets, power events"}},
+	"system/psu_status": {Title: "Power supply not OK", Meaning: "The power supply reports a critical or degraded state. Either the unit failed, or it has no AC input (cable, PDU, circuit breaker). The server runs on the other supply without redundancy.",
+		Causes: []string{"no AC input: unplugged cable, a PDU or breaker off", "a failed power supply unit", "a power supply not seated fully"},
+		Check:  []string{"ipmitool sdr type 'Power Supply'", "ipmitool sel elist | grep -i 'power supply'", "the BMC's power page (HPE iLO: Power & Thermal → Power Supplies)"}},
 	"system/fan_failed": {Title: "Fan failed", Meaning: "A fan stopped or reads below its critical speed.", Causes: []string{"a failed fan or connector"},
 		Check: []string{"ipmitool sdr type Fan", "sensors"}},
 	"system/ambient_temp": {Title: "Inlet or exhaust temperature high", Meaning: "The air into or out of the server is too warm.",

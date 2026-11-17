@@ -1,0 +1,1 @@
+[{"boot_id":"a5c1e7f30b2d4c6e9a8b7c6d5e4f3a21","first_entry":1791450000000000,"index":-1,"last_entry":1794041400000000},{"boot_id":"9e4c2a7f1b3d4c5e8f6a0b1c2d3e4f5a","first_entry":1794042000000000,"index":0,"last_entry":1794819600000000}]

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  20/21   ✖ CRIT
-1✖41 2✖8 3✖9  4 Storage ✖12  5○ 6✖6 7✖6 8○ 9 0                            ? help
+ TYR  srv-degraded-01                              fixture  now  20/22   ✖ CRIT
+1✖42 2✖8 3✖9  4 Storage ✖12  5○ 6✖6 7✖6 8○ 9 0                            ? help
  ✖ CRIT  7 disks · 26 TB · 1 network volume (1 se…  v Disks · RAID · Filesystems
 
 Software RAID ───────────────────────────────────────────────────── /proc/mdstat

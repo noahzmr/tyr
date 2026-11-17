@@ -295,6 +295,30 @@
       ],
       "exit": 0,
       "stdout": "cmd/journalctl__TRANSPORT=kernel_-o_json_--no-pager_-q_--output-fields=MESSAGE_--since=-365d_-g_Hardware_Error_Kernel_panic_likely_on_CPU.txt"
+    },
+    {
+      "argv": [
+        "journalctl",
+        "--list-boots",
+        "-o",
+        "json",
+        "--no-pager"
+      ],
+      "exit": 0,
+      "stdout": "cmd/journalctl_--list-boots_-o_json_--no-pager.txt"
+    },
+    {
+      "argv": [
+        "journalctl",
+        "MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b",
+        "-o",
+        "json",
+        "--output-fields=_BOOT_ID",
+        "--no-pager",
+        "-q"
+      ],
+      "exit": 0,
+      "stdout": "cmd/journalctl_MESSAGE_ID=d93fb3c9c24d451a97cea615ce59c00b_-o_json_--output-fields=_BOOT_ID_--no-pager_-q.txt"
     }
   ],
   "description": "synthetic: like server-healthy but coretemp is not loaded and only ipmitool is installed; CPU and DIMM temperatures come from the BMC",

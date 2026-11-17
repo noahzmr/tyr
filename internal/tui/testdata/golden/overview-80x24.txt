@@ -1,6 +1,6 @@
- TYR  srv-degraded-01                              fixture  now  20/21   ✖ CRIT
- 1 Overview ✖41  2✖8 3✖9 4✖12 5○ 6✖6 7✖6 8○ 9 0                           ? help
- ✖ CRIT  Needs attention  CPU Mem Stor Net GPU
+ TYR  srv-degraded-01                              fixture  now  20/22   ✖ CRIT
+ 1 Overview ✖42  2✖8 3✖9 4✖12 5○ 6✖6 7✖6 8○ 9 0                           ? help
+ ✖ CRIT  Needs attention  CPU Mem Stor Net GPU  Sys
 
 Modules ───────────────────────────────────────────────────────── enter open tab
 ▌✖ CPU      CRIT      8 1 core offline (cpu7); taken offline at runtime - back…
@@ -10,8 +10,8 @@ Modules ────────────────────────
  ✖ Network  CRIT      6 bond0 degraded: ens1f1 down (1/2 members up)
  ✖ GPU/NPU  CRIT      6 GPU1 ca:00.0: 2 uncorrectable ECC errors
  ○ Events   n/a         collector not implemented yet
- ● System   OK        – BIOS 1.4b · BMC 1.40
-Findings 20 ✖ · 21 ▲ ─────────────────────────────────── worst first · 1–8 of 41
+ ▲ System   WARN      1 1 of 2 boots in the last 30 days ended without a clean…
+Findings 20 ✖ · 22 ▲ ─────────────────────────────────── worst first · 1–8 of 42
  ✖ CPU      1 core offline (cpu7); taken offline at runtime - back onl…        ┃
  ✖ CPU      cpu7 is offline, but cpu39 - the other thread of the same …        │
  ✖ CPU      4 of 5 program crashes (invalid opcode, segfault) ran on c…        │

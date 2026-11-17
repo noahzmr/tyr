@@ -1,6 +1,6 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 21 warn   ✖ CRIT
-1 Overview ✖41  2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
- ✖ CRIT  48 components · 14 with problems · serials visible                                                                                        v List · Tree
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 22 warn   ✖ CRIT
+1 Overview ✖42  2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress   0 Inventory                           ? help
+ ✖ CRIT  48 components · 15 with problems · serials visible                                                                                        v List · Tree
 
 Search ╭─ / to search ────────╮  Category  all  system chassis board BMC CPU DIMM disk volume RAID RAID PD NIC xcvr GPU PSU FRU
 
@@ -13,13 +13,13 @@ Search ╭─ / to search ────────╮  Category  all  system cha
  ✖ NIC     ens1f1 4b:00.1     Intel             Ethernet Controller E810-XXV for SFP  K91258-006           B49691A00010            4.40 0x8001c967 1.3534.0    ┃
  ✖ xcvr    ens1f1             FINISAR CORP.     25G Ethernet: 25G Base-SR             FTLF8536P4BCL        X7A0B11                 –                           ┃
  ✖ GPU     GPU1 ca:00.0       NVIDIA            NVIDIA A100 80GB PCIe                 900-21001-0020-100   1324420012346           92.00.68.00.01              ┃
+ ▲ system  srv-degraded-01    Supermicro        SYS-120U-TNR                          –                    S412345X3A01234         BIOS 1.4b 06/14/2024        ┃
  ▲ DIMM    P2-DIMMC1          Samsung           DDR4 DIMM                             M393A4K40EB3-CWE     3A5F0014                –                           ┃
  ▲ disk    /dev/nvme1n1       –                 SAMSUNG MZQL21T9HCJR-00A07            –                    S64GNE0R100002          GDC5602Q                    ┃
  ▲ disk    /dev/sdc           –                 ST4000NM000A-2HZ100                   –                    WJG0A003                SN04                        ┃
  ▲ NIC     eno1 03:00.0       Intel             I350 Gigabit Network Connection       AOC-I350             3CECEF100001            1.63, 0x80000f73, 1.3534.0  ┃
  ▲ NIC     ens1f0 4b:00.0     Intel             Ethernet Controller E810-XXV for SFP  K91258-006           B49691A00010            4.40 0x8001c967 1.3534.0    ┃
  ▲ xcvr    ens1f0             FINISAR CORP.     25G Ethernet: 25G Base-SR             FTLF8536P4BCL        X7A0B10                 –                           ┃
- ● system  srv-degraded-01    Supermicro        SYS-120U-TNR                          –                    S412345X3A01234         BIOS 1.4b 06/14/2024        ┃
  ● chassis Rack Mount Chassis Supermicro        –                                     –                    C1160LL12AB0123         –                           ┃
  ● board   mainboard          Supermicro        X12DPU-6                              –                    OM21AS012345            –                           ┃
  ● BMC     BMC                Supermicro        –                                     –                    –                       1.40                        ┃

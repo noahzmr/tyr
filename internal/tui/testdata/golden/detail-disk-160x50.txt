@@ -1,4 +1,4 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 21 warn   ✖ CRIT
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 22 warn   ✖ CRIT
 esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ100 · 4 TB · S/N WJG0A004                                                              line 1–46 · 0 %
 
 Identity ──────────────────────────────────────────────────────────────────────  Sensors ─────────────────────────────────────────────────────────────── session

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  20 crit 21 warn   ✖ CRIT
-1 Overview ✖41  2 CPU ✖8  3 Mem ✖9 4 Stor ✖12 5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv               ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  20 crit 22 warn   ✖ CRIT
+1 Overview ✖42  2 CPU ✖8  3 Mem ✖9 4 Stor ✖12 5 Power ○ 6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv               ? help
  ✖ CRIT  2× Intel Xeon Silver 4314 · 63/64 online · hottest 96°C                                v Grid · Cores · Details
 
    CPU   Skt Core Node SMT    State   Load            MHz   Max  °C  Thr MCE Test   C-idle

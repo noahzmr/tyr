@@ -28,22 +28,6 @@ func statusSym(s model.Status) string {
 	return map[model.Status]string{model.StatusOK: "●", model.StatusWarn: "▲", model.StatusCrit: "✖", model.StatusUnknown: "?"}[s]
 }
 
-// psuStatus reads the SMBIOS type 39 status text ("Present, OK").
-func psuStatus(p model.PSUFRU) model.Status {
-	low := strings.ToLower(p.StatusText)
-	switch {
-	case !p.Present:
-		return model.StatusUnknown
-	case strings.Contains(low, "critical") || strings.Contains(low, "fail") || strings.Contains(low, "lost"):
-		return model.StatusCrit
-	case strings.Contains(low, "non-critical") || strings.Contains(low, "degraded"):
-		return model.StatusWarn
-	case strings.Contains(low, "ok"):
-		return model.StatusOK
-	}
-	return model.StatusUnknown
-}
-
 // componentHealth groups every component of a snapshot by kind.
 func componentHealth(s *model.Snapshot) []*healthGroup {
 	var groups []*healthGroup
@@ -136,7 +120,7 @@ func componentHealth(s *model.Snapshot) []*healthGroup {
 		if len(y.PSUs) > 0 {
 			g := group("Power supplies")
 			for _, p := range y.PSUs {
-				g.add(p.Location, psuStatus(p))
+				g.add(p.Label(), p.Health())
 			}
 		}
 		if len(y.Fans) > 0 {

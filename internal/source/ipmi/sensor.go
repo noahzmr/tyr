@@ -44,6 +44,15 @@ func unitKind(u string) (string, model.SensorKind) {
 	return strings.ToLower(strings.TrimSpace(u)), model.KindOther
 }
 
+// fanDuty: HPE iLO and some others report fans as a duty cycle in percent
+// ("Fan 1 DutyCycle"), not in RPM.
+func fanDuty(name, unit string, kind model.SensorKind) model.SensorKind {
+	if kind == model.KindOther && unit == "percent" && strings.Contains(strings.ToLower(name), "fan") {
+		return model.KindFan
+	}
+	return kind
+}
+
 func parseNum(s string) *float64 {
 	s = strings.TrimSpace(s)
 	if s == "" || s == "na" || s == "N/A" {
@@ -70,6 +79,7 @@ func ParseIPMIToolSensors(data []byte) ([]Sensor, error) {
 			f[i] = strings.TrimSpace(f[i])
 		}
 		unit, kind := unitKind(f[2])
+		kind = fanDuty(f[0], unit, kind)
 		s := Sensor{Name: f[0], Kind: kind, Unit: unit, StatusText: f[3]}
 		if f[2] == "discrete" {
 			s.Discrete = f[1]
@@ -150,6 +160,7 @@ func ParseIPMIUtilSensors(data []byte) ([]Sensor, error) {
 		if fields := strings.Fields(reading); len(fields) == 2 && parseNum(fields[0]) != nil && sdrType == "Full" {
 			s.Value = parseNum(fields[0])
 			s.Unit, s.Kind = unitKind(fields[1])
+			s.Kind = fanDuty(name, s.Unit, s.Kind)
 		} else {
 			s.Discrete = reading
 			s.Kind = typeKind(sensType)

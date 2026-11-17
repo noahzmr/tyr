@@ -65,7 +65,15 @@ Vendor, product, serial, BIOS, board, chassis, BMC firmware, kernel and
 uptime; the PSU inventory (SMBIOS type 39); fans and inlet/exhaust
 temperatures (hwmon, else the BMC).
 
-Findings: `fan_failed` ✖, `fan_low` ▲, temperatures past their limits.
+Findings: `fan_failed` ✖, `fan_low` ▲, temperatures past their limits, and:
+
+| Code | Status | When |
+|---|---|---|
+| `psu_status` | ▲ / ✖ | SMBIOS reports a power supply as non-critical or critical; the message adds the BMC's latest power supply event (AC lost or a failed unit), since SMBIOS alone does not tell them apart |
+| `unclean_shutdown` | ▲ / ✖ | boots of the last 30 days that ended without journald's "Journal stopped" - a crash, hard reset or power loss; ✖ from two on (a crash loop) |
+
+Fans that the BMC reports as a duty cycle in percent (HPE iLO) count as fans.
+The report lists every boot the journal knows with how it ended.
 
 ### CPU
 

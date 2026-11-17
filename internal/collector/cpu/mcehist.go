@@ -231,7 +231,11 @@ func (h *staticHistory) journal(ctx context.Context, env *collector.Env, amd boo
 			h.recs = append(h.recs, r)
 		}
 	}
-	reason := fmt.Sprintf("%d earlier boots with machine checks", len(boots))
+	mces := 0
+	for _, b := range boots {
+		mces += len(b.p.recs)
+	}
+	reason := fmt.Sprintf("earlier boots: %d machine checks, %d program crashes", mces, len(h.faults))
 	if !hostfs.Exists(env.FS, "/var/log/journal") {
 		reason += "; the journal is not persistent (no /var/log/journal): earlier boots are not kept"
 	}

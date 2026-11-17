@@ -194,3 +194,11 @@ func TestFRUAndMCInfo(t *testing.T) {
 		t.Errorf("%q %q %v", v, fw, err)
 	}
 }
+
+// HPE iLO reports fans as a duty cycle
+func TestHPEFanDutyCycle(t *testing.T) {
+	ss, _ := ParseIPMIToolSensors([]byte("Fan 1 DutyCycle  | 29.400     | percent    | ok    | na        | na        | na        | na        | na        | na        \n"))
+	if len(ss) != 1 || ss[0].Kind != model.KindFan || ss[0].Unit != "percent" || *ss[0].Value != 29.4 {
+		t.Fatalf("%+v", ss)
+	}
+}

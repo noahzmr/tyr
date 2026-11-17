@@ -116,12 +116,36 @@ func systemSection(m *md, x *model.System) {
 	if len(x.PSUs) > 0 {
 		var rows [][]string
 		for _, p := range x.PSUs {
-			rows = append(rows, []string{p.Location, strings.TrimSpace(p.Manufacturer + " " + p.Model), p.Serial, f0(p.MaxWatts, " W"), p.StatusText})
+			rows = append(rows, []string{p.Label(), strings.TrimSpace(p.Manufacturer + " " + p.Model), p.Serial, f0(p.MaxWatts, " W"), status(p.Health()) + " " + p.StatusText})
 		}
 		m.h(3, "Power supplies")
 		m.table([]string{"PSU", "Model", "Serial", ">Rating", "State"}, rows)
 	}
 	sensorTable(m, "Fans and chassis temperatures", append(append([]model.Sensor{}, x.Fans...), x.Temps...))
+	bootsTable(m, x)
+}
+
+// bootsTable lists the boots the journal knows and how each one ended.
+func bootsTable(m *md, x *model.System) {
+	if len(x.Boots) == 0 {
+		return
+	}
+	var rows [][]string
+	for i := len(x.Boots) - 1; i >= 0; i-- {
+		b := x.Boots[i]
+		end := "unknown"
+		switch {
+		case b.Current:
+			end = "running"
+		case b.Clean != nil && *b.Clean:
+			end = "clean shutdown"
+		case b.Clean != nil:
+			end = "✖ no clean shutdown (crash, reset or power loss)"
+		}
+		rows = append(rows, []string{b.ID[:min(8, len(b.ID))], b.Start.UTC().Format("2006-01-02 15:04"), b.End.UTC().Format("2006-01-02 15:04"), dur(b.End.Sub(b.Start)), end})
+	}
+	m.h(3, "Boots")
+	m.table([]string{"Boot", "Start (UTC)", "Last entry (UTC)", ">Ran", "Ended"}, rows)
 }
 
 func sensorTable(m *md, title string, ss []model.Sensor) {

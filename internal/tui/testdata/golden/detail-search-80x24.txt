@@ -1,4 +1,4 @@
- TYR  srv-degraded-01                              fixture  now  20/21   ✖ CRIT
+ TYR  srv-degraded-01                              fixture  now  20/22   ✖ CRIT
 esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ10…  line 18–37 · 29 %
 
 Self-test  no failure logged
