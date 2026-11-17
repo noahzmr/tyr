@@ -603,3 +603,19 @@ func faultFindings(h *model.Header, out *model.CPU) {
 		fmt.Sprintf("%d of %d program crashes (%s) ran on core %d of socket %d (%s), in %d different programs: the core likely computes wrong results",
 			g.n, total, strings.Join(kinds, ", "), g.core, g.socket, strings.Join(cpus, ", "), len(g.procs)))
 }
+
+// redfishProcessorRecords: processor errors from the BMC's Redfish logs
+// (HPE IML: "Uncorrectable Machine Check Exception (Board 0, Processor 2,
+// …)"). The BMC names the socket, not the logical CPU.
+func redfishProcessorRecords(evs []model.Event) []model.MCERecord {
+	var out []model.MCERecord
+	for _, e := range evs {
+		low := strings.ToLower(e.Message + " " + e.Class)
+		if e.Severity < model.StatusWarn || e.Severity == model.StatusUnknown ||
+			!(strings.Contains(low, "processor") || strings.Contains(low, "machine check") || strings.Contains(low, "cpu ")) {
+			continue
+		}
+		out = append(out, model.MCERecord{Time: e.Time, Source: e.Log, CPU: -1, Bank: -1, Unit: e.Message, Severity: e.Severity, Text: e.Message})
+	}
+	return out
+}

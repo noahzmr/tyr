@@ -16,7 +16,7 @@ func TestCatalogCoversCollectorCodes(t *testing.T) {
 	call := regexp.MustCompile(`(?:Find|add|cnt)\([^"\n]*?"([a-z]+(?:_[a-z]+)+)"`)
 	assign := regexp.MustCompile(`code(?: :)?= "([a-z]+(?:_[a-z]+)+)"`)
 	dirs := map[string]model.ModuleID{"system": model.ModSystem, "cpu": model.ModCPU, "memory": model.ModMemory,
-		"storage": model.ModStorage, "network": model.ModNetwork, "accel": model.ModAccel}
+		"storage": model.ModStorage, "network": model.ModNetwork, "accel": model.ModAccel, "power": model.ModPower, "events": model.ModEvents}
 	// informational (status OK) codes: no alert, no explanation needed
 	info := map[string]bool{"throttle_history": false}
 	for dir, mod := range dirs {

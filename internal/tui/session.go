@@ -181,6 +181,9 @@ func (s *session) history(key string) []float64 {
 // recordSensors keeps a short history of the readings shown in detail
 // pages. Keys are "<module>/<component>/<sensor>".
 func (s *session) recordSensors(snap *model.Snapshot) {
+	if pw := snap.Power; pw != nil {
+		s.record("power/draw", pw.ConsumedWatts)
+	}
 	if c := snap.CPU; c != nil {
 		var sum, n float64
 		for _, l := range c.Logical {

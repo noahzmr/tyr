@@ -1,0 +1,29 @@
+{
+  "Members": [
+    {
+      "Created": "2026-11-07T08:00:00Z",
+      "EntryType": "SEL",
+      "Id": "1",
+      "Message": "Log area reset/cleared",
+      "SensorType": "Event Logging Disabled",
+      "Severity": "OK"
+    },
+    {
+      "Created": "2026-11-07T08:48:00Z",
+      "EntryType": "SEL",
+      "Id": "2",
+      "Message": "CPU1: IERR - processor internal error (machine check)",
+      "SensorType": "Processor",
+      "Severity": "Critical"
+    },
+    {
+      "Created": "2026-11-11T09:00:00Z",
+      "EntryType": "SEL",
+      "Id": "3",
+      "Message": "Correctable ECC @DIMMC1(CPU2)",
+      "SensorType": "Memory",
+      "Severity": "Warning"
+    }
+  ],
+  "Members@odata.nextLink": "/redfish/v1/Systems/1/LogServices/Log1/Entries/page2"
+}

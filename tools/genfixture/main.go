@@ -37,6 +37,7 @@ type scenario struct {
 	Journal      []journalLine     // kernel messages of earlier boots
 	Pstore       map[string]string // crash records: path -> content
 	Boots        []bootSpec        // earlier boots (the current one is added)
+	Redfish      bool              // record a Redfish tree (event logs, power)
 	Sim          map[string]any
 
 	// memory
@@ -175,6 +176,7 @@ func scenarios() []scenario {
 			{"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c", boot.Add(-25 * 24 * time.Hour), boot.Add(-12 * 24 * time.Hour), true},
 			{"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", boot.Add(-12*24*time.Hour + time.Hour), boot.Add(-12 * time.Minute), false}, // the fatal MCE
 		},
+		Redfish:       true,
 		Sim:           map[string]any{"core_test_fail": []int{21}},
 		DIMMOverride:  map[string]dimmSpec{"P1-DIMMD1": {"Micron Technology", "MTA36ASF4G72PZ-3G2R1", 3200, 2933}},
 		EDACErrors:    map[string][2]int{"P2-DIMMC1": {14, 0}, "P2-DIMMB1": {0, 1}},
@@ -314,6 +316,9 @@ func (g *gen) build() {
 	g.dmi()
 	g.kmsg()
 	g.history()
+	if g.s.Redfish {
+		g.redfish()
+	}
 	g.manifest()
 }
 
@@ -883,4 +888,73 @@ func (g *gen) ipmi() {
 		sel.WriteString("ipmiutil sel, completed successfully\n")
 		g.cmd([]string{"ipmiutil", "sel"}, sel.String(), 0)
 	}
+}
+
+// rfWrite stores one Redfish resource of the recording (path + ".json").
+func (g *gen) rfWrite(path string, v any) {
+	if g.err != nil {
+		return
+	}
+	b, _ := json.MarshalIndent(v, "", "  ")
+	p := strings.TrimSuffix(path, "/")
+	if strings.HasSuffix(path, "/") {
+		p += "/index"
+	}
+	full := filepath.Join(g.dir, filepath.FromSlash(p)+".json")
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		g.err = err
+		return
+	}
+	g.err = os.WriteFile(full, append(b, '\n'), 0o644)
+}
+
+func members(paths ...string) map[string]any {
+	var m []map[string]string
+	for _, p := range paths {
+		m = append(m, map[string]string{"@odata.id": p})
+	}
+	return map[string]any{"Members": m, "Members@odata.count": len(m)}
+}
+
+// redfish: a BMC that answers Redfish - its event log (the SEL's story),
+// a manager log, and power with PSU2 on no AC input.
+func (g *gen) redfish() {
+	g.rfWrite("/redfish/v1/", map[string]any{"RedfishVersion": "1.11.0", "Product": "Supermicro Redfish Service"})
+	g.rfWrite("/redfish/v1/Systems", members("/redfish/v1/Systems/1"))
+	g.rfWrite("/redfish/v1/Systems/1/LogServices", members("/redfish/v1/Systems/1/LogServices/Log1"))
+	g.rfWrite("/redfish/v1/Systems/1/LogServices/Log1", map[string]any{"Id": "Log1", "Name": "System Event Log",
+		"Entries": map[string]string{"@odata.id": "/redfish/v1/Systems/1/LogServices/Log1/Entries"}})
+	ev := func(id string, at time.Time, sev, sensor, msg string) map[string]any {
+		return map[string]any{"Id": id, "Created": at.Format(time.RFC3339), "Severity": sev, "SensorType": sensor, "Message": msg, "EntryType": "SEL"}
+	}
+	g.rfWrite("/redfish/v1/Systems/1/LogServices/Log1/Entries", map[string]any{"Members": []any{
+		ev("1", boot.Add(-time.Hour), "OK", "Event Logging Disabled", "Log area reset/cleared"),
+		ev("2", boot.Add(-12*time.Minute), "Critical", "Processor", "CPU1: IERR - processor internal error (machine check)"),
+		ev("3", boot.Add(4*24*time.Hour), "Warning", "Memory", "Correctable ECC @DIMMC1(CPU2)"),
+	}, "Members@odata.nextLink": "/redfish/v1/Systems/1/LogServices/Log1/Entries/page2"})
+	g.rfWrite("/redfish/v1/Systems/1/LogServices/Log1/Entries/page2", map[string]any{"Members": []any{
+		ev("4", boot.Add(7*24*time.Hour), "Critical", "Memory", "Uncorrectable ECC @DIMMB1(CPU2)"),
+		ev("5", boot.Add(8*24*time.Hour), "Critical", "Power Supply", "PS2 Status: Power Supply AC lost"),
+		ev("6", boot.Add(8*24*time.Hour+time.Second), "Warning", "Power Unit", "Redundancy Lost"),
+	}})
+	g.rfWrite("/redfish/v1/Managers", members("/redfish/v1/Managers/1"))
+	g.rfWrite("/redfish/v1/Managers/1/LogServices", members("/redfish/v1/Managers/1/LogServices/Log1"))
+	g.rfWrite("/redfish/v1/Managers/1/LogServices/Log1", map[string]any{"Id": "Log1", "Name": "BMC Event Log",
+		"Entries": map[string]string{"@odata.id": "/redfish/v1/Managers/1/LogServices/Log1/Entries"}})
+	g.rfWrite("/redfish/v1/Managers/1/LogServices/Log1/Entries", map[string]any{"Members": []any{
+		ev("1", boot.Add(8*24*time.Hour+2*time.Hour), "OK", "", "User admin logged in from 10.0.0.15 (Redfish)"),
+	}})
+	g.rfWrite("/redfish/v1/Chassis", members("/redfish/v1/Chassis/1"))
+	g.rfWrite("/redfish/v1/Chassis/1", map[string]any{"Id": "1", "Power": map[string]string{"@odata.id": "/redfish/v1/Chassis/1/Power"}})
+	psu := func(id, serial string, health string, volts, out float64) map[string]any {
+		return map[string]any{"MemberId": id, "Name": "PSU" + id, "Model": "PWS-1K22A-1R", "Manufacturer": "SUPERMICRO", "SerialNumber": serial,
+			"FirmwareVersion": "1.4", "PowerSupplyType": "AC", "PowerCapacityWatts": 1200, "LastPowerOutputWatts": out,
+			"LineInputVoltage": volts, "LineInputVoltageType": "ACHighLine", "Status": map[string]string{"State": "Enabled", "Health": health}}
+	}
+	g.rfWrite("/redfish/v1/Chassis/1/Power", map[string]any{
+		"PowerControl": []any{map[string]any{"PowerConsumedWatts": 412, "PowerCapacityWatts": 2400, "PowerLimit": map[string]any{"LimitInWatts": nil},
+			"PowerMetrics": map[string]any{"AverageConsumedWatts": 405, "MinConsumedWatts": 380, "MaxConsumedWatts": 455, "IntervalInMin": 20}}},
+		"PowerSupplies": []any{psu("1", "P1K22CL21123451", "OK", 231, 412), psu("2", "P1K22CL21123452", "Critical", 0, 0)},
+		"Redundancy":    []any{map[string]any{"Name": "PSU Redundancy", "Mode": "N+m", "Status": map[string]string{"State": "Enabled", "Health": "Critical"}}},
+	})
 }

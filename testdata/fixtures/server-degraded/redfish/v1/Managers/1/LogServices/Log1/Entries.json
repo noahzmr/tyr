@@ -1,0 +1,12 @@
+{
+  "Members": [
+    {
+      "Created": "2026-11-15T11:00:00Z",
+      "EntryType": "SEL",
+      "Id": "1",
+      "Message": "User admin logged in from 10.0.0.15 (Redfish)",
+      "SensorType": "",
+      "Severity": "OK"
+    }
+  ]
+}

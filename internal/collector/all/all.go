@@ -5,8 +5,10 @@ import (
 	"github.com/noahzmr/tyr/internal/collector"
 	"github.com/noahzmr/tyr/internal/collector/accel"
 	"github.com/noahzmr/tyr/internal/collector/cpu"
+	"github.com/noahzmr/tyr/internal/collector/events"
 	"github.com/noahzmr/tyr/internal/collector/memory"
 	"github.com/noahzmr/tyr/internal/collector/network"
+	"github.com/noahzmr/tyr/internal/collector/power"
 	"github.com/noahzmr/tyr/internal/collector/storage"
 	"github.com/noahzmr/tyr/internal/collector/system"
 	"github.com/noahzmr/tyr/internal/model"
@@ -14,7 +16,7 @@ import (
 
 // Collectors returns every implemented collector.
 func Collectors() []collector.Collector {
-	return []collector.Collector{system.New(), cpu.New(), memory.New(), storage.New(), network.New(), accel.New()}
+	return []collector.Collector{system.New(), cpu.New(), memory.New(), storage.New(), power.New(), network.New(), accel.New(), events.New()}
 }
 
 // Implemented reports whether a module has a collector yet.

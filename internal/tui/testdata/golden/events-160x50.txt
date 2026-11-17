@@ -1,40 +1,38 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 22 warn   ✖ CRIT
-1 Overview ✖42  2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6   8 Events ○   9 Stress  0 Inventory                          ? help
-○ Events collector (SEL and kernel log) not implemented yet
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 24 warn   ✖ CRIT
+1 Overview ✖49  2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ✖2  6 Network ✖6  7 GPU/NPU ✖6   8 Events ✖5   9 Stress  0 Inventory                        ? help
+ ✖ CRIT  System Event Log 6 · BMC Event Log 1 · kernel log 13 · 5 open (30 days)
 
-Severity  all  warn+ crit   Source  all  SEL kernel   since boot (9d 0h)   ╭─ / to search ──────╮
-SEL fill  ○ no SEL reader yet (BMC event log via ipmitool sel)
+Severity  all  warn+ crit   Source  all  BMC kernel   since boot (9d 0h)   ╭─ / to search ──────╮
+Logs  System Event Log 6 · BMC Event Log 1 · kernel log 13
 
-   Time         Sev  Source Component   Message
-   ○ no events Events collector (SEL and kernel log) not implemented yet
+   Time        Sev  Log            Component        Message
+▌✖ 11-15 16:00 crit kernel         0000:ca:00.0     NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been …
+ ▲ 11-15 15:00 warn kernel         ens1f1           ice 0000:4b:00.1 ens1f1: NIC Link is Down
+ ✖ 11-15 14:32 crit kernel         sdf              I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
+ ✖ 11-15 14:31 crit kernel         sdf              I/O error, dev sdf, sector 2048 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
+ ✖ 11-15 13:00 crit kernel         sdd              I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
+ ▲ 11-15 13:00 warn kernel         ata4             ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 action 0x0
+ ● 11-15 12:00 ok   BMC Event Log  –                User admin logged in from 10.0.0.15 (Redfish)
+ ▲ 11-15 10:00 warn System Event … Power Unit       Redundancy Lost
+ ✖ 11-15 10:00 crit System Event … Power Supply     PS2 Status: Power Supply AC lost
+ ✖ 11-14 10:00 crit kernel         CPU_SrcID#1_MC#… EDAC MC4: 1 UE memory read error on CPU_SrcID#1_MC#0_Chan#1_DIMM#0 (channel:1 slot:0 page:0x1f0a3 offset:0…
+ ✖ 11-14 10:00 crit System Event … Memory           Uncorrectable ECC @DIMMB1(CPU2)
+ ▲ 11-13 10:00 warn kernel         cpu52            mce: CPU52: Core temperature above threshold, cpu clock throttled (total events = 14)
+ ▲ 11-13 10:00 warn kernel         cpu20            mce: CPU20: Core temperature above threshold, cpu clock throttled (total events = 14)
+ ▲ 11-12 10:00 warn kernel         cpu12            mce: [Hardware Error]: CPU 12: Machine Check: 0 Bank 13: cc00008000010090
+ ▲ 11-11 10:00 warn kernel         CPU_SrcID#1_MC#… EDAC MC5: 14 CE memory read error on CPU_SrcID#1_MC#1_Chan#0_DIMM#0 (channel:0 slot:0 page:0x3a2f40 offset…
+ ▲ 11-11 10:00 warn System Event … Memory           Correctable ECC @DIMMC1(CPU2)
+ ▲ 11-10 10:00 warn kernel         cpu12            mce: [Hardware Error]: CPU 12: Machine Check: 0 Bank 13: cc00008000010090
+ ▲ 11-10 10:00 warn kernel         mce              mce: [Hardware Error]: Machine check events logged
+ ✖ 11-07 09:48 crit System Event … Processor        CPU1: IERR - processor internal error (machine check)
+ ● 11-07 09:00 ok   System Event … Event Logging D… Log area reset/cleared
 
-Findings · Events ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-○ no findings Events collector (SEL and kernel log) not implemented yet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Findings · Events 3 ✖ · 2 ▲ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ System Even… System Event Log 2026-11-15 10:00: PS2 Status: Power Supply AC lost
+ ✖ System Even… System Event Log 2026-11-14 10:00: Uncorrectable ECC @DIMMB1(CPU2)
+ ✖ System Even… System Event Log 2026-11-07 09:48: CPU1: IERR - processor internal error (machine check)
+ ▲ System Even… System Event Log 2026-11-15 10:00: Redundancy Lost
+ ▲ System Even… System Event Log 2026-11-11 10:00: Correctable ECC @DIMMC1(CPU2)
 
 
 
@@ -47,4 +45,6 @@ Findings · Events ────────────────────�
 
 
 
-↑↓ move  enter jump to component  f severity  s source  / search  space details  ! problems  q quit  ? help
+
+
+↑↓ move  enter open  f severity  s source  / search  space details  ! problems  q quit  ? help

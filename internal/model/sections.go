@@ -40,10 +40,80 @@ type System struct {
 }
 
 // Power is the power module section.
-type Power struct{ Header }
+type Power struct {
+	Header
+	Source        string        `json:"source,omitempty"` // "redfish (host interface)", "smbios"
+	ConsumedWatts *float64      `json:"consumed_watts,omitempty"`
+	CapacityWatts *float64      `json:"capacity_watts,omitempty"`
+	LimitWatts    *float64      `json:"limit_watts,omitempty"` // power cap
+	AvgWatts      *float64      `json:"avg_watts,omitempty"`
+	MinWatts      *float64      `json:"min_watts,omitempty"`
+	MaxWatts      *float64      `json:"max_watts,omitempty"`
+	IntervalMin   int           `json:"interval_min,omitempty"` // of avg/min/max
+	Redundancy    []Redundancy  `json:"redundancy,omitempty"`
+	Supplies      []PowerSupply `json:"supplies"`
+}
+
+// PowerSupply is one supply with its live readings (Redfish), or its
+// SMBIOS record when the BMC cannot be read.
+type PowerSupply struct {
+	Name          string   `json:"name"`
+	Bay           string   `json:"bay,omitempty"`
+	Present       bool     `json:"present"`
+	State         string   `json:"state,omitempty"`  // Redfish Status.State: Enabled, Absent, UnavailableOffline
+	Health        string   `json:"health,omitempty"` // OK, Warning, Critical; SMBIOS "Present, Critical"
+	Detail        string   `json:"detail,omitempty"` // vendor state (HPE PowerSupplyStatus)
+	Model         string   `json:"model,omitempty"`
+	Manufacturer  string   `json:"manufacturer,omitempty"`
+	Serial        string   `json:"serial,omitempty"`
+	PartNumber    string   `json:"part_number,omitempty"`
+	SparePart     string   `json:"spare_part_number,omitempty"`
+	Firmware      string   `json:"firmware,omitempty"`
+	Type          string   `json:"type,omitempty"` // AC, DC
+	CapacityWatts *float64 `json:"capacity_watts,omitempty"`
+	OutputWatts   *float64 `json:"output_watts,omitempty"`
+	InputVolts    *float64 `json:"input_volts,omitempty"`
+	InputType     string   `json:"input_type,omitempty"` // ACHighLine …
+	Status        Status   `json:"status"`
+}
+
+// Redundancy is a power supply redundancy group.
+type Redundancy struct {
+	Name   string `json:"name"`
+	Mode   string `json:"mode,omitempty"`
+	Health string `json:"health,omitempty"`
+	Status Status `json:"status"`
+}
 
 // Events is the events module section.
-type Events struct{ Header }
+type Events struct {
+	Header
+	Logs    []EventLog `json:"logs"`
+	Entries []Event    `json:"entries"` // oldest first
+}
+
+// EventLog is one log Tyr read: the HPE IML, the iLO event log, the IPMI
+// SEL, the kernel log.
+type EventLog struct {
+	Name    string `json:"name"`
+	Source  string `json:"source"` // redfish, ipmi, kernel
+	Entries int    `json:"entries"`
+}
+
+// Event is one entry of a BMC or kernel log.
+type Event struct {
+	Time      time.Time `json:"time,omitzero"`
+	Updated   time.Time `json:"updated,omitzero"` // last occurrence (HPE IML)
+	Log       string    `json:"log"`
+	Source    string    `json:"source"`
+	ID        string    `json:"id,omitempty"`
+	Severity  Status    `json:"severity"`
+	Class     string    `json:"class,omitempty"`     // HPE class ("System Error"), SEL sensor type
+	Component string    `json:"component,omitempty"` // sensor, device
+	Message   string    `json:"message"`
+	Count     int       `json:"count,omitempty"`
+	Repaired  *bool     `json:"repaired,omitempty"`
+}
 
 // PSUFRU is a power supply as described by SMBIOS type 39.
 type PSUFRU struct {

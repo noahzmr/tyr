@@ -85,7 +85,6 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 			h.Find(model.StatusWarn, "fan_low", s.Name, s.Source, fmt.Sprintf("%s outside normal range (%s)", s.Name, rpm(s)))
 		}
 	}
-	psuFindings(ctx, env, h, out)
 	bootFindings(h, out, env.Now())
 	for _, s := range out.Temps {
 		if s.Status >= model.StatusWarn && s.Value != nil {
@@ -225,46 +224,5 @@ func (c *Collector) bmcSensors(env *collector.Env, out *model.System, sens []ipm
 			}
 			out.Temps = append(out.Temps, m)
 		}
-	}
-}
-
-// psuFindings: a power supply that SMBIOS reports as not OK, with the
-// BMC's latest power supply event (AC lost or a failed unit) when there is
-// one - SMBIOS alone does not tell the two apart.
-func psuFindings(ctx context.Context, env *collector.Env, h *model.Header, out *model.System) {
-	var bad []model.PSUFRU
-	for _, p := range out.PSUs {
-		if p.Health() >= model.StatusWarn {
-			bad = append(bad, p)
-		}
-	}
-	if len(bad) == 0 {
-		return
-	}
-	var events []string
-	if !env.IsVM() {
-		if sel, _ := env.SEL(ctx); sel != nil {
-			for _, e := range sel.Entries {
-				if e.Category == "psu" && e.Asserted && e.Severity >= model.StatusWarn {
-					when := ""
-					if !e.Time.IsZero() {
-						when = e.Time.Local().Format("2006-01-02 15:04") + " "
-					}
-					events = append(events, when+strings.TrimSpace(e.Sensor+": "+e.Event))
-				}
-			}
-		}
-	}
-	for _, p := range bad {
-		msg := fmt.Sprintf("%s reports %q (SMBIOS)", p.Label(), p.StatusText)
-		if p.Serial != "" {
-			msg = fmt.Sprintf("%s (S/N %s) reports %q (SMBIOS)", p.Label(), p.Serial, p.StatusText)
-		}
-		if len(events) > 0 {
-			msg += "; latest BMC power supply event: " + events[len(events)-1]
-		} else {
-			msg += ": failed, or no AC input - the BMC's power page tells which"
-		}
-		h.Find(p.Health(), "psu_status", p.Label(), "dmidecode", msg)
 	}
 }

@@ -286,11 +286,63 @@ retired / remapped rows, Xid driver errors from the kernel log. NVIDIA through
 `nvidia-smi`, AMD and Intel GPUs through sysfs, AMD NPUs through `xrt-smi`.
 BMC display adapters are listed but not counted.
 
-### Power and Events
+### Power
 
-No collector yet: the TUI shows both as ○ unavailable with the reason. PSU
-inventory and fans come from the System module; machine checks, I/O errors and
-Xid events are already raised by the modules they belong to.
+From the BMC's Redfish service: every power supply with health, state, the
+vendor's own state (HPE `PowerSupplyStatus`), input voltage, output, rating,
+model, serial, spare part and firmware; total draw, capacity, average / min /
+max, the power cap, redundancy. Without Redfish: the SMBIOS power supply
+records (present / OK / critical) and the BMC event log's power supply events.
+
+| Code | Status | When |
+|---|---|---|
+| `psu_status` | ▲ / ✖ | a supply is not OK; an input of 0 V means no AC input (cable, PDU, breaker) rather than a failed unit |
+| `psu_redundancy` | ▲ / ✖ | the redundancy group lost its spare |
+
+### Events
+
+One timeline, newest first: the BMC's logs over Redfish (HPE: the IML and the
+iLO event log, with class, count, last occurrence and repaired flag; others:
+SEL, Lifecycle log), else the IPMI SEL, and the hardware messages Tyr
+classifies in the kernel log.
+
+| Code | Status | When |
+|---|---|---|
+| `bmc_events` | ▲ / ✖ | a warning or critical BMC event of the last 30 days that is not marked repaired, grouped by message |
+
+Processor events of the BMC (HPE "Uncorrectable Machine Check Exception
+(Board 0, Processor 2 …)") also go into the CPU's machine check history.
+
+### Redfish access
+
+Tyr only reads (GET). It finds the service in this order:
+
+1. the BMC's **host interface** that SMBIOS type 42 announces (HPE iLO
+   "Virtual NIC", 16.1.15.1): enable it in iLO (Security → Access Settings →
+   Virtual NIC) and give the host's USB network interface an address
+   (16.1.15.2/24); nothing leaves the server,
+2. an **address**: `--redfish HOST`, `TYR_REDFISH`, or `host =` in the config
+   file.
+
+Credentials come from `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or the
+config file `/etc/tyr/redfish.conf` (`--redfish-config`), which should be
+root-only (0600). A read-only iLO account (Login privilege only) is enough.
+They are never written to snapshots, reports or result files.
+
+```ini
+# /etc/tyr/redfish.conf
+host = 10.16.5.200          # only needed without the Virtual NIC
+user = tyr-read
+password = …
+pin 16.1.15.1:443 = sha256:…   # added by Tyr on first use
+```
+
+BMCs use self-signed certificates, so Tyr pins the certificate's SHA-256
+fingerprint on first use (appending the `pin` line) and refuses a different
+certificate later; delete the line after replacing the iLO certificate.
+Event logs are read every 2 minutes and power every 15 seconds, in the
+background: a slow BMC does not hold up the TUI, and the first read shows up
+with the next refresh. `--no-redfish` turns it off.
 
 ## Without root
 

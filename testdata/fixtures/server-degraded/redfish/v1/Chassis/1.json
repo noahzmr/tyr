@@ -1,0 +1,6 @@
+{
+  "Id": "1",
+  "Power": {
+    "@odata.id": "/redfish/v1/Chassis/1/Power"
+  }
+}

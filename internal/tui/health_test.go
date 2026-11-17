@@ -262,7 +262,7 @@ func TestTreeSlotMapHelpMouse(t *testing.T) {
 
 func TestWindowTitleShowsStatus(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
-	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (20 crit, 22 warn)") {
+	if title := m.View().WindowTitle; !strings.HasPrefix(title, "CRIT srv-degraded-01 (25 crit, 24 warn)") {
 		t.Errorf("title %q", title)
 	}
 }
@@ -287,12 +287,12 @@ func TestCopySerial(t *testing.T) {
 	}
 }
 
-func TestPowerAndEventsUnavailable(t *testing.T) {
+func TestPowerAndEvents(t *testing.T) {
 	for _, size := range [][2]int{{80, 24}, {120, 40}, {160, 50}} {
 		m := newLoaded(t, "server-degraded", size[0], size[1])
 		run(m, "5")
 		s := text(m)
-		for _, want := range []string{"○ Power", "collector not implemented yet", "PSU1", "P1K22CL21123451", "1200 W", "Fans", "6 of 6 reporting", "○ no findings"} {
+		for _, want := range []string{"1/2 PSUs OK · 412 W of 2400 W", "PSU2", "0 V", "Critical", "BMC Redfish"} {
 			if !strings.Contains(s, want) {
 				t.Errorf("%dx%d power missing %q\n%s", size[0], size[1], want, s)
 			}
@@ -302,33 +302,51 @@ func TestPowerAndEventsUnavailable(t *testing.T) {
 		checkFits(t, "events", screen(m), size[0], size[1])
 	}
 	m := newLoaded(t, "server-degraded", 120, 40)
-	run(m, "5", "enter")
-	if m.page == nil || !strings.Contains(text(m), "Power › PSU1") {
+	run(m, "5")
+	if s := text(m); !strings.Contains(s, "Total draw  412 W of 2400 W capacity") || !strings.Contains(s, "Redundancy  Critical") || !strings.Contains(s, "6 of 6 reporting") {
+		t.Errorf("power totals\n%s", s)
+	}
+	run(m, "enter") // the critical supply is listed first
+	if m.page == nil || !strings.Contains(text(m), "Power › PSU2") || !strings.Contains(text(m), "no AC input") {
 		t.Errorf("psu page\n%s", text(m))
 	}
 	run(m, "c")
-	if !strings.Contains(m.message, "P1K22CL21123451") {
+	if !strings.Contains(m.message, "P1K22CL21123452") {
 		t.Errorf("copy psu serial: %q", m.message)
 	}
 	run(m, "esc", "8")
 	s := text(m)
-	for _, want := range []string{"○ Events", "Severity", "Source", "SEL fill", "no events"} {
+	for _, want := range []string{"Severity", "Source", "Logs  System Event Log 6 · BMC Event Log 1 · kernel log", "PS2 Status: Power Supply AC lost",
+		"Findings · Events 3 ✖ · 2 ▲"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("events missing %q\n%s", want, s)
 		}
 	}
 	ev := m.tabs[7].(*eventsTab)
-	run(m, "s", "f", "f")
-	if m.tabs[m.active].Title() != "Events" || ev.src != 1 || ev.sev != 2 {
-		t.Errorf("s/f on Events: tab %s src %d sev %d", m.tabs[m.active].Title(), ev.src, ev.sev)
+	all := len(ev.list.shown)
+	run(m, "s") // BMC only
+	if ev.src != 1 || len(ev.list.shown) != 7 || m.tabs[m.active].Title() != "Events" {
+		t.Errorf("BMC filter: src %d rows %d of %d", ev.src, len(ev.list.shown), all)
 	}
-	run(m, "/", "q", "enter")
-	if ev.search.Value() != "q" || m.tabs[m.active].Title() != "Events" {
-		t.Errorf("search: %q", ev.search.Value())
+	run(m, "f", "f") // critical only
+	if ev.sev != 2 || len(ev.list.shown) != 3 {
+		t.Errorf("crit filter: %d rows", len(ev.list.shown))
+	}
+	run(m, "/", "A", "C", " ", "l", "o", "s", "t", "enter")
+	if ev.search.Value() != "AC lost" || len(ev.list.shown) != 1 {
+		t.Errorf("search %q: %d rows", ev.search.Value(), len(ev.list.shown))
 	}
 	run(m, "space")
-	if !ev.expand {
-		t.Error("space did not toggle details")
+	if !ev.expand || !strings.Contains(text(m), "Power Supply · Power Supply") && !strings.Contains(text(m), "PS2 Status") {
+		t.Errorf("details\n%s", text(m))
+	}
+	run(m, "enter")
+	if m.page == nil || !strings.Contains(text(m), "PS2 Status: Power Supply AC lost") {
+		t.Errorf("event page\n%s", text(m))
+	}
+	run(m, "esc", "esc")
+	if ev.search.Value() != "" || ev.sev != 0 || ev.src != 0 || len(ev.list.shown) != all {
+		t.Errorf("esc did not clear the filters: %d of %d", len(ev.list.shown), all)
 	}
 }
 

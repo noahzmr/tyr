@@ -11,6 +11,7 @@ package fixture
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/noahzmr/tyr/internal/source/redfish"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,6 +99,9 @@ func Load(dir string, opts collector.Options) (*collector.Env, *Manifest, error)
 	}
 	if env.Virt == "" {
 		env.Virt = "none"
+	}
+	if hostfs.Exists(hostfs.New(dir), "/redfish/v1/index.json") {
+		env.Redfish = redfish.FileGetter{Root: dir}
 	}
 	return env, &m, nil
 }

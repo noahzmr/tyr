@@ -19,10 +19,10 @@ the keys that work here. `?` shows all keys and this tab's own.
 | `2` | CPU | Grid · Cores · Details | every logical CPU by socket and thread (`t`: load ↔ temperature), per-core table, socket details and graphs |
 | `3` | Memory | Table · Slot map | DIMMs with an inspector; slots per socket and channel (`a`: empty slots) |
 | `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID, filesystems |
-| `5` | Power | - | PSU inventory and fans; readings ○ until a Power collector exists |
+| `5` | Power | - | power supplies with state, input voltage, output and rating; total draw, average, cap, redundancy, the draw over the session; fans (BMC Redfish, else SMBIOS) |
 | `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP (`h`: virtual interfaces) |
 | `7` | GPU/NPU | - | load, memory, power, temperature, PCIe link; NPUs |
-| `8` | Events | - | severity / source chips and search; ○ until an Events collector exists |
+| `8` | Events | - | one timeline of the BMC's logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages; severity / source chips, search, `space` details, `enter` the whole entry |
 | `9` | Stress | form · confirm · live · result | the stress tests (see [stress-tests.md](stress-tests.md)) |
 | `0` | Inventory | List · Tree | every component with serials; search, category chips; the topology tree |
 

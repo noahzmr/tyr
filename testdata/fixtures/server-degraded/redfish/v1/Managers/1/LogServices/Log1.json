@@ -1,0 +1,7 @@
+{
+  "Entries": {
+    "@odata.id": "/redfish/v1/Managers/1/LogServices/Log1/Entries"
+  },
+  "Id": "Log1",
+  "Name": "BMC Event Log"
+}

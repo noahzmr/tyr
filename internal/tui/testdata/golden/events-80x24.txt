@@ -1,24 +1,24 @@
- TYR  srv-degraded-01                              fixture  now  20/22   ✖ CRIT
-1✖42 2✖8 3✖9 4✖12 5○ 6✖6 7✖6  8 Events ○  9 0                             ? help
-○ Events collector (SEL and kernel log) not implemented yet
+ TYR  srv-degraded-01                              fixture  now  25/24   ✖ CRIT
+1✖49 2✖8 3✖9 4✖12 5✖2 6✖6 7✖6  8 Events ✖5  9 0                           ? help
+ ✖ CRIT  System Event Log 6 · BMC Event Log 1 · kernel log 13 · 5 open (30 da…
 
-Severity  all  warn+ crit   Source  all  SEL kernel   since boot (9d 0h)   ╭─ /…
-SEL fill  ○ no SEL reader yet (BMC event log via ipmitool sel)
+Severity  all  warn+ crit   Source  all  BMC kernel   since boot (9d 0h)   ╭─ /…
+Logs  System Event Log 6 · BMC Event Log 1 · kernel log 13
 
-   Time         Sev  Source Component   Message
-   ○ no events Events collector (SEL and kernel log) not implemented yet
+   Time        Sev  Message
+▌✖ 11-15 16:00 crit NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3,…  ┃
+ ▲ 11-15 15:00 warn ice 0000:4b:00.1 ens1f1: NIC Link is Down                  ┃
+ ✖ 11-15 14:32 crit I/O error, dev sdf, sector 4096 op 0x1:(WRITE) flags 0x8…  │
+ ✖ 11-15 14:31 crit I/O error, dev sdf, sector 2048 op 0x1:(WRITE) flags 0x8…  │
+ ✖ 11-15 13:00 crit I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flag…  │
+ ▲ 11-15 13:00 warn ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 actio…  │
+ ● 11-15 12:00 ok   User admin logged in from 10.0.0.15 (Redfish)              │
 
-Findings · Events ──────────────────────────────────────────────────────────────
-○ no findings Events collector (SEL and kernel log) not implemented yet
+Findings · Events 3 ✖ · 2 ▲ ──────────────────────────────── n next · enter open
+ ✖ System Even… System Event Log 2026-11-15 10:00: PS2 Status: Power Supply AC
+                lost
+ ✖ System Even… System Event Log 2026-11-14 10:00: Uncorrectable ECC
+                @DIMMB1(CPU2)
+   … 3 more · enter on a row opens its page
 
-
-
-
-
-
-
-
-
-
-
-↑↓ move  enter jump to component  f severity  s source  / search  ? help
+↑↓ move  enter open  f severity  s source  / search  space details  ? help

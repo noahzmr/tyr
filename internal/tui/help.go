@@ -96,7 +96,7 @@ func (s *storageTab) HelpText() string {
 }
 
 func (p *powerTab) HelpText() string {
-	return "↑↓ power supplies · enter opens the PSU page · c copies the serial · live readings arrive with the Power collector"
+	return "↑↓ power supplies · enter opens the PSU page (input voltage, output, BMC state) · c copies the serial · live readings come from the BMC's Redfish service; without it the SMBIOS records are shown"
 }
 
 func (n *networkTab) HelpText() string {
@@ -108,7 +108,7 @@ func (a *accelTab) HelpText() string {
 }
 
 func (e *eventsTab) HelpText() string {
-	return "f severity · s source · / search · space expands the selected event · enter jumps to the component in its tab · ! warn and crit only"
+	return "the BMC's logs (HPE IML, iLO event log, SEL via Redfish, else the IPMI SEL) and the kernel's hardware messages, newest first · f severity · s source (all, BMC, kernel) · / search · space shows the whole entry below · enter opens it · esc clears the filters"
 }
 
 func (s *stressTab) HelpText() string {

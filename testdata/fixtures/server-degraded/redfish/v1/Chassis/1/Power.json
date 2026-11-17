@@ -1,0 +1,63 @@
+{
+  "PowerControl": [
+    {
+      "PowerCapacityWatts": 2400,
+      "PowerConsumedWatts": 412,
+      "PowerLimit": {
+        "LimitInWatts": null
+      },
+      "PowerMetrics": {
+        "AverageConsumedWatts": 405,
+        "IntervalInMin": 20,
+        "MaxConsumedWatts": 455,
+        "MinConsumedWatts": 380
+      }
+    }
+  ],
+  "PowerSupplies": [
+    {
+      "FirmwareVersion": "1.4",
+      "LastPowerOutputWatts": 412,
+      "LineInputVoltage": 231,
+      "LineInputVoltageType": "ACHighLine",
+      "Manufacturer": "SUPERMICRO",
+      "MemberId": "1",
+      "Model": "PWS-1K22A-1R",
+      "Name": "PSU1",
+      "PowerCapacityWatts": 1200,
+      "PowerSupplyType": "AC",
+      "SerialNumber": "P1K22CL21123451",
+      "Status": {
+        "Health": "OK",
+        "State": "Enabled"
+      }
+    },
+    {
+      "FirmwareVersion": "1.4",
+      "LastPowerOutputWatts": 0,
+      "LineInputVoltage": 0,
+      "LineInputVoltageType": "ACHighLine",
+      "Manufacturer": "SUPERMICRO",
+      "MemberId": "2",
+      "Model": "PWS-1K22A-1R",
+      "Name": "PSU2",
+      "PowerCapacityWatts": 1200,
+      "PowerSupplyType": "AC",
+      "SerialNumber": "P1K22CL21123452",
+      "Status": {
+        "Health": "Critical",
+        "State": "Enabled"
+      }
+    }
+  ],
+  "Redundancy": [
+    {
+      "Mode": "N+m",
+      "Name": "PSU Redundancy",
+      "Status": {
+        "Health": "Critical",
+        "State": "Enabled"
+      }
+    }
+  ]
+}

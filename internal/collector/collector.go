@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/noahzmr/tyr/internal/source/redfish"
 	"os"
 	"runtime"
 	"runtime/debug"
@@ -49,6 +50,12 @@ type Options struct {
 	// queried again. Queries are not free: every rejected command counts as
 	// a SCSI error on the device (ioerr_cnt), and some controllers log them.
 	SMARTInterval time.Duration
+	// Redfish: the BMC's address when its host interface is not used
+	// (also TYR_REDFISH or "host =" in the config file); RedfishConfig is
+	// the config file with credentials and pinned certificates.
+	Redfish       string
+	RedfishConfig string
+	NoRedfish     bool
 }
 
 type smartAgeKey struct{}
@@ -69,7 +76,8 @@ func SMARTMaxAge(ctx context.Context, def time.Duration) time.Duration {
 
 // DefaultOptions returns the CLI defaults.
 func DefaultOptions() Options {
-	return Options{Thresholds: check.DefaultDefaults(), Timeout: 10 * time.Second, CoreTestTimeout: 2 * time.Second, SMARTInterval: 5 * time.Minute}
+	return Options{Thresholds: check.DefaultDefaults(), Timeout: 10 * time.Second, CoreTestTimeout: 2 * time.Second, SMARTInterval: 5 * time.Minute,
+		RedfishConfig: redfish.DefaultConfig}
 }
 
 // Privileges describe what the process may access. They are probed with
@@ -100,9 +108,13 @@ type Env struct {
 	Simulated bool // fixture mode: active tests are simulated
 	LiveSim   bool // fixture mode with simulated changing counters (demo)
 	Sim       Sim
+	// Redfish is set for fixtures (a recorded tree); on a host the client
+	// is found on first use (RedfishClient).
+	Redfish redfish.Getter
 
 	mu    sync.Mutex
 	round *roundCache
+	rf    rfCache
 }
 
 // NewHostEnv builds an Env for the live system.

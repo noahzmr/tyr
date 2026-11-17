@@ -1,25 +1,25 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  20 crit 22 warn   ✖ CRIT
-1 Overview ✖42 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12  5 Power ○  6 Net ✖6 7 GPU ✖6 8 Events ○ 9 Stress 0 Inv               ? help
-○ Power collector not implemented yet · inventory only: 2 PSUs · 2400 W rated · 6 fans
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 24 warn   ✖ CRIT
+1 Overview ✖49 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12  5 Power ✖2  6 Net ✖6 7 GPU ✖6 8 Events ✖5 9 Stress 0 Inv             ? help
+ ✖ CRIT  1/2 PSUs OK · 412 W of 2400 W
 
-Power supplies ─────────────────────────────────────────────────────────────────────── SMBIOS type 39 · no live readings
-   PSU  Model                   Serial          State         Rating Input · output · °C
-▌● PSU1 SUPERMICRO PWS-1K22A-1R P1K22CL21123451 Present, OK   1200 W ○ needs BMC PSU sensors
- ● PSU2 SUPERMICRO PWS-1K22A-1R P1K22CL21123452 Present, OK   1200 W ○ needs BMC PSU sensors
+Power supplies ───────────────────────────────────────────────────────────────────────────────────────────── BMC Redfish
+   PSU  Model                   Serial          State      Input   Output   Rating Firmware
+▌✖ PSU2 SUPERMICRO PWS-1K22A-1R P1K22CL21123452 Critical     0 V      0 W   1200 W 1.4
+ ● PSU1 SUPERMICRO PWS-1K22A-1R P1K22CL21123451 OK         231 V    412 W   1200 W 1.4
 
-Redundancy  ○ needs PSU status sensors                      PSU rails
-Total draw  ○ no BMC power reading                          ○ needs BMC voltage sensors
-CPU RAPL    ○ no RAPL collector yet
-DRAM RAPL   ○ no RAPL collector yet
-
-Total power draw · W  ○ no power readings to graph
+Total draw  412 W of 2400 W capacity
+Average     405 W  min 380 W · max 455 W · last 20 min
+Power cap   none
+Redundancy  Critical · PSU Redundancy N+m
 
 Fans ────────────────────────────────────────────────────────────────────────────────────────────────── 6 of 6 reporting
 ● FAN1   ━━━━━───────────┃─ 6340 rpm    ● FAN2   ━━━━━───────────┃─ 6480 rpm    ● FAN3   ━━━━━───────────┃─ 6620 rpm
 ● FAN4   ━━━━━───────────┃─ 6760 rpm    ● FAN5   ━━━━━───────────┃─ 6900 rpm    ● FAN6   ━━━━━───────────┃─ 7040 rpm
 
-Findings · Power ───────────────────────────────────────────────────────────────────────────────────────────────────────
-○ no findings Power collector not implemented yet
+Findings · Power 2 ✖ ─────────────────────────────────────────────────────────────────────────────── n next · enter open
+ ✖ PSU2         PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no AC input: cable, PDU or breaker) · output 0 W
+ ✖ PSU Redunda… PSU Redundancy (N+m): Critical - one more failure and the server loses power
+
 
 
 

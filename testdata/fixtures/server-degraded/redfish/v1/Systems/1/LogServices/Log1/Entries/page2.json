@@ -1,0 +1,28 @@
+{
+  "Members": [
+    {
+      "Created": "2026-11-14T09:00:00Z",
+      "EntryType": "SEL",
+      "Id": "4",
+      "Message": "Uncorrectable ECC @DIMMB1(CPU2)",
+      "SensorType": "Memory",
+      "Severity": "Critical"
+    },
+    {
+      "Created": "2026-11-15T09:00:00Z",
+      "EntryType": "SEL",
+      "Id": "5",
+      "Message": "PS2 Status: Power Supply AC lost",
+      "SensorType": "Power Supply",
+      "Severity": "Critical"
+    },
+    {
+      "Created": "2026-11-15T09:00:01Z",
+      "EntryType": "SEL",
+      "Id": "6",
+      "Message": "Redundancy Lost",
+      "SensorType": "Power Unit",
+      "Severity": "Warning"
+    }
+  ]
+}

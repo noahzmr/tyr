@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -10,18 +11,16 @@ import (
 	"github.com/noahzmr/tyr/internal/model"
 )
 
-// powerTab (canvas board Power). The Power collector (PSU sensors, RAPL,
-// redundancy) does not exist yet: the tab shows the PSU inventory from
-// SMBIOS and the fans the System collector reads, and every missing
-// reading as ○ unavailable with the reason.
+// powerTab (canvas board Power): the power supplies with their state and
+// live readings, total draw and cap, redundancy, the draw over the
+// session, and the chassis fans. Live data comes from the BMC's Redfish
+// service; without it the SMBIOS power supply records are shown.
 type powerTab struct {
 	snap *model.Snapshot
 	w, h int
 	keys keyMap
 	list *listView
 }
-
-const powerMissing = "collector not implemented yet"
 
 func newPowerTab(p *prefs) *powerTab { return &powerTab{keys: newKeyMap(), list: newListView(p)} }
 
@@ -37,11 +36,27 @@ func (p *powerTab) Help() []key.Binding {
 	return []key.Binding{p.keys.Up, p.keys.Enter, keyCopy}
 }
 
-func (p *powerTab) psus() []model.PSUFRU {
+func (p *powerTab) power() *model.Power {
+	if p.snap == nil {
+		return nil
+	}
+	return p.snap.Power
+}
+
+// supplies: the Power section's, else the SMBIOS inventory.
+func (p *powerTab) supplies() []model.PowerSupply {
+	if pw := p.power(); pw != nil && len(pw.Supplies) > 0 {
+		return pw.Supplies
+	}
 	if p.snap == nil || p.snap.System == nil {
 		return nil
 	}
-	return p.snap.System.PSUs
+	var out []model.PowerSupply
+	for _, x := range p.snap.System.PSUs {
+		out = append(out, model.PowerSupply{Name: x.Label(), Present: x.Present, Health: x.StatusText, Manufacturer: x.Manufacturer,
+			Model: x.Model, Serial: x.Serial, Firmware: x.Revision, CapacityWatts: x.MaxWatts, Status: x.Health()})
+	}
+	return out
 }
 
 func (p *powerTab) fans() []model.Sensor {
@@ -51,24 +66,21 @@ func (p *powerTab) fans() []model.Sensor {
 	return p.snap.System.Fans
 }
 
-// psuStatus is the PSU state from SMBIOS.
-func psuStatus(x model.PSUFRU) model.Status { return x.Health() }
-
 func (p *powerTab) arrange() {
 	var items []listItem
-	for _, x := range p.psus() {
-		items = append(items, listItem{key: x.Label(), alt: []string{x.Name, x.Serial}, status: psuStatus(x)})
+	for _, x := range p.supplies() {
+		items = append(items, listItem{key: x.Name, alt: []string{x.Serial, x.Model, x.Bay}, status: x.Status})
 	}
 	p.list.arrange(items)
 }
 
-func (p *powerTab) psu(loc string) (model.PSUFRU, bool) {
-	for _, x := range p.psus() {
-		if x.Location == loc {
+func (p *powerTab) supply(name string) (model.PowerSupply, bool) {
+	for _, x := range p.supplies() {
+		if x.Name == name {
 			return x, true
 		}
 	}
-	return model.PSUFRU{}, false
+	return model.PowerSupply{}, false
 }
 
 func (p *powerTab) Focus(subject string) bool { p.arrange(); return p.list.focus(subject) }
@@ -86,32 +98,18 @@ func (p *powerTab) Strip(t *Theme, w int) string {
 	if p.snap == nil {
 		return ""
 	}
-	if sec := p.snap.Power; sec != nil { // once the collector exists
+	if sec := p.power(); sec != nil {
 		h := sec.Head()
 		return statusStrip(t, h.Status, h.Summary, "", "", w)
 	}
-	var facts []string
-	if n := len(p.psus()); n > 0 {
-		total := 0.0
-		for _, x := range p.psus() {
-			if x.MaxWatts != nil {
-				total += *x.MaxWatts
-			}
-		}
-		f := countLabel(n, "PSU", "PSUs")
-		if total > 0 {
-			f += fmt.Sprintf(" · %.0f W rated", total)
-		}
-		facts = append(facts, f)
+	return truncate(t.Unavail("Power", "not collected"), w)
+}
+
+func wattsOf(v *float64) string {
+	if v == nil {
+		return "–"
 	}
-	if n := len(p.fans()); n > 0 {
-		facts = append(facts, countLabel(n, "fan", "fans"))
-	}
-	s := t.Unavail("Power", powerMissing)
-	if len(facts) > 0 {
-		s += t.Dim.Render(" · inventory only: " + strings.Join(facts, " · "))
-	}
-	return truncate(s, w)
+	return fmt.Sprintf("%.0f W", *v)
 }
 
 func (p *powerTab) View(t *Theme) string {
@@ -119,25 +117,37 @@ func (p *powerTab) View(t *Theme) string {
 		return ""
 	}
 	w := p.w
+	pw := p.power()
+	live := pw != nil && pw.Source == "redfish"
 	var out []string
-	// power supplies
-	out = append(out, t.HeadingRight("Power supplies", "", "SMBIOS type 39 · no live readings", w))
-	if len(p.psus()) == 0 {
-		out = append(out, t.Unavail("PSU inventory", "no SMBIOS type 39 records (needs root, or the board has none)"))
+	note := "SMBIOS · no live readings (BMC Redfish not readable)"
+	if live {
+		note = "BMC Redfish"
+	}
+	out = append(out, t.HeadingRight("Power supplies", "", note, w))
+	if len(p.supplies()) == 0 {
+		out = append(out, t.Unavail("power supplies", "no Redfish data and no SMBIOS type 39 records"))
 	} else {
-		cols := []column{{"PSU", -1}, {"Model", -1}, {"Serial", -1}, {"State", -1}, {">Rating", 8}, {"Input · output · °C", 0}}
+		cols := []column{{"PSU", -1}, {"Model", -1}, {"Serial", -1}, {"State", -1}, {">Input", 7}, {">Output", 8}, {">Rating", 8}, {"Firmware", 0}}
 		if w < 100 {
-			cols = []column{{"PSU", -1}, {"Model", 0}, {"Serial", -1}, {">Rating", 8}}
+			cols = []column{{"PSU", -1}, {"State", -1}, {">Input", 7}, {">Output", 8}, {"Serial", 0}}
 		}
 		for i := range p.list.shown {
-			x, _ := p.psu(p.list.shown[i].key)
-			rating := "–"
-			if x.MaxWatts != nil {
-				rating = fmt.Sprintf("%.0f W", *x.MaxWatts)
+			x, _ := p.supply(p.list.shown[i].key)
+			state := x.Health
+			if x.State != "" && x.State != "Enabled" {
+				state = strings.TrimSpace(state + " " + x.State)
 			}
-			cells := map[string]string{"PSU": x.Location, "Model": strings.TrimSpace(x.Manufacturer + " " + x.Model),
-				"Serial": orDash(x.Serial), "State": t.StatusText(psuStatus(x), orDash(x.StatusText)), ">Rating": rating,
-				"Input · output · °C": t.Sub.Render("○ needs BMC PSU sensors"), "Readings": t.Sub.Render("○ needs BMC")}
+			in := "–"
+			if x.InputVolts != nil {
+				in = fmt.Sprintf("%.0f V", *x.InputVolts)
+				if *x.InputVolts == 0 {
+					in = t.StatusText(model.StatusCrit, in)
+				}
+			}
+			cells := map[string]string{"PSU": x.Name, "Model": strings.TrimSpace(x.Manufacturer + " " + x.Model), "Serial": orDash(x.Serial),
+				"State": t.StatusText(x.Status, orDash(state)), ">Input": in, ">Output": wattsOf(x.OutputWatts), ">Rating": wattsOf(x.CapacityWatts),
+				"Firmware": orDash(x.Firmware)}
 			var r row
 			for _, c := range cols {
 				r.cells = append(r.cells, cells[c.title])
@@ -147,21 +157,31 @@ func (p *powerTab) View(t *Theme) string {
 		out = append(out, strings.Split(p.list.render(t, cols, w, len(p.list.shown)+1), "\n")...)
 	}
 
-	// totals and rails
-	totals := kvBlock(t, []kvPair{
-		{"Redundancy", t.Unavail("", "needs PSU status sensors")},
-		{"Total draw", t.Unavail("", "no BMC power reading")},
-		{"CPU RAPL", t.Unavail("", "no RAPL collector yet")},
-		{"DRAM RAPL", t.Unavail("", "no RAPL collector yet")},
-	}, "")
-	rails := t.Dim.Render("PSU rails") + "\n" + t.Unavail("", "needs BMC voltage sensors")
-	out = append(out, "")
-	if w >= 100 {
-		out = append(out, strings.Split(kvColumns(w, totals, rails), "\n")...)
-	} else {
-		out = append(out, strings.Split(totals, "\n")...)
+	// totals, redundancy, the draw over the session
+	if live {
+		draw := wattsOf(pw.ConsumedWatts)
+		if pw.CapacityWatts != nil {
+			draw += t.Dim.Render(" of " + wattsOf(pw.CapacityWatts) + " capacity")
+		}
+		avg := ""
+		if pw.AvgWatts != nil {
+			avg = wattsOf(pw.AvgWatts) + t.Dim.Render(fmt.Sprintf("  min %s · max %s · last %d min", wattsOf(pw.MinWatts), wattsOf(pw.MaxWatts), pw.IntervalMin))
+		}
+		limit := t.Sub.Render("none")
+		if pw.LimitWatts != nil {
+			limit = wattsOf(pw.LimitWatts)
+		}
+		rows := []kvPair{{"Total draw", draw}, {"Average", avg}, {"Power cap", limit}}
+		for _, r := range pw.Redundancy {
+			rows = append(rows, kvPair{"Redundancy", t.StatusText(r.Status, orDash(r.Health)) + t.Dim.Render(" · "+strings.TrimSpace(r.Name+" "+r.Mode))})
+		}
+		out = append(out, "", kvBlock(t, rows, ""))
+		if hist := t.sess.history("power/draw"); len(hist) > 1 && p.h >= 30 {
+			spec := chartSpec{Title: "Total power draw · W", Value: wattsOf(pw.ConsumedWatts), Series: hist, Color: t.Series[0],
+				Window: time.Duration(len(hist)) * 5 * time.Second, YFmt: func(v float64) string { return fmt.Sprintf("%.0f", v) }}
+			out = append(out, "", brailleChart(t, spec, w, 6))
+		}
 	}
-	out = append(out, "", t.Bold.Render("Total power draw · W")+"  "+t.Unavail("", "no power readings to graph"))
 
 	// fans
 	fans := p.fans()
@@ -191,34 +211,41 @@ func (p *powerTab) View(t *Theme) string {
 		out = append(out, "", t.Heading("Fans", "", w), t.Unavail("fans", "no fan sensors (IPMI or hwmon)"))
 	}
 
-	// findings
-	if sec := p.snap.Power; sec != nil {
+	if sec := p.power(); sec != nil {
 		out = append(out, "", findingsSection(t, "Power", sec.Head().Findings, sec.Head().Sources, max(3, p.h-len(out)-1), w))
-	} else {
-		out = append(out, "", t.Heading("Findings · Power", "", w), t.Unavail("no findings", "Power "+powerMissing))
 	}
 	return strings.Join(out, "\n")
 }
 
-// Detail: the selected PSU's page.
+// Detail: the selected supply's page.
 func (p *powerTab) Detail(t *Theme, w int) (string, string) {
 	it, ok := p.list.current()
 	if !ok {
 		return "", ""
 	}
-	x, _ := p.psu(it.key)
+	x, _ := p.supply(it.key)
 	doc := newDoc(t, w)
-	doc.section("Identity", t.Badge(psuStatus(x)))
-	rating := ""
-	if x.MaxWatts != nil {
-		rating = fmt.Sprintf("%.0f W", *x.MaxWatts)
+	doc.section("Identity", t.Badge(x.Status))
+	doc.kv([2]string{"Name", x.Name}, [2]string{"Bay", x.Bay}, [2]string{"Manufacturer", x.Manufacturer}, [2]string{"Model", x.Model},
+		[2]string{"Serial", t.Bold.Render(x.Serial)}, [2]string{"Part number", x.PartNumber}, [2]string{"Spare part", x.SparePart},
+		[2]string{"Firmware", x.Firmware}, [2]string{"Type", x.Type}, [2]string{"Rating", wattsOf(x.CapacityWatts)})
+	doc.section("State", "")
+	in := ""
+	if x.InputVolts != nil {
+		in = fmt.Sprintf("%.0f V %s", *x.InputVolts, x.InputType)
+		if *x.InputVolts == 0 {
+			in = t.StatusText(model.StatusCrit, "0 V - no AC input: check the cable, the PDU outlet and its breaker")
+		}
 	}
-	doc.kv([2]string{"Location", x.Location}, [2]string{"Name", x.Name}, [2]string{"Manufacturer", x.Manufacturer},
-		[2]string{"Model", x.Model}, [2]string{"Serial", x.Serial}, [2]string{"Revision", x.Revision},
-		[2]string{"Rating", rating}, [2]string{"State", x.StatusText})
-	doc.section("Readings", "")
-	doc.add(t.Unavail("input, output, rails, temperature", "Power "+powerMissing+" (BMC PSU sensors)"))
-	return "PSU " + x.Location, doc.String()
+	doc.kv([2]string{"Health", t.StatusText(x.Status, x.Health)}, [2]string{"State", x.State}, [2]string{"BMC state", x.Detail},
+		[2]string{"Input", in}, [2]string{"Output", wattsOf(x.OutputWatts)})
+	if pw := p.power(); pw == nil || pw.Source != "redfish" {
+		doc.add(hang("   ", t.Sub.Render("No live readings: the BMC's Redfish service is not readable (see Findings · sources). SMBIOS only says present / OK / critical."), w-1))
+	}
+	if sec := p.power(); sec != nil {
+		doc.findings(model.ModPower, relatedFindings(sec.Findings, x.Name))
+	}
+	return x.Name, doc.String()
 }
 
 func (p *powerTab) SelectedSerial() (string, string) {
@@ -226,8 +253,8 @@ func (p *powerTab) SelectedSerial() (string, string) {
 	if !ok {
 		return "", ""
 	}
-	x, _ := p.psu(it.key)
-	return x.Location, x.Serial
+	x, _ := p.supply(it.key)
+	return x.Name, x.Serial
 }
 
 func (p *powerTab) PageInfo() (pageInfo, bool) {
@@ -235,6 +262,6 @@ func (p *powerTab) PageInfo() (pageInfo, bool) {
 	if !ok {
 		return pageInfo{}, false
 	}
-	x, _ := p.psu(it.key)
-	return pageInfo{path: []string{x.Label()}, status: psuStatus(x), facts: nonEmpty(x.Model, sn(x.Serial))}, true
+	x, _ := p.supply(it.key)
+	return pageInfo{path: []string{x.Name}, status: x.Status, facts: nonEmpty(x.Model, sn(x.Serial))}, true
 }

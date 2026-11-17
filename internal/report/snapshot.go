@@ -69,6 +69,8 @@ func Snapshot(s *model.Snapshot) string {
 	storageSection(&m, s.Storage)
 	networkSection(&m, s.Network)
 	accelSection(&m, s.Accel)
+	powerSection(&m, s.Power)
+	eventsSection(&m, s.Events)
 	inventorySection(&m, s.Inventory)
 	explainSection(&m, s, alertsFrom(s))
 	sourcesSection(&m, s)
@@ -542,4 +544,82 @@ func faultTable(m *md, c *model.CPU) {
 			fmt.Sprintf("%d of %d", g.n, len(c.ProcessFaults)), esc(strings.Join(procs, ", ")), g.first.UTC().Format("2006-01-02 15:04"), g.last.UTC().Format("2006-01-02 15:04")})
 	}
 	m.table([]string{"Socket / core", "CPUs", ">Crashes", ">Share", "Programs", "First (UTC)", "Last (UTC)"}, rows)
+}
+
+// powerSection: draw, cap, redundancy and every supply with its readings.
+func powerSection(m *md, p *model.Power) {
+	if p == nil || len(p.Supplies) == 0 {
+		return
+	}
+	m.h(2, "Power")
+	src := "SMBIOS (no live readings: the BMC's Redfish service was not readable)"
+	if p.Source == "redfish" {
+		src = "BMC Redfish"
+	}
+	limit := "none"
+	if p.LimitWatts != nil {
+		limit = fmt.Sprintf("%.0f W", *p.LimitWatts)
+	}
+	avg := ""
+	if p.AvgWatts != nil {
+		avg = fmt.Sprintf("%s (min %s, max %s, last %d min)", f0(p.AvgWatts, " W"), f0(p.MinWatts, " W"), f0(p.MaxWatts, " W"), p.IntervalMin)
+	}
+	kv := [][2]string{{"Source", src}, {"Draw", f0(p.ConsumedWatts, " W")}, {"Capacity", f0(p.CapacityWatts, " W")}, {"Average", avg}}
+	if p.Source == "redfish" {
+		kv = append(kv, [2]string{"Power cap", limit})
+	}
+	for _, r := range p.Redundancy {
+		kv = append(kv, [2]string{"Redundancy", strings.TrimSpace(status(r.Status) + " " + r.Name + " " + r.Mode)})
+	}
+	m.kv(kv...)
+	var rows [][]string
+	for _, s := range p.Supplies {
+		in := ""
+		if s.InputVolts != nil {
+			in = fmt.Sprintf("%.0f V", *s.InputVolts)
+		}
+		rows = append(rows, []string{s.Name, s.Bay, strings.TrimSpace(s.Manufacturer + " " + s.Model), s.Serial, s.SparePart, s.Firmware,
+			strings.TrimSpace(status(s.Status) + " " + s.Health + " " + s.Detail), in, f0(s.OutputWatts, " W"), f0(s.CapacityWatts, " W")})
+	}
+	m.table([]string{"PSU", "Bay", "Model", "Serial", "Spare part", "Firmware", "State", ">Input", ">Output", ">Rating"}, rows)
+}
+
+// eventsSection: the open BMC events, then the newest warnings and errors
+// of all logs.
+func eventsSection(m *md, e *model.Events) {
+	if e == nil || len(e.Logs) == 0 {
+		return
+	}
+	m.h(2, "Event logs")
+	var logs []string
+	for _, l := range e.Logs {
+		logs = append(logs, fmt.Sprintf("%s (%d)", l.Name, l.Entries))
+	}
+	m.p("Logs read: %s.", esc(strings.Join(logs, ", ")))
+	var rows [][]string
+	for i := len(e.Entries) - 1; i >= 0 && len(rows) < 60; i-- {
+		ev := e.Entries[i]
+		if ev.Severity < model.StatusWarn || ev.Severity == model.StatusUnknown {
+			continue
+		}
+		when := "-"
+		if !ev.Time.IsZero() {
+			when = ev.Time.UTC().Format("2006-01-02 15:04")
+		}
+		rep := ""
+		if ev.Repaired != nil {
+			rep = map[bool]string{true: "repaired", false: "open"}[*ev.Repaired]
+		}
+		comp := ev.Component
+		if comp == "" {
+			comp = ev.Class
+		}
+		rows = append(rows, []string{when, status(ev.Severity), ev.Log, esc(comp), esc(ev.Message), rep})
+	}
+	if len(rows) == 0 {
+		m.p("No warnings or errors in the logs.")
+		return
+	}
+	m.p("Warnings and errors, newest first (at most 60):")
+	m.table([]string{"Time (UTC)", "Severity", "Log", "Component", "Message", "Repaired"}, rows)
 }

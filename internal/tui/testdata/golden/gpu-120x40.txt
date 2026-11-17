@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  20 crit 22 warn   ✖ CRIT
-1 Overview ✖42 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ○ 6 Net ✖6  7 GPU/NPU ✖6  8 Events ○ 9 Stress 0 Inv           ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  25 crit 24 warn   ✖ CRIT
+1 Overview ✖49 2 CPU ✖8 3 Mem ✖9 4 Stor ✖12 5 Power ✖2 6 Net ✖6  7 GPU/NPU ✖6  8 Events ✖5 9 Stress 0 Inv         ? help
  ✖ CRIT  2 GPUs · 0 NPUs · nvidia 550.127.05 · 1 BMC display adapter not counted
 
    Device Model                                 Driver Load           Memory                      Power  °C PCIe

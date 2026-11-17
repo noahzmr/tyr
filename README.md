@@ -113,6 +113,8 @@ guard that keeps it safe, and gives a verdict you can trust.
 | Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, transceiver optics, LLDP neighbours, BMC LAN |
 | GPU/NPU | PCIe link width and speed, temperatures, power, ECC, retired/remapped rows, driver errors (Xid) |
 | System | identity, BIOS, BMC, PSU inventory, fans and chassis temperatures |
+| Power | power supplies with state, input voltage, output and rating; total draw and cap; redundancy (BMC Redfish, else SMBIOS) |
+| Events | the BMC's event logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages in one timeline |
 
 - Local Linux interfaces first (sysfs, hwmon, procfs, `/dev/kmsg`); external
   tools only where they add data; the BMC only where Linux has no answer.
@@ -335,6 +337,8 @@ and cron work unchanged.
 | `--crit-temp`, `--warn-temp` | 90, 75 | limits for sensors without their own; given explicitly they also replace the built-in AMD CPU limits |
 | `--no-ipmi`, `--no-dmidecode`, `--no-smart` | off | skip a source |
 | `--smart-interval` | 5m | reuse SMART data this long (`r` and stress snapshots always read fresh) |
+| `--redfish HOST` | | BMC address for Redfish when its host interface (iLO Virtual NIC) is off; credentials from `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or `/etc/tyr/redfish.conf` |
+| `--no-redfish` | off | do not query the BMC's Redfish service |
 | `--nic-all` | off | include virtual interfaces |
 | `--sel-all` | off | all SEL entries, not only warnings and errors |
 | `--timeout` | 10s | per collector |
