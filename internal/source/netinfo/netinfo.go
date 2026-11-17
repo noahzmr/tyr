@@ -284,11 +284,13 @@ func ParseLinkInfo(data []byte) LinkInfo {
 	return li
 }
 
+var statsRe = regexp.MustCompile(`err|drop|crc|miss|discard|fifo|timeout|bad|illegal|symbol|fcs|lost`)
+
 // ParseStats parses `ethtool -S <if>` and returns non-zero counters whose
 // names indicate errors, drops or discards.
 func ParseStats(data []byte) map[string]uint64 {
 	out := map[string]uint64{}
-	re := regexp.MustCompile(`err|drop|crc|miss|discard|fifo|timeout|bad|illegal|symbol|fcs|lost`)
+	re := statsRe
 	for _, l := range strings.Split(string(data), "\n") {
 		k, v, ok := strings.Cut(l, ":")
 		if !ok {

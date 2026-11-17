@@ -15,18 +15,31 @@ import (
 // are lost and why that usually happens on this kind of interface.
 
 // rings reads the receive ring and queue count once per interface.
-func (c *Collector) rings(ctx context.Context, env *collector.Env, n *model.NIC) {
+func (c *Collector) rings(ctx context.Context, env *collector.Env, n *model.NIC, et *netinfo.Ethtool, have bool) {
 	c.mu.Lock()
 	r, ok := c.ring[n.Name]
 	c.mu.Unlock()
 	if !ok {
-		if b, err := env.Exec.Run(ctx, "ethtool", "-g", n.Name); err == nil {
-			if v, ok := netinfo.ParseRing(b); ok {
-				r.rx, r.max = v.RX, v.RXMax
+		gotRing, gotQ := false, false
+		if et != nil {
+			if v, err := et.RingParams(n.Name); err == nil {
+				r.rx, r.max, gotRing = v.RX, v.RXMax, true
+			}
+			if q, err := et.RxQueues(n.Name); err == nil {
+				r.queues, gotQ = q, true
 			}
 		}
-		if b, err := env.Exec.Run(ctx, "ethtool", "-l", n.Name); err == nil {
-			r.queues, _ = netinfo.ParseChannels(b)
+		if !gotRing && have {
+			if b, err := env.Exec.Run(ctx, "ethtool", "-g", n.Name); err == nil {
+				if v, ok := netinfo.ParseRing(b); ok {
+					r.rx, r.max = v.RX, v.RXMax
+				}
+			}
+		}
+		if !gotQ && have {
+			if b, err := env.Exec.Run(ctx, "ethtool", "-l", n.Name); err == nil {
+				r.queues, _ = netinfo.ParseChannels(b)
+			}
 		}
 		c.mu.Lock()
 		c.ring[n.Name] = r

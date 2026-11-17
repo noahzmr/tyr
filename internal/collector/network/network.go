@@ -59,6 +59,13 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	lldp := c.lldp(ctx, env, h)
 	hwmon := sysfs.ReadHwmon(f)
 	_, haveEthtool := env.Exec.LookPath("ethtool")
+	var et *netinfo.Ethtool // native requests on a live host
+	if env.FS.IsHost() {
+		if e, err := netinfo.OpenEthtool(); err == nil {
+			et = e
+			defer e.Close()
+		}
+	}
 
 	// Which interfaces to show: physical, wireless, bonds, VLANs on shown
 	// interfaces, bridges with a physical/bond port. Everything else only
@@ -121,9 +128,9 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 				n.NUMANode = d.NUMANode
 				n.Serial, n.PartNumber = vpdIDs(f, d)
 			}
-			c.ethtool(ctx, env, &n, haveEthtool == nil)
-			if haveEthtool == nil && n.Kind == "physical" {
-				c.rings(ctx, env, &n)
+			c.ethtool(ctx, env, &n, haveEthtool == nil, et)
+			if n.Kind == "physical" && (et != nil || haveEthtool == nil) {
+				c.rings(ctx, env, &n, et, haveEthtool == nil)
 			}
 			for _, chip := range hwmon {
 				if chip.Device == x.DevicePath {
@@ -209,9 +216,11 @@ func (c *Collector) lldp(ctx context.Context, env *collector.Env, h *model.Heade
 	return m
 }
 
-// ethtool fills driver/firmware (ioctl first), link modes, error counters and
-// the transceiver. Wireless NICs only get driver info.
-func (c *Collector) ethtool(ctx context.Context, env *collector.Env, n *model.NIC, have bool) {
+// ethtool fills driver/firmware, link modes, error counters and the
+// transceiver: natively (et, the SIOCETHTOOL requests) where the driver
+// answers, else through the ethtool tool when it is installed. Wireless
+// NICs only get driver info.
+func (c *Collector) ethtool(ctx context.Context, env *collector.Env, n *model.NIC, have bool, et *netinfo.Ethtool) {
 	var di netinfo.DrvInfo
 	var err error
 	if env.FS.IsHost() {
@@ -231,30 +240,64 @@ func (c *Collector) ethtool(ctx context.Context, env *collector.Env, n *model.NI
 	if strings.EqualFold(n.Firmware, "N/A") {
 		n.Firmware = ""
 	}
-	if !have || n.Kind == "wireless" {
+	if n.Kind == "wireless" {
 		return
 	}
-	if b, err := env.Exec.Run(ctx, "ethtool", n.Name); err == nil || len(b) > 0 {
-		li := netinfo.ParseLinkInfo(b)
-		n.MaxSpeedMbps, n.PortType, n.Autoneg = li.MaxSpeedMbps, li.Port, li.Autoneg
-	}
-	if b, err := env.Exec.Run(ctx, "ethtool", "-S", n.Name); err == nil {
-		if m := netinfo.ParseStats(b); len(m) > 0 {
-			n.ErrorCounters = m
+	// link modes
+	linked := false
+	if et != nil {
+		if li, err := et.LinkInfo(n.Name); err == nil {
+			n.MaxSpeedMbps, n.PortType, n.Autoneg, linked = li.MaxSpeedMbps, li.Port, li.Autoneg, true
 		}
 	}
-	if n.PortType == "FIBRE" || n.PortType == "Direct Attach Copper" || n.PortType == "Other" || n.PortType == "" {
-		if b, err := env.Exec.Run(ctx, "ethtool", "-m", n.Name); err == nil {
-			if t := netinfo.ParseModule(b); t != nil {
-				st := model.StatusOK
-				for i := range t.Sensors {
-					check.EvalSensor(&t.Sensors[i])
-					st = model.Worst(st, t.Sensors[i].Status)
-				}
-				t.Status = st
-				n.Module = t
+	if !linked && have {
+		if b, err := env.Exec.Run(ctx, "ethtool", n.Name); err == nil || len(b) > 0 {
+			li := netinfo.ParseLinkInfo(b)
+			n.MaxSpeedMbps, n.PortType, n.Autoneg = li.MaxSpeedMbps, li.Port, li.Autoneg
+		}
+	}
+	// driver statistics: the error counters
+	stats := false
+	if et != nil {
+		if all, err := et.Stats(n.Name); err == nil {
+			if m := netinfo.FilterStats(all); len(m) > 0 {
+				n.ErrorCounters = m
+			}
+			stats = true
+		}
+	}
+	if !stats && have {
+		if b, err := env.Exec.Run(ctx, "ethtool", "-S", n.Name); err == nil {
+			if m := netinfo.ParseStats(b); len(m) > 0 {
+				n.ErrorCounters = m
 			}
 		}
+	}
+	// transceiver
+	if n.PortType != "FIBRE" && n.PortType != "Direct Attach Copper" && n.PortType != "Other" && n.PortType != "" {
+		return
+	}
+	var t *model.Transceiver
+	if et != nil {
+		if typ, b, err := et.ModuleEEPROM(n.Name); err == nil {
+			t = netinfo.ParseModuleEEPROM(typ, b)
+		}
+	}
+	if (t == nil || len(t.Sensors) == 0) && have { // externally calibrated or unread: let ethtool decode it
+		if b, err := env.Exec.Run(ctx, "ethtool", "-m", n.Name); err == nil {
+			if tt := netinfo.ParseModule(b); tt != nil {
+				t = tt
+			}
+		}
+	}
+	if t != nil {
+		st := model.StatusOK
+		for i := range t.Sensors {
+			check.EvalSensor(&t.Sensors[i])
+			st = model.Worst(st, t.Sensors[i].Status)
+		}
+		t.Status = st
+		n.Module = t
 	}
 }
 
