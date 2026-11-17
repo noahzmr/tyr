@@ -129,10 +129,11 @@ guard that keeps it safe, and gives a verdict you can trust.
 ### Stress tests
 
 - CPU, memory, storage and network, one at a time or as a full test.
-- Built-in engines that verify every result, among them a Prime95-style
-  torture test (Lucas-Lehmer FFTs with round-off and residue checks, small /
-  large / blend), plus `stress-ng`, `mprime`, `memtester` and `iperf3` when
-  installed; the TUI installs the packaged ones.
+- Built-in engines that verify every result, among them Tyr's own Prime95:
+  the torture test (Lucas-Lehmer FFTs on AVX-512 / AVX2 with FMA, round-off
+  and residue checks, small / large / blend) - no external tool needed. Plus
+  `stress-ng`, `mprime`, `memtester` and `iperf3` when installed; the TUI
+  installs the packaged ones.
 - Baseline snapshot → load under a safety guard → after snapshot → verdict.
 - The guard lets a CPU run at its own limit and stops it 5 °C beyond; drives,
   DIMMs and GPUs stop at their critical temperature; any new machine check or
@@ -213,7 +214,7 @@ Tools add data where Linux has no interface Tyr can read:
 |---|---|---|
 | Recommended | `smartctl` (SATA/SAS SMART), `ras-mc-ctl` (rasdaemon), `lldpctl` (switch port) | distribution packages `smartmontools`, `rasdaemon`, `lldpd` |
 | Stress engines | `stress-ng`, `memtester`, `iperf3` | distribution packages, or `i` on the Stress tab |
-| Vendor, manual | `storcli64` / `perccli64` (MegaRAID / PERC), `nvidia-smi` (with the NVIDIA driver), `xrt-smi` (AMD NPUs), `mprime` (Prime95) | vendor downloads |
+| Vendor, manual | `storcli64` / `perccli64` (MegaRAID / PERC), `nvidia-smi` (with the NVIDIA driver), `xrt-smi` (AMD NPUs); optional `mprime` (Prime95 itself - Tyr has its own torture test) | vendor downloads |
 | Desktop copy | `wl-copy`, `xclip` or `xsel` | distribution packages |
 
 Which tool adds what, the package names per distribution and how to install

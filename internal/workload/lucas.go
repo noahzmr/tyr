@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/bits"
-	"sync"
 )
 
 // A Prime95-style torture test: Lucas-Lehmer iterations s → s² − 2 mod
@@ -62,7 +61,7 @@ func TortureCases(mode string) []LLCase {
 // FFTSize is the FFT length the case uses.
 func (c LLCase) FFTSize() int {
 	d := (int(c.P) + 15) / 16
-	n := 1
+	n := 4 // the FFT's last two stages are one radix-4 pass
 	for n < 2*d {
 		n <<= 1
 	}
@@ -87,74 +86,23 @@ func (e *LLError) Error() string {
 // MaxRoundoff is the round-off at which a result counts as wrong.
 const MaxRoundoff = 0.40
 
-// --- FFT ---------------------------------------------------------------------------
-
-// fftPlan holds the twiddles and bit-reversal of one size, shared read-only.
-type fftPlan struct {
-	n   int
-	rev []int32
-	tw  []complex128 // e^(−2πik/n), k < n/2
-}
-
-var plans sync.Map // int → *fftPlan
-
-func planFor(n int) *fftPlan {
-	if p, ok := plans.Load(n); ok {
-		return p.(*fftPlan)
-	}
-	p := &fftPlan{n: n, rev: make([]int32, n), tw: make([]complex128, n/2)}
-	lg := bits.TrailingZeros(uint(n))
-	for i := range p.rev {
-		p.rev[i] = int32(bits.Reverse32(uint32(i)) >> (32 - lg))
-	}
-	for k := range p.tw {
-		s, c := math.Sincos(-2 * math.Pi * float64(k) / float64(n))
-		p.tw[k] = complex(c, s)
-	}
-	v, _ := plans.LoadOrStore(n, p)
-	return v.(*fftPlan)
-}
-
-// fft transforms a in place; inverse uses conjugate twiddles (unscaled).
-func (p *fftPlan) fft(a []complex128, inverse bool) {
-	n := p.n
-	for i, r := range p.rev {
-		if int(r) > i {
-			a[i], a[r] = a[r], a[i]
-		}
-	}
-	for size := 2; size <= n; size <<= 1 {
-		half, step := size>>1, n/size
-		for start := 0; start < n; start += size {
-			for k := 0; k < half; k++ {
-				w := p.tw[k*step]
-				if inverse {
-					w = complex(real(w), -imag(w))
-				}
-				u, v := a[start+k], a[start+k+half]*w
-				a[start+k], a[start+k+half] = u+v, u-v
-			}
-		}
-	}
-}
-
 // --- Lucas-Lehmer ---------------------------------------------------------------------
 
 // llState squares numbers mod 2^p − 1 with balanced 16-bit digits.
 type llState struct {
-	p     uint
-	d     int     // digits
-	digit []int64 // balanced, −2^15 ≤ x < 2^15 (top digit may be larger)
-	buf   []complex128
-	words []uint64 // the product
-	lo    []uint64 // the residue, below 2^p
-	plan  *fftPlan
+	p      uint
+	d      int       // digits
+	digit  []int64   // balanced, −2^15 ≤ x < 2^15 (top digit may be larger)
+	re, im []float64 // the FFT buffer, split for vector units
+	words  []uint64  // the product
+	lo     []uint64  // the residue, below 2^p
+	plan   *fftPlan
 }
 
 func newLL(p uint) *llState {
 	d := (int(p) + 15) / 16
 	n := LLCase{P: p}.FFTSize()
-	return &llState{p: p, d: d, digit: make([]int64, d), buf: make([]complex128, n),
+	return &llState{p: p, d: d, digit: make([]int64, d), re: make([]float64, n), im: make([]float64, n),
 		words: make([]uint64, (2*d+2)/4+2), lo: make([]uint64, (int(p)+63)/64+1), plan: planFor(n)}
 }
 
@@ -184,20 +132,19 @@ func (s *llState) balance() {
 
 // step computes s² − 2 mod 2^p − 1 and returns the largest round-off.
 func (s *llState) step() float64 {
-	b := s.buf
-	for i := range b {
+	re, im := s.re, s.im
+	for i := range re {
 		if i < s.d {
-			b[i] = complex(float64(s.digit[i]), 0)
+			re[i] = float64(s.digit[i])
 		} else {
-			b[i] = 0
+			re[i] = 0
 		}
+		im[i] = 0
 	}
-	s.plan.fft(b, false)
-	for i, v := range b {
-		b[i] = v * v
-	}
-	s.plan.fft(b, true)
-	scale := 1 / float64(len(b))
+	s.plan.fft(re, im, false)
+	square(re, im)
+	s.plan.fft(re, im, true)
+	scale := 1 / float64(len(re))
 	clear(s.words)
 	var worst float64
 	var carry int64
@@ -205,8 +152,8 @@ func (s *llState) step() float64 {
 	// coefficients → base 2^16 digits (with carries) → 64-bit words
 	for k := 0; k < 2*s.d+2; k++ {
 		var c int64
-		if k < len(b) {
-			x := real(b[k]) * scale
+		if k < len(re) {
+			x := re[k] * scale
 			r := math.Round(x)
 			if e := math.Abs(x - r); e > worst {
 				worst = e

@@ -68,7 +68,7 @@ func (cpuTorture) Plan(cfg Config, env *Env) *Plan {
 	p.Info = []string{
 		"Like Prime95's torture test: Lucas-Lehmer iterations on Mersenne numbers of 4,000 to 7 million bits, squared with floating-point FFTs. " +
 			"Every iteration must round to whole numbers (round-off below 0.40) and every run must end at its known residue - a core that computes wrong is named.",
-		"Tyr's FFT is portable Go without hand-written AVX code: it runs cooler than Prime95 / mprime. For the most heat install mprime (engine mprime).",
+		"FFT code: " + workload.KernelName + " (vector units with fused multiply-add, as Prime95 uses them). No external tool needed; mprime remains an option for Prime95's own code.",
 	}
 	return p
 }
@@ -107,6 +107,7 @@ func (cpuTorture) Run(ctx context.Context, cfg Config, _ *Plan, rt Runtime) erro
 		}()
 	}
 	lo, hi := fftRange(cases)
+	rt.Logf("torture: %s FFTs %s–%s, %s, %d CPUs", fftMode(cfg), kOrM(lo), kOrM(hi), workload.KernelName, len(cpus))
 	rt.Progress(0, fmt.Sprintf("%s FFTs %s–%s on %d CPUs", fftMode(cfg), kOrM(lo), kOrM(hi), len(cpus)))
 	t := time.NewTicker(time.Second)
 	defer t.Stop()

@@ -99,11 +99,13 @@ Part of AMD's XRT and XDNA driver:
 install instructions in its README). Tyr finds `xrt-smi` in
 `/opt/xilinx/xrt/bin`.
 
-### Prime95 / mprime: the hottest CPU test
+### Prime95 / mprime: optional
 
-The `mprime` engine runs Prime95's own torture test, whose hand-written
-AVX-512 code draws more power than Tyr's `torture` engine. It is not packaged
-and has its own license terms (see the download page).
+Not needed: Tyr's own `torture` engine runs the same kind of test (Lucas-Lehmer
+FFTs on the vector units with FMA, results checked). The `mprime` engine runs
+Prime95's own code when you want exactly that - for example to compare with
+results from other machines. It is not packaged and has its own license terms
+(see the download page).
 
 1. Download the Linux 64-bit tarball from
    [mersenne.org/download](https://www.mersenne.org/download/).

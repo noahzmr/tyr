@@ -63,7 +63,7 @@ sequenceDiagram
 External engines appear when installed. In the TUI, `i` on the Stress form
 installs the packaged ones (`stress-ng`, `memtester`, `iperf3`) through the
 host's package manager after a confirmation; `mprime` has no distribution
-package ([install it by hand](tools.md#prime95--mprime-the-hottest-cpu-test)),
+package ([install it by hand](tools.md#prime95--mprime-optional)),
 and `memtest86+` is never installed because its package changes the boot
 loader. A pre-OS test of all RAM still needs memtest86+: Tyr detects it and
 says how to boot it. Package names and official documentation of every
@@ -160,9 +160,13 @@ Two checks catch a core that computes wrong:
 - **Residue.** Every finished run must end at its known value. A wrong
   result names the CPU, the exponent, the FFT size and the residues.
 
-The FFT is portable Go without hand-written AVX code, so it runs cooler than
-Prime95 / mprime, whose AVX-512 code draws the most power a CPU can. For the
-hottest test install mprime and choose the `mprime` engine.
+The butterflies run on the vector units with fused multiply-add, as in
+Prime95: AVX-512 (8 values per instruction) where the CPU has it, else AVX2
+with FMA (4), else plain Go (other architectures). Like Prime95 the transform
+needs no bit reversal (decimation in frequency forward, in time backward),
+and the last two stages are one radix-4 pass. Every path gives the exact
+residues; the plan and the log name the one in use. No external tool is
+needed; `mprime` stays available as an engine for Prime95's own code.
 
 ```bash
 tyr stress --component cpu --engine torture --fft small --duration 30m   # heat

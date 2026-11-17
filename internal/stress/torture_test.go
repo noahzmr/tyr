@@ -22,7 +22,7 @@ func TestTortureEngine(t *testing.T) {
 	host := hostEnv(twoCPUs())
 	p := cpuTorture{}.Plan(Config{Component: CompCPU, Engine: EngTorture, FFT: "large", Duration: time.Minute}, host)
 	all := strings.Join(append(append(p.Scope, p.Impact...), p.Info...), "\n")
-	for _, want := range []string{"large FFTs 256K–1M", "16 MiB per CPU", "round-off below 0.40", "mprime"} {
+	for _, want := range []string{"large FFTs 256K–1M", "16 MiB per CPU", "round-off below 0.40", "FFT code: "} {
 		if !strings.Contains(all, want) {
 			t.Errorf("plan lacks %q:\n%s", want, all)
 		}
