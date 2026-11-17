@@ -37,18 +37,22 @@ type Disk struct {
 	// IOErrorsTyr is the part of IOErrors this Tyr process caused itself:
 	// SMART queries the device or controller rejects. IOErrorsNew are the
 	// errors that appeared since Tyr started without its queries.
-	IOErrorsTyr  *uint64     `json:"io_errors_tyr,omitempty"`
-	IOErrorsNew  *uint64     `json:"io_errors_new,omitempty"`
-	KernelErrors int         `json:"kernel_log_errors"`
-	KernelLast   string      `json:"kernel_log_last,omitempty"`  // the latest kernel I/O error line
-	Remote       *RemoteDisk `json:"remote,omitempty"`           // iSCSI / FC volume of a storage system
-	Location     string      `json:"location,omitempty"`         // controller (driver) · port · bay
-	KernelLines  []string    `json:"kernel_log_lines,omitempty"` // the latest kernel log lines that name the disk (or its session)
-	SMARTAt      time.Time   `json:"smart_at,omitzero"`          // when SMART was read (it is cached)
-	Holders      []string    `json:"holders,omitempty"`          // md/dm devices using it
-	Mounted      []string    `json:"mountpoints,omitempty"`
-	SMART        *SMART      `json:"smart,omitempty"`
-	Status       Status      `json:"status"`
+	IOErrorsTyr *uint64 `json:"io_errors_tyr,omitempty"`
+	IOErrorsNew *uint64 `json:"io_errors_new,omitempty"`
+	// IOErrorsShared rose on every disk behind the same controller at the
+	// same moment, without kernel I/O errors: commands of a monitoring
+	// agent (smartd, HPE amsd) the controller rejects, not disk errors.
+	IOErrorsShared *uint64     `json:"io_errors_controller,omitempty"`
+	KernelErrors   int         `json:"kernel_log_errors"`
+	KernelLast     string      `json:"kernel_log_last,omitempty"`  // the latest kernel I/O error line
+	Remote         *RemoteDisk `json:"remote,omitempty"`           // iSCSI / FC volume of a storage system
+	Location       string      `json:"location,omitempty"`         // controller (driver) · port · bay
+	KernelLines    []string    `json:"kernel_log_lines,omitempty"` // the latest kernel log lines that name the disk (or its session)
+	SMARTAt        time.Time   `json:"smart_at,omitzero"`          // when SMART was read (it is cached)
+	Holders        []string    `json:"holders,omitempty"`          // md/dm devices using it
+	Mounted        []string    `json:"mountpoints,omitempty"`
+	SMART          *SMART      `json:"smart,omitempty"`
+	Status         Status      `json:"status"`
 }
 
 // SMART is drive self-monitoring data (ATA attributes or NVMe health log).
@@ -195,6 +199,9 @@ func (s *Storage) counters(c map[string]uint64) {
 			v := *d.IOErrors
 			if d.IOErrorsTyr != nil {
 				v -= min(v, *d.IOErrorsTyr)
+			}
+			if d.IOErrorsShared != nil {
+				v -= min(v, *d.IOErrorsShared)
 			}
 			c[p+"io_errors"] = v
 		}

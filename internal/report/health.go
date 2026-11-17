@@ -217,8 +217,11 @@ func coresTable(m *md, c *model.CPU) {
 			mce = fmt.Sprint(n)
 		}
 		core := ""
-		if l.SocketID >= 0 && l.CoreID >= 0 {
+		switch {
+		case l.SocketID >= 0 && l.CoreID >= 0:
 			core = fmt.Sprintf("%d / %d", l.SocketID, l.CoreID)
+		case l.SocketID >= 0:
+			core = fmt.Sprintf("%d / –", l.SocketID)
 		}
 		test := string(l.CoreTest)
 		if l.CoreTestDetail != "" {

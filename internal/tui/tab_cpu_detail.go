@@ -596,6 +596,7 @@ func (c *cpuTab) Detail(t *Theme, w int) (string, string) {
 		}
 	}
 	offlineSection(doc, c.cpu, l)
+	faultSection(doc, c.cpu, l)
 	mceHistorySection(doc, c.cpu, l)
 	if l.Online {
 		doc.section("Live", "")
@@ -778,4 +779,50 @@ func mceHistorySection(doc *doc, c *model.CPU, l model.LogicalCPU) {
 	doc.section("Machine check history", doc.t.Dim.Render(note+" · this boot, earlier boots, crash records, rasdaemon, BMC"))
 	doc.table([]string{"Time", "CPU", "Bank", "Unit", "Where", "Severity", "Source"}, rows, sts)
 	doc.add(hang("   ", doc.t.Sub.Render("Errors in the core (L1/L2, fetch, load-store, execution) point at this core; errors in shared units (L3, memory controller, fabric) are only reported by it."), doc.w-1))
+}
+
+// faultSection lists programs that crashed on this physical core (both
+// threads), from the kernel's "likely on CPU N (core C, socket S)".
+func faultSection(doc *doc, c *model.CPU, l model.LogicalCPU) {
+	if len(c.ProcessFaults) == 0 {
+		return
+	}
+	sib := -1
+	if l.Offline != nil && l.Offline.Sibling != nil {
+		sib = *l.Offline.Sibling
+	}
+	mine := func(f model.ProcessFault) bool {
+		return f.CPU == l.ID || f.CPU == sib || (l.SocketID >= 0 && l.CoreID >= 0 && f.Socket == l.SocketID && f.Core == l.CoreID)
+	}
+	var rows [][]string
+	procs := map[string]bool{}
+	for i := len(c.ProcessFaults) - 1; i >= 0; i-- {
+		f := c.ProcessFaults[i]
+		if !mine(f) {
+			continue
+		}
+		procs[f.Process] = true
+		if len(rows) < 30 {
+			when := "-"
+			if !f.Time.IsZero() {
+				when = f.Time.Local().Format("2006-01-02 15:04:05")
+			}
+			rows = append(rows, []string{when, cpuKey(f.CPU), f.Kind, f.Process, f.Source})
+		}
+	}
+	if len(rows) == 0 {
+		return
+	}
+	t := doc.t
+	n := 0
+	for _, f := range c.ProcessFaults {
+		if mine(f) {
+			n++
+		}
+	}
+	doc.section("Program crashes on this core", t.StatusText(model.StatusCrit, fmt.Sprintf("%d of %d", n, len(c.ProcessFaults)))+
+		t.Dim.Render(fmt.Sprintf(" crashes · %d programs", len(procs))))
+	doc.table([]string{"Time", "CPU", "Fault", "Program", "Source"}, rows, nil)
+	doc.add(hang("   ", t.Sub.Render("The kernel names the CPU a crashing program ran on. Unrelated programs crashing on the same core mean the core computes wrong results - "+
+		"often without any machine check, so the core looks healthy everywhere else. Take both threads offline and replace the CPU."), doc.w-1))
 }

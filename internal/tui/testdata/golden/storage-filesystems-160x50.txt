@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  19 crit 21 warn   ✖ CRIT
-1 Overview ✖40  2 CPU ✖7  3 Memory ✖9   4 Storage ✖12   5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 21 warn   ✖ CRIT
+1 Overview ✖41  2 CPU ✖8  3 Memory ✖9   4 Storage ✖12   5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
  ✖ CRIT  7 disks · 26 TB · 1 network volume (1 session down) · md1 degraded · 1 RAID controller · 4 filesystems                     v Disks · RAID · Filesystems
 
    Mountpoint                                                                                                    Type   Size     Used                 Inodes

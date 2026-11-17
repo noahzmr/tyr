@@ -250,6 +250,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		}
 	}
 	out.CrashRecords = hist.crashes
+	out.ProcessFaults = processFaults(klog, hist)
 	c.offlineInfo(env, out, klog)
 
 	// --- core test ----------------------------------------------------------
@@ -298,6 +299,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	// --- findings ---------------------------------------------------------------
 	c.livenessFindings(env, h, masks, procs, out)
 	offlineFindings(h, out)
+	faultFindings(h, out)
 	historyFindings(h, out)
 	tempFindings(h, out, temps)
 	throttleFindings(h, out, prevByID)

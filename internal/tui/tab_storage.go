@@ -190,8 +190,15 @@ func cmdErrors(t *Theme, d model.Disk) string {
 		s = t.StatusBold(model.StatusWarn, s)
 	}
 	rest := fmt.Sprintf(" · %s since boot", grouped(*d.IOErrors))
+	var parts []string
 	if tyr > 0 {
-		rest += fmt.Sprintf(" (%d by Tyr's SMART reads)", tyr)
+		parts = append(parts, fmt.Sprintf("%d by Tyr's SMART reads", tyr))
+	}
+	if d.IOErrorsShared != nil && *d.IOErrorsShared > 0 {
+		parts = append(parts, fmt.Sprintf("%d on every disk of the controller at once", *d.IOErrorsShared))
+	}
+	if len(parts) > 0 {
+		rest += " (" + strings.Join(parts, ", ") + ")"
 	}
 	return s + t.Sub.Render(rest)
 }
@@ -963,7 +970,8 @@ func ioErrorsSection(doc *doc, d model.Disk) {
 	var hints []string
 	if d.IOErrors != nil {
 		hints = append(hints, "SCSI command errors (ioerr_cnt) count every command that ended with an error - also commands the drive "+
-			"or controller rejects, such as SMART queries it does not pass through. Only new errors Tyr did not cause are a finding.")
+			"or controller rejects, such as SMART queries it does not pass through. Errors that rise on every disk of a controller at the same moment "+
+			"come from a monitoring agent (smartd, HPE amsd) the controller rejects. Only the rest - new, on this disk alone, not caused by Tyr - is a finding.")
 	}
 	switch {
 	case !d.Local():

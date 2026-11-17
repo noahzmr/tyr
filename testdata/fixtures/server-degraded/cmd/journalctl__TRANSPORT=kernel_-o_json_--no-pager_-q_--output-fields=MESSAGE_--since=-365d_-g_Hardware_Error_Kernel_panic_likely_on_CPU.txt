@@ -1,0 +1,11 @@
+{"MESSAGE":"mce: [Hardware Error]: Machine check events logged","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792314000000000"}
+{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792314000001000"}
+{"MESSAGE":"mce: [Hardware Error]: CPU 12: Machine Check: 0 Bank 13: cc00008000010090","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792832400000000"}
+{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793782800000000"}
+{"MESSAGE":"mce: [Hardware Error]: CPU 39: Machine Check: 0 Bank 0: 9800000000000150","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793869200000000"}
+{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793955600000000"}
+{"MESSAGE":"unpigz[203267]: segfault at 751f649982f8 ip 0000000000409f71 sp 0000714cf9da5970 error 6 in pigz[401000+1f000] likely on CPU 39 (core 7, socket 0)","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793948400000000"}
+{"MESSAGE":"update-ca-certi[204034]: segfault at 5 ip 000064bc76274a0e sp 00007ffe66106270 error 4 in dash[64bc7626f000+15000] likely on CPU 39 (core 7, socket 0)","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793952000000000"}
+{"MESSAGE":"apport[206963]: segfault at ffffffffffffff8b ip 0000000000427639 sp 00007fff5dd81350 error 7 in python3.12[420000+2e3000] likely on CPU 39 (core 7, socket 0)","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793955660000000"}
+{"MESSAGE":"(udev-worker)[210826]: segfault at 95 ip 000077ca85f9b436 sp 00007ffb23c3ed8 error 4 in libc.so.6[77ca85e28000+189000] likely on CPU 18 (core 2, socket 1)","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793959200000000"}
+{"MESSAGE":"traps: pause[212918] trap invalid opcode ip:41a493 sp:7ffc03a833f8 error:0 in pause[401000+86000] likely on CPU 39 (core 7, socket 0)","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793962800000000"}

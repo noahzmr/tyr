@@ -79,6 +79,7 @@ an optional per-core compute test (`--core-test`).
 | `core_half_offline` | ✖ | a CPU is offline but the other thread of its physical core still runs work |
 | `mce_history` | ▲ / ✖ | machine checks before this boot (journal, crash records, rasdaemon) |
 | `crash_record` | ✖ | a kernel panic saved in pstore, with the CPU of a fatal machine check |
+| `fault_cluster` | ✖ | crashes of different programs pile up on one physical core (at least 3, 2 programs, 40 % of all crashes) |
 | `cpu_missing` | ▲ | the kernel sees fewer CPUs than SMBIOS reports (e.g. `maxcpus=`) |
 | `cpu_temp`, `core_temp` | ▲ / ✖ | past the warn / crit limit |
 | `mce` | ▲ / ✖ | machine check records in the kernel log, severity from the record |
@@ -103,6 +104,22 @@ A core with one thread offline is a **suspect core**: CPU stress tests and the
 core test leave its other thread alone (`--include-suspect-cores` loads it
 anyway), and its row is ▲.
 
+#### Program crashes per core
+
+A core that computes wrong results often raises no machine check at all -
+it just makes programs crash. The kernel names the CPU of every crash:
+
+```text
+unpigz[203267]: segfault at 751f649982f8 … in pigz[401000+1f000] likely on CPU 46 (core 21, socket 1)
+```
+
+Tyr collects these lines (segfault, general protection, invalid opcode) from
+this boot and earlier boots and counts them per physical core. A healthy host
+spreads its rare crashes over all cores; when unrelated programs - a shell, a
+compressor, Python - crash on the same core, `fault_cluster` names it. The
+crash lines also give an offline CPU its socket and core, which sysfs no
+longer shows.
+
 #### Machine check history
 
 | Source | What |
@@ -111,6 +128,7 @@ anyway), and its row is ▲.
 | journal | earlier boots: `journalctl _TRANSPORT=kernel -g 'Hardware Error\|Kernel panic' --since -365d`, labelled with the boot ID (`journalctl -b <id>`) |
 | pstore | crash records the kernel saved before a panic (`/sys/fs/pstore`, `/var/lib/systemd/pstore`); the time comes from the record |
 | rasdaemon | `ras-mc-ctl --errors`, when installed; repeats of kernel log records are dropped |
+| BMC event log | processor events (IERR, machine check, configuration error): firmware-first servers (HPE, Dell) report CPU errors there instead of to the kernel. HPE's full record is iLO's Integrated Management Log |
 
 Every record has the reporting CPU, the MCA bank and the unit. The unit
 decides what is to blame:
@@ -206,8 +224,13 @@ disks. Tyr therefore:
 - shows the count since boot, but does not raise a finding for it,
 - reads the counter before and after each of its own SMART queries and keeps
   that part apart ("173 by Tyr's SMART reads"),
-- warns only about errors that are new since it started and that it did not
-  cause, and uses the same corrected counter for stress test verdicts.
+- keeps apart errors that rise on every disk behind the same controller at the
+  same moment (3 or more disks, no kernel I/O errors): a monitoring agent such
+  as smartd or HPE's amsd sends a command the controller rejects. Growth on
+  one disk waits 90 s for the others before it counts as that disk's own,
+- warns only about errors that are new since it started, that it did not
+  cause and that are not controller-wide, and uses the same corrected counter
+  for stress test verdicts.
 
 #### Troubleshooting storage
 

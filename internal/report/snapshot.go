@@ -2,6 +2,7 @@ package report
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -191,6 +192,7 @@ func cpuSection(m *md, c *model.CPU) {
 	}
 	sensorTable(m, "Temperatures", c.PackageTemps)
 	offlineTable(m, c)
+	faultTable(m, c)
 	mceHistoryTable(m, c)
 	coresTable(m, c)
 }
@@ -470,4 +472,50 @@ func sourcesSection(m *md, s *model.Snapshot) {
 		m.h(2, "Data sources not used")
 		m.table([]string{"Module", "Source", "State", "Reason"}, rows)
 	}
+}
+
+// faultTable: program crashes (segfault, general protection, invalid
+// opcode) per physical core, from the kernel's "likely on CPU" note.
+func faultTable(m *md, c *model.CPU) {
+	if len(c.ProcessFaults) == 0 {
+		return
+	}
+	type grp struct {
+		socket, core int
+		n            int
+		cpus, procs  []string
+		first, last  time.Time
+	}
+	by := map[[2]int]*grp{}
+	var order []*grp
+	for _, f := range c.ProcessFaults {
+		k := [2]int{f.Socket, f.Core}
+		g := by[k]
+		if g == nil {
+			g = &grp{socket: f.Socket, core: f.Core, first: f.Time}
+			by[k] = g
+			order = append(order, g)
+		}
+		g.n++
+		if cpu := fmt.Sprintf("cpu%d", f.CPU); !slices.Contains(g.cpus, cpu) {
+			g.cpus = append(g.cpus, cpu)
+		}
+		if !slices.Contains(g.procs, f.Process) {
+			g.procs = append(g.procs, f.Process)
+		}
+		g.last = f.Time
+	}
+	sort.SliceStable(order, func(i, j int) bool { return order[i].n > order[j].n })
+	m.h(3, "Program crashes by core")
+	m.p("The kernel names the CPU a crashing program ran on (segfault, general protection, invalid opcode). Unrelated programs crashing on one core mean the core computes wrong results, often without any machine check.")
+	var rows [][]string
+	for _, g := range order {
+		procs := g.procs
+		if len(procs) > 6 {
+			procs = append(procs[:6:6], fmt.Sprintf("+%d", len(g.procs)-6))
+		}
+		rows = append(rows, []string{fmt.Sprintf("%d / %d", g.socket, g.core), strings.Join(g.cpus, ", "), fmt.Sprint(g.n),
+			fmt.Sprintf("%d of %d", g.n, len(c.ProcessFaults)), esc(strings.Join(procs, ", ")), g.first.UTC().Format("2006-01-02 15:04"), g.last.UTC().Format("2006-01-02 15:04")})
+	}
+	m.table([]string{"Socket / core", "CPUs", ">Crashes", ">Share", "Programs", "First (UTC)", "Last (UTC)"}, rows)
 }

@@ -148,6 +148,12 @@ func scenarios() []scenario {
 			{boot.Add(-3 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151"},
 			{boot.Add(-2 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 39: Machine Check: 0 Bank 0: 9800000000000150"},
 			{boot.Add(-1 * 24 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151"},
+			// programs crashing on cpu39 (core 7 of socket 0, cpu7's other thread)
+			{boot.Add(-26 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "unpigz[203267]: segfault at 751f649982f8 ip 0000000000409f71 sp 0000714cf9da5970 error 6 in pigz[401000+1f000] likely on CPU 39 (core 7, socket 0)"},
+			{boot.Add(-25 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "update-ca-certi[204034]: segfault at 5 ip 000064bc76274a0e sp 00007ffe66106270 error 4 in dash[64bc7626f000+15000] likely on CPU 39 (core 7, socket 0)"},
+			{boot.Add(-24*time.Hour + time.Minute), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "apport[206963]: segfault at ffffffffffffff8b ip 0000000000427639 sp 00007fff5dd81350 error 7 in python3.12[420000+2e3000] likely on CPU 39 (core 7, socket 0)"},
+			{boot.Add(-23 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "(udev-worker)[210826]: segfault at 95 ip 000077ca85f9b436 sp 00007ffb23c3ed8 error 4 in libc.so.6[77ca85e28000+189000] likely on CPU 18 (core 2, socket 1)"},
+			{boot.Add(-22 * time.Hour), "d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c", "traps: pause[212918] trap invalid opcode ip:41a493 sp:7ffc03a833f8 error:0 in pause[401000+86000] likely on CPU 39 (core 7, socket 0)"},
 		},
 		Pstore: map[string]string{
 			"/var/lib/systemd/pstore/1794041280/dmesg-erst-7340032000001": "Panic#1 Part1\n" +
@@ -513,7 +519,7 @@ func (g *gen) history() {
 		b.Write(j)
 		b.WriteByte('\n')
 	}
-	g.cmd([]string{"journalctl", "_TRANSPORT=kernel", "-o", "json", "--no-pager", "-q", "--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic"}, b.String(), 0)
+	g.cmd([]string{"journalctl", "_TRANSPORT=kernel", "-o", "json", "--no-pager", "-q", "--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic|likely on CPU"}, b.String(), 0)
 	paths := make([]string, 0, len(g.s.Pstore))
 	for p := range g.s.Pstore {
 		paths = append(paths, p)

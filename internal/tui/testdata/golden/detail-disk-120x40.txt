@@ -1,4 +1,4 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  19 crit 21 warn   ✖ CRIT
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 ·…  fixture  updated now  20 crit 21 warn   ✖ CRIT
 esc ◂ 4 Storage › Disks › sdd   ✖ CRIT    ST4000NM000A-2HZ100 · 4 TB · S/N WJG0A004                      line 1–36 · 0 %
 
 Identity ──────────────────────────────────────────────────  Sensors ─────────────────────────────────────────── session
@@ -29,12 +29,12 @@ Last           2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:
                class 0
 SCSI commands  0 new · 31 since boot
 SCSI command errors (ioerr_cnt) count every command that ended with an error - also commands the drive or controller
-rejects, such as SMART queries it does not pass through. Only new errors Tyr did not cause are a finding.
+rejects, such as SMART queries it does not pass through. Errors that rise on every disk of a controller at the same
+moment come from a monitoring agent (smartd, HPE amsd) the controller rejects. Only the rest - new, on this disk
+alone, not caused by Tyr - is a finding.
 Kernel I/O errors are reads or writes the disk could not complete: check SMART (pending and reallocated sectors), the
 cable or backplane (CRC errors), and journalctl -k for the disk.
 
 Kernel log last 3 lines naming sdd · newest last · journalctl -k -b | grep -w sdd ──────────────────────────────────────
  2026-11-15 12:00:00 ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 action 0x0
- 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 0
- 2026-11-15 12:00:00 md/raid:md1: Disk failure on sdd1, disabling device.
 ↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help

@@ -134,6 +134,10 @@ func TestServerDegraded(t *testing.T) {
 		!strings.Contains(f.Message, "cpu12 1× (shared: uncore bank 13") {
 		t.Errorf("mce_history %+v", f)
 	}
+	if f := finding(c, "fault_cluster"); f == nil || f.Status != model.StatusCrit || f.Subject != "cpu39" ||
+		f.Message != "4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (cpu39), in 4 different programs: the core likely computes wrong results" {
+		t.Errorf("fault_cluster %+v", f)
+	}
 	if f := finding(c, "crash_record"); f == nil || f.Subject != "cpu7" || !strings.Contains(f.Message, "Fatal machine check") {
 		t.Errorf("crash_record %+v", f)
 	}

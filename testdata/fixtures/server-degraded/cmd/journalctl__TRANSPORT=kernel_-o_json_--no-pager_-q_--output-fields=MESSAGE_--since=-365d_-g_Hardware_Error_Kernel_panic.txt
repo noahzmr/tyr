@@ -1,6 +1,0 @@
-{"MESSAGE":"mce: [Hardware Error]: Machine check events logged","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792314000000000"}
-{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792314000001000"}
-{"MESSAGE":"mce: [Hardware Error]: CPU 12: Machine Check: 0 Bank 13: cc00008000010090","_BOOT_ID":"6b1e0c8a4f3d4e2b9a7c5d3e1f0a2b4c","__REALTIME_TIMESTAMP":"1792832400000000"}
-{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793782800000000"}
-{"MESSAGE":"mce: [Hardware Error]: CPU 39: Machine Check: 0 Bank 0: 9800000000000150","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793869200000000"}
-{"MESSAGE":"mce: [Hardware Error]: CPU 7: Machine Check: 0 Bank 1: 9c00000000010151","_BOOT_ID":"d0f4a6b8c1e3459a8b7c6d5e4f3a2b1c","__REALTIME_TIMESTAMP":"1793955600000000"}

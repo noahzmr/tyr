@@ -91,8 +91,11 @@ func offlineCorePlan(cfg Config, env *Env, sim bool) *Plan {
 		}
 	}
 	scope := name + " (offline)"
-	if l != nil && l.SocketID >= 0 {
+	switch {
+	case l != nil && l.SocketID >= 0 && l.CoreID >= 0:
 		scope = fmt.Sprintf("%s (offline) · socket %d, core %d", name, l.SocketID, l.CoreID)
+	case l != nil && l.SocketID >= 0:
+		scope = fmt.Sprintf("%s (offline) · socket %d", name, l.SocketID)
 	}
 	p.Scope = []string{scope}
 	if l != nil && l.Offline != nil && l.Offline.Sibling != nil {

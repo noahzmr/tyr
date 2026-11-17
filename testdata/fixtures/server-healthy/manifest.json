@@ -255,10 +255,10 @@
         "--output-fields=MESSAGE",
         "--since=-365d",
         "-g",
-        "Hardware Error|Kernel panic"
+        "Hardware Error|Kernel panic|likely on CPU"
       ],
       "exit": 0,
-      "stdout": "cmd/journalctl__TRANSPORT=kernel_-o_json_--no-pager_-q_--output-fields=MESSAGE_--since=-365d_-g_Hardware_Error_Kernel_panic.txt"
+      "stdout": "cmd/journalctl__TRANSPORT=kernel_-o_json_--no-pager_-q_--output-fields=MESSAGE_--since=-365d_-g_Hardware_Error_Kernel_panic_likely_on_CPU.txt"
     }
   ],
   "description": "synthetic: Supermicro SYS-120U-TNR, 2x Xeon Silver 4314 (64 threads), root, all healthy",

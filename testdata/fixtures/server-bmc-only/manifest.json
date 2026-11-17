@@ -291,10 +291,10 @@
         "--output-fields=MESSAGE",
         "--since=-365d",
         "-g",
-        "Hardware Error|Kernel panic"
+        "Hardware Error|Kernel panic|likely on CPU"
       ],
       "exit": 0,
-      "stdout": "cmd/journalctl__TRANSPORT=kernel_-o_json_--no-pager_-q_--output-fields=MESSAGE_--since=-365d_-g_Hardware_Error_Kernel_panic.txt"
+      "stdout": "cmd/journalctl__TRANSPORT=kernel_-o_json_--no-pager_-q_--output-fields=MESSAGE_--since=-365d_-g_Hardware_Error_Kernel_panic_likely_on_CPU.txt"
     }
   ],
   "description": "synthetic: like server-healthy but coretemp is not loaded and only ipmitool is installed; CPU and DIMM temperatures come from the BMC",

@@ -55,7 +55,18 @@ type smartCache struct {
 // first saw it, and how much of the growth Tyr's own queries caused.
 type ioState struct {
 	first, tyr uint64
+	// errors that rose on every disk of a controller at once (rejected
+	// commands of a monitoring agent), and growth not yet matched
+	shared, pend  uint64
+	pendSince     time.Time
+	last, lastTyr uint64
+	lastKernel    int
+	seen          bool
 }
+
+// sharedHold is how long growth on one disk waits for the same growth on
+// the other disks of its controller before it counts as the disk's own.
+const sharedHold = 90 * time.Second
 
 // New returns a storage collector.
 func New() *Collector {
@@ -116,7 +127,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		out.Disks = append(out.Disks, d)
 	}
 	c.smartAll(ctx, env, out, devs)
-	c.ioErrorAccounting(f, out)
+	c.ioErrorAccounting(f, out, env.Now())
 	for i := range out.Disks {
 		diskFindings(h, &out.Disks[i], env.Opts.Thresholds)
 	}
@@ -357,9 +368,10 @@ func (c *Collector) smartFor(ctx context.Context, env *collector.Env, b sysfs.Bl
 
 // ioErrorAccounting re-reads ioerr_cnt after the SMART queries and splits
 // it into what Tyr caused and what is new since Tyr started.
-func (c *Collector) ioErrorAccounting(f hostfs.FS, out *model.Storage) {
+func (c *Collector) ioErrorAccounting(f hostfs.FS, out *model.Storage, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	groups := map[string][]*ioState{}
 	for i := range out.Disks {
 		d := &out.Disks[i]
 		st := c.ioerr[d.Name]
@@ -369,11 +381,64 @@ func (c *Collector) ioErrorAccounting(f hostfs.FS, out *model.Storage) {
 		if v, ok := sysfs.ReadIOErrCount(f, d.Name); ok {
 			d.IOErrors = &v
 		}
-		tyr := st.tyr
+		// growth since the last round that Tyr did not cause
+		if st.seen && *d.IOErrors >= st.last {
+			grow := *d.IOErrors - st.last
+			grow -= min(grow, st.tyr-st.lastTyr)
+			if grow > 0 && d.KernelErrors == st.lastKernel {
+				if st.pend == 0 {
+					st.pendSince = now
+				}
+				st.pend += grow
+			}
+		}
+		st.last, st.lastTyr, st.lastKernel, st.seen = *d.IOErrors, st.tyr, d.KernelErrors, true
+		if ctrl, _, _ := strings.Cut(d.Location, " ·"); ctrl != "" && d.Local() {
+			groups[ctrl] = append(groups[ctrl], st)
+		}
+	}
+	// the same growth on every disk of a controller (3 or more): rejected
+	// commands of a monitoring agent, not errors of the disks
+	grouped := map[*ioState]bool{}
+	for _, g := range groups {
+		if len(g) < 3 {
+			continue
+		}
+		for _, st := range g {
+			grouped[st] = true
+		}
+		if g[0].pend == 0 {
+			continue
+		}
+		same := true
+		for _, st := range g[1:] {
+			same = same && st.pend == g[0].pend
+		}
+		if same {
+			for _, st := range g {
+				st.shared += st.pend
+				st.pend = 0
+			}
+		}
+	}
+	for i := range out.Disks {
+		d := &out.Disks[i]
+		st := c.ioerr[d.Name]
+		if d.IOErrors == nil || st == nil {
+			continue
+		}
+		tyr, shared := st.tyr, st.shared
 		d.IOErrorsTyr = &tyr
+		if shared > 0 {
+			d.IOErrorsShared = &shared
+		}
+		held := uint64(0)
+		if st.pend > 0 && grouped[st] && now.Sub(st.pendSince) < sharedHold {
+			held = st.pend // may still turn out to be controller-wide
+		}
 		var fresh uint64
-		if *d.IOErrors > st.first+st.tyr {
-			fresh = *d.IOErrors - st.first - st.tyr
+		if base := st.first + st.tyr + st.shared + held; *d.IOErrors > base {
+			fresh = *d.IOErrors - base
 		}
 		d.IOErrorsNew = &fresh
 	}

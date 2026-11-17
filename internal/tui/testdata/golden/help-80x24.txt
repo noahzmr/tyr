@@ -1,5 +1,5 @@
- TYR  srv-degraded-01                              fixture  now  19/21   ✖ CRIT
-1✖40 2✖7 3✖9  4 Storage ✖12  5○ 6✖6 7✖6 8○ 9 0                            ? help
+ TYR  srv-degraded-01                              fixture  now  20/21   ✖ CRIT
+1✖41 2✖8 3✖9  4 Storage ✖12  5○ 6✖6 7✖6 8○ 9 0                            ? help
  ✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮ms
   │ Navigation              Health                  Data · stress            │
   │ 1–0       switch tab    n         next problem  r         refresh now    │

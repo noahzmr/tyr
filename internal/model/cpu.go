@@ -46,6 +46,23 @@ type CPU struct {
 	// first; CrashRecords are kernel panics saved in pstore.
 	MCEHistory   []MCERecord   `json:"mce_history,omitempty"`
 	CrashRecords []CrashRecord `json:"crash_records,omitempty"`
+	// ProcessFaults are programs the kernel killed for a fault (segfault,
+	// general protection, invalid opcode) with the CPU they ran on. Many
+	// unrelated programs crashing on one core mean the core computes wrong
+	// results, often without any machine check.
+	ProcessFaults []ProcessFault `json:"process_faults,omitempty"`
+}
+
+// ProcessFault is one "… likely on CPU 46 (core 21, socket 1)" message.
+type ProcessFault struct {
+	Time    time.Time `json:"time,omitzero"`
+	Source  string    `json:"source"`
+	CPU     int       `json:"cpu"`
+	Core    int       `json:"core"`
+	Socket  int       `json:"socket"`
+	Kind    string    `json:"kind"` // segfault, general protection, invalid opcode, trap
+	Process string    `json:"process"`
+	Text    string    `json:"text"`
 }
 
 // OfflineInfo describes a logical CPU the kernel does not run.

@@ -119,3 +119,49 @@ func TestOwnSMARTQueriesAreNotDiskErrors(t *testing.T) {
 		t.Errorf("counter without Tyr's own errors: %d", cnt["disk.sda.io_errors"])
 	}
 }
+
+// The same growth on every disk of a controller at once is a monitoring
+// agent's rejected command, not three failing disks; growth on one disk
+// alone is that disk's after the hold time.
+func TestControllerWideIOErrors(t *testing.T) {
+	c := New()
+	f := hostfs.New(t.TempDir()) // no sysfs: the values below are used
+	now := time.Date(2026, 11, 17, 6, 0, 0, 0, time.UTC)
+	vals := map[string]uint64{"sda": 1106, "sdb": 1106, "sdc": 1106}
+	for n, v := range vals {
+		c.ioerr[n] = &ioState{first: v}
+	}
+	round := func() *model.Storage {
+		out := &model.Storage{}
+		for _, n := range []string{"sda", "sdb", "sdc"} {
+			v := vals[n]
+			out.Disks = append(out.Disks, model.Disk{Name: n, IOErrors: &v, Location: "0000:5c:00.0 (smartpqi) · SAS phy " + n})
+		}
+		c.ioErrorAccounting(f, out, now)
+		return out
+	}
+	round()
+	for n := range vals {
+		vals[n]++
+	}
+	now = now.Add(time.Second)
+	out := round()
+	for _, d := range out.Disks {
+		if *d.IOErrorsNew != 0 || d.IOErrorsShared == nil || *d.IOErrorsShared != 1 {
+			t.Fatalf("%s: new %d shared %v", d.Name, *d.IOErrorsNew, d.IOErrorsShared)
+		}
+	}
+	if cnt := (&model.Snapshot{Storage: out}).Counters(); cnt["disk.sda.io_errors"] != 1106 {
+		t.Errorf("stress counter counts the controller-wide error: %d", cnt["disk.sda.io_errors"])
+	}
+	// only sdb grows: held back briefly, then its own
+	vals["sdb"] += 2
+	now = now.Add(time.Second)
+	if d := round().Disks[1]; *d.IOErrorsNew != 0 {
+		t.Errorf("held: new %d", *d.IOErrorsNew)
+	}
+	now = now.Add(sharedHold)
+	if d := round().Disks[1]; *d.IOErrorsNew != 2 {
+		t.Errorf("after the hold: new %d", *d.IOErrorsNew)
+	}
+}

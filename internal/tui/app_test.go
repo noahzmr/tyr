@@ -93,9 +93,9 @@ func TestEveryTabFits(t *testing.T) {
 func TestHeaderAndOverview(t *testing.T) {
 	m := newLoaded(t, "server-degraded", 120, 40)
 	s := ansi.Strip(screen(m))
-	for _, want := range []string{"TYR", "srv-degraded-01", "Supermicro SYS-120U-TNR", "S/N S412345X3A01234", "✖ CRIT", "fixture", "19 crit 21 warn",
-		"63/64 online · max 96°C", "512 GB · 16/32 slots", "collector not implemente", "CRIT · 7", "Needs attention",
-		"Findings 19 ✖ · 21 ▲", "worst first", "▸ 1 core offline (cpu7)", "✖ CPU      cpu7", "/data 96% full", "6/6 fans OK"} {
+	for _, want := range []string{"TYR", "srv-degraded-01", "Supermicro SYS-120U-TNR", "S/N S412345X3A01234", "✖ CRIT", "fixture", "20 crit 21 warn",
+		"63/64 online · max 96°C", "512 GB · 16/32 slots", "collector not implemente", "CRIT · 8", "Needs attention",
+		"Findings 20 ✖ · 21 ▲", "worst first", "▸ 1 core offline (cpu7)", "✖ CPU      cpu7", "/data 96% full", "6/6 fans OK"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("overview missing %q\n%s", want, s)
 		}

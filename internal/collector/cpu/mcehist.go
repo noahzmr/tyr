@@ -155,6 +155,7 @@ func (p *mceParser) lastFor(cpu, bank int, at time.Time) *model.MCERecord {
 // crash records, rasdaemon. Read once per collector.
 type staticHistory struct {
 	recs    []model.MCERecord
+	faults  []model.ProcessFault
 	crashes []model.CrashRecord
 	sources []model.SourceState
 }
@@ -184,7 +185,7 @@ func (h *staticHistory) journal(ctx context.Context, env *collector.Env, amd boo
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	out, err := env.Exec.Run(ctx, "journalctl", "_TRANSPORT=kernel", "-o", "json", "--no-pager", "-q",
-		"--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic")
+		"--output-fields=MESSAGE", "--since=-365d", "-g", "Hardware Error|Kernel panic|likely on CPU")
 	var xe *execx.ExitError
 	if err != nil && len(out) == 0 && !(errors.As(err, &xe) && xe.Code == 1 && len(bytes.TrimSpace(xe.Stderr)) == 0) {
 		// exit 1 without a message: no matching entries
@@ -220,6 +221,9 @@ func (h *staticHistory) journal(ctx context.Context, env *collector.Env, amd boo
 			boots[e.Boot] = b
 		}
 		b.p.line(at, msg)
+		if f, ok := parseFault(at, "earlier boot "+e.Boot[:min(8, len(e.Boot))], msg); ok {
+			h.faults = append(h.faults, f)
+		}
 	}
 	for id, b := range boots {
 		for _, r := range b.p.recs {
@@ -483,4 +487,115 @@ func selProcessorRecords(sel *ipmi.SEL) []model.MCERecord {
 			Text: strings.TrimSpace(e.SensorType + " " + e.Sensor + ": " + e.Event)})
 	}
 	return out
+}
+
+// --- program crashes per core ---------------------------------------------------
+
+const maxFaults = 500
+
+// faultLine: "unpigz[203267]: segfault at … likely on CPU 46 (core 21,
+// socket 1)", "traps: x[1]: trap invalid opcode … likely on CPU 3 (…)".
+var faultLine = regexp.MustCompile(`(?:traps: )?(\S+?)\[\d+\]:? (.*?)\s*likely on CPU (\d+) \(core (\d+), socket (\d+)\)`)
+
+func parseFault(at time.Time, source, msg string) (model.ProcessFault, bool) {
+	m := faultLine.FindStringSubmatch(msg)
+	if m == nil {
+		return model.ProcessFault{}, false
+	}
+	f := model.ProcessFault{Time: at, Source: source, Process: m[1], Text: strings.TrimSpace(msg)}
+	f.CPU, _ = strconv.Atoi(m[3])
+	f.Core, _ = strconv.Atoi(m[4])
+	f.Socket, _ = strconv.Atoi(m[5])
+	low := strings.ToLower(m[2])
+	switch {
+	case strings.Contains(low, "segfault"):
+		f.Kind = "segfault"
+	case strings.Contains(low, "general protection"):
+		f.Kind = "general protection"
+	case strings.Contains(low, "invalid opcode"):
+		f.Kind = "invalid opcode"
+	default:
+		f.Kind = "trap"
+	}
+	return f, true
+}
+
+// processFaults merges this boot's kernel log with earlier boots.
+func processFaults(klog *kernellog.Log, st *staticHistory) []model.ProcessFault {
+	out := append([]model.ProcessFault(nil), st.faults...)
+	if klog != nil {
+		for _, e := range klog.Recent {
+			if strings.Contains(e.Message, "likely on CPU") {
+				if f, ok := parseFault(e.Time, "kernel log (this boot)", e.Message); ok {
+					out = append(out, f)
+				}
+			}
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Time.Before(out[j].Time) })
+	if len(out) > maxFaults {
+		out = out[len(out)-maxFaults:]
+	}
+	return out
+}
+
+// FaultGroup is the crashes of one physical core.
+type faultGroup struct {
+	socket, core int
+	n            int
+	cpus, procs  map[string]bool
+	kinds        map[string]int
+}
+
+func faultGroups(fs []model.ProcessFault) []*faultGroup {
+	by := map[[2]int]*faultGroup{}
+	var out []*faultGroup
+	for _, f := range fs {
+		k := [2]int{f.Socket, f.Core}
+		g := by[k]
+		if g == nil {
+			g = &faultGroup{socket: f.Socket, core: f.Core, cpus: map[string]bool{}, procs: map[string]bool{}, kinds: map[string]int{}}
+			by[k] = g
+			out = append(out, g)
+		}
+		g.n++
+		g.cpus["cpu"+strconv.Itoa(f.CPU)] = true
+		g.procs[f.Process] = true
+		g.kinds[f.Kind]++
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].n > out[j].n })
+	return out
+}
+
+func keys(m map[string]bool) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Slice(out, func(i, j int) bool { return natLess(out[i], out[j]) })
+	return out
+}
+
+// faultFindings: crashes of different programs piling up on one core. A
+// healthy system spreads its (rare) crashes over all cores; a core that
+// computes wrong results makes unrelated programs crash on it.
+func faultFindings(h *model.Header, out *model.CPU) {
+	gs := faultGroups(out.ProcessFaults)
+	if len(gs) == 0 {
+		return
+	}
+	total := len(out.ProcessFaults)
+	g := gs[0]
+	if g.n < 3 || len(g.procs) < 2 || float64(g.n) < 0.4*float64(total) {
+		return
+	}
+	var kinds []string
+	for k := range g.kinds {
+		kinds = append(kinds, k)
+	}
+	sort.Strings(kinds)
+	cpus := keys(g.cpus)
+	h.Find(model.StatusCrit, "fault_cluster", strings.Join(cpus, ","), "kernel_log",
+		fmt.Sprintf("%d of %d program crashes (%s) ran on core %d of socket %d (%s), in %d different programs: the core likely computes wrong results",
+			g.n, total, strings.Join(kinds, ", "), g.core, g.socket, strings.Join(cpus, ", "), len(g.procs)))
 }

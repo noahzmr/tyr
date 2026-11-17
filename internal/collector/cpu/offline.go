@@ -130,13 +130,18 @@ func (c *Collector) offlineInfo(env *collector.Env, out *model.CPU, klog *kernel
 			l.SocketID = socketOfNode(out.Logical, l.NUMANode)
 		}
 		if sib < 0 {
+			coreFromFaults(out, l, -1)
 			continue
 		}
 		o.Sibling = &sib
+		coreFromFaults(out, l, sib)
 		if x := byID[sib]; x != nil && x.Online {
 			o.SiblingOnline = true
 			if l.CoreID < 0 {
-				l.CoreID, l.SocketID, l.NUMANode = x.CoreID, x.SocketID, x.NUMANode
+				l.CoreID, l.SocketID = x.CoreID, x.SocketID
+			}
+			if l.NUMANode < 0 {
+				l.NUMANode = x.NUMANode
 			}
 			o.L3SharedWith = l3Shared(env.FS, sib)
 		}
@@ -221,4 +226,19 @@ func offlineNote(out *model.CPU) string {
 		return "; some come back online after a reboot"
 	}
 	return ""
+}
+
+// coreFromFaults: the kernel names socket and core of crashing programs, so
+// an offline CPU (whose topology is gone) gets them from its own or its
+// other thread's crashes.
+func coreFromFaults(out *model.CPU, l *model.LogicalCPU, sib int) {
+	if l.CoreID >= 0 {
+		return
+	}
+	for _, f := range out.ProcessFaults {
+		if f.CPU == l.ID || (sib >= 0 && f.CPU == sib) {
+			l.CoreID, l.SocketID = f.Core, f.Socket
+			return
+		}
+	}
 }

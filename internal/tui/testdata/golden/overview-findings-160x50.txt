@@ -1,9 +1,9 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  19 crit 21 warn   ✖ CRIT
- 1 Overview ✖40   2 CPU ✖7  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  20 crit 21 warn   ✖ CRIT
+ 1 Overview ✖41   2 CPU ✖8  3 Memory ✖9  4 Storage ✖12  5 Power ○  6 Network ✖6  7 GPU/NPU ✖6  8 Events ○  9 Stress  0 Inventory                          ? help
  ✖ CRIT  Needs attention  CPU · Memory · Storage · Network · GPU/NPU
 
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
-│ ✖ CPU                      CRIT · 7 │ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 12 │ │ ○ Power                 unavailable │
+│ ✖ CPU                      CRIT · 8 │ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 12 │ │ ○ Power                 unavailable │
 │ 63/64 online · max 96°C             │ │ 512 GB · 16/32 slots                │ │ 8 disks · md1 degraded              │ │ collector not implemented yet       │
 │ ▸ 1 core offline (cpu7); taken      │ │ ▸ 1 memory event in BMC SEL, latest │ │ ▸ sdd: 2 I/O errors in kernel log,  │ │                                     │
 │   offline at runtime - back online… │ │   2026-11-14 09:00: Uncorrectable … │ │   last: 2026-11-15 12:00:00 I/O er… │ │                                     │
@@ -17,9 +17,10 @@
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 
-Findings 19 ✖ · 21 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────── i explain · worst first · 1–28 of 40
+Findings 20 ✖ · 21 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────── i explain · worst first · 1–28 of 41
  ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot                                            10:00        ┃
 ▌✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - still runs work: the core is not isolated     10:00        ┃
+ ✖ CPU      cpu39         4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (cpu39), in 4 different programs: the core… 10:00        ┃
  ✖ CPU      cpu7,cpu12,c… machine checks in earlier boots, crash records or the BMC log: cpu7 4× (core: L1 data cache (DCU)), cpu12 1× (shared: … 10:00        ┃
  ✖ CPU      cpu7          the kernel crashed on cpu7 (2026-11-07 09:48): Fatal machine check                                                      10:00        ┃
  ✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(CPU2)                                     10:00        ┃
@@ -36,7 +37,7 @@ Findings 19 ✖ · 21 ▲ ──────────────────
  ✖ Network  bond0         bond0 degraded: ens1f1 down (1/2 members up)                                                                            10:00        ┃
  ✖ Network  ens1f1        ens1f1 link down                                                                                                        10:00        ┃
  ✖ GPU/NPU  0000:ca:00.0  GPU1 ca:00.0: 2 uncorrectable ECC errors                                                                                10:00        ┃
- ✖ GPU/NPU  0000:ca:00.0  GPU1 ca:00.0: 1 driver error in kernel log, last: NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrec… 10:00        ┃
+ ✖ GPU/NPU  0000:ca:00.0  GPU1 ca:00.0: 1 driver error in kernel log, last: NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrec… 10:00        │
  ▲ CPU      cpu12         2 machine check errors on cpu12 (corrected)                                                                             10:00        │
  ▲ CPU      CPU1 Package  CPU1 Package at 93°C (warn 90°C)                                                                                        10:00        │
  ▲ CPU      CPU1 Core 4   CPU1 Core 4 at 96°C (warn 90°C)                                                                                         10:00        │
@@ -45,6 +46,5 @@ Findings 19 ✖ · 21 ▲ ──────────────────
  ▲ Memory   P2-DIMMC1     14 correctable ECC errors on P2-DIMMC1                                                                                  10:00        │
  ▲ Memory   memory        512 GB installed, OS sees 480 GB                                                                                        10:00        │
  ▲ Memory   P1-DIMMD1     DIMMs run at different speeds: P1-DIMMD1 at 2933 MT/s, others up to 3200 MT/s                                           10:00        │
- ▲ Memory   node1         NUMA node 1 has 220 GB, largest node has 252 GB                                                                         10:00        │
 
 ←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help

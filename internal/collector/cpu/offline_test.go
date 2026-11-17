@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -86,5 +87,30 @@ func TestSocketOfNode(t *testing.T) {
 	}
 	if s := socketOfNode(ls, 2); s != -1 { // a node across sockets says nothing
 		t.Errorf("node 2: socket %d", s)
+	}
+}
+
+func TestParseFault(t *testing.T) {
+	at := time.Date(2026, 11, 13, 18, 7, 45, 0, time.UTC)
+	f, ok := parseFault(at, "kernel log", "unpigz[203267]: segfault at 751f649982f8 ip 0000000000409f71 sp 0000714cf9da5970 error 6 in pigz[401000+1f000] likely on CPU 46 (core 21, socket 1)")
+	if !ok || f.CPU != 46 || f.Core != 21 || f.Socket != 1 || f.Kind != "segfault" || f.Process != "unpigz" {
+		t.Errorf("segfault %+v", f)
+	}
+	f, ok = parseFault(at, "kernel log", "traps: pause[212918] trap invalid opcode ip:41a493 sp:7ffc03a833f8 error:0 in pause[401000+86000] likely on CPU 13 (core 3, socket 1)")
+	if !ok || f.Kind != "invalid opcode" || f.Process != "pause" || f.CPU != 13 {
+		t.Errorf("trap %+v", f)
+	}
+	if _, ok := parseFault(at, "kernel log", "sh[226979]: segfault at 7ffe7e7ced20 ip 00007ffe7e7ced20 error 15"); ok {
+		t.Error("a line without a CPU parsed")
+	}
+	// a spread of crashes is not a cluster
+	c := &model.CPU{}
+	for i, cpu := range []int{1, 2, 3, 4, 5} {
+		c.ProcessFaults = append(c.ProcessFaults, model.ProcessFault{CPU: cpu, Core: cpu, Process: fmt.Sprint("p", i), Kind: "segfault"})
+	}
+	var h model.Header
+	faultFindings(&h, c)
+	if len(h.Findings) != 0 {
+		t.Errorf("spread crashes flagged: %+v", h.Findings)
 	}
 }
