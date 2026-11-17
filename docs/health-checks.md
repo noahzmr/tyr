@@ -307,6 +307,18 @@ retired / remapped rows, Xid driver errors from the kernel log. NVIDIA through
 (see [tools.md](tools.md) for installing them).
 BMC display adapters are listed but not counted.
 
+GPUs attached to the CPU over NVLink-C2C (DGX Spark's GB10, GH200, GB200,
+GB300; recognised by name, by `nvidia-smi`'s ATS addressing mode or
+`c2c_mode`, or by a device that reports PCIe Gen1 as its maximum) show "C2C" as their link and
+get no PCIe width check: their PCIe function is a stub (GB10: x1 at
+2.5 GT/s) and not the data path. GPUs without memory of their own (GB10,
+integrated GPUs) show "shared" with the system's RAM; on GB10 the used
+figure is what the GPU's processes hold, as `nvidia-smi` lists it.
+
+The GPU page lists the processes holding GPU memory, largest first. GPUs that
+report a T.Limit (Blackwell: the margin to the slowdown temperature) instead
+of thresholds get it as their critical limit, and a warning 5 °C below.
+
 ### Power
 
 From the BMC's Redfish service: every power supply with health, state, the

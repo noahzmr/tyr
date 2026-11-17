@@ -1,0 +1,110 @@
+<?xml version="1.0" ?>
+<!-- DGX Spark (GB10), driver 580.142, trimmed; UUID and PDI zeroed -->
+<nvidia_smi_log>
+    <driver_version>580.142</driver_version>
+    <cuda_version>13.0</cuda_version>
+    <attached_gpus>1</attached_gpus>
+    <gpu id="0000000F:01:00.0">
+        <product_name>NVIDIA GB10</product_name>
+        <product_brand>NVIDIA RTX</product_brand>
+        <product_architecture>Blackwell</product_architecture>
+        <addressing_mode>ATS</addressing_mode>
+        <serial>N/A</serial>
+        <uuid>GPU-00000000-0000-0000-0000-000000000000</uuid>
+        <pdi>0x0000000000000000</pdi>
+        <vbios_version>9A.0B.25.00.00</vbios_version>
+        <board_part_number>N/A</board_part_number>
+        <gpu_part_number>2E12-275-A1</gpu_part_number>
+        <c2c_mode>Enabled</c2c_mode>
+        <pci>
+            <pci_bus_id>0000000F:01:00.0</pci_bus_id>
+            <pci_gpu_link_info>
+                <pcie_gen>
+                    <max_link_gen>1</max_link_gen>
+                    <current_link_gen>1</current_link_gen>
+                    <device_current_link_gen>1</device_current_link_gen>
+                    <max_device_link_gen>5</max_device_link_gen>
+                    <max_host_link_gen>5</max_host_link_gen>
+                </pcie_gen>
+                <link_widths>
+                    <max_link_width>16x</max_link_width>
+                    <current_link_width>1x</current_link_width>
+                </link_widths>
+            </pci_gpu_link_info>
+        </pci>
+        <fan_speed>N/A</fan_speed>
+        <clocks_event_reasons>
+            <clocks_event_reason_gpu_idle>Not Active</clocks_event_reason_gpu_idle>
+            <clocks_event_reason_sw_power_cap>Not Active</clocks_event_reason_sw_power_cap>
+            <clocks_event_reason_hw_slowdown>Not Active</clocks_event_reason_hw_slowdown>
+        </clocks_event_reasons>
+        <fb_memory_usage>
+            <total>N/A</total>
+            <reserved>N/A</reserved>
+            <used>N/A</used>
+            <free>N/A</free>
+        </fb_memory_usage>
+        <utilization>
+            <gpu_util>0 %</gpu_util>
+            <memory_util>0 %</memory_util>
+        </utilization>
+        <ecc_errors>
+            <volatile>
+                <sram_correctable>N/A</sram_correctable>
+                <dram_correctable>N/A</dram_correctable>
+                <dram_uncorrectable>N/A</dram_uncorrectable>
+            </volatile>
+            <aggregate>
+                <sram_correctable>N/A</sram_correctable>
+                <dram_correctable>N/A</dram_correctable>
+                <dram_uncorrectable>N/A</dram_uncorrectable>
+            </aggregate>
+        </ecc_errors>
+        <retired_pages>
+            <multiple_single_bit_retirement><retired_count>N/A</retired_count></multiple_single_bit_retirement>
+            <double_bit_retirement><retired_count>N/A</retired_count></double_bit_retirement>
+            <pending_blacklist>N/A</pending_blacklist>
+            <pending_retirement>N/A</pending_retirement>
+        </retired_pages>
+        <remapped_rows>N/A</remapped_rows>
+        <temperature>
+            <gpu_temp>39 C</gpu_temp>
+            <gpu_temp_tlimit>56 C</gpu_temp_tlimit>
+            <gpu_temp_max_tlimit_threshold>N/A</gpu_temp_max_tlimit_threshold>
+            <gpu_temp_slow_tlimit_threshold>N/A</gpu_temp_slow_tlimit_threshold>
+            <gpu_temp_max_gpu_tlimit_threshold>0 C</gpu_temp_max_gpu_tlimit_threshold>
+            <memory_temp>N/A</memory_temp>
+        </temperature>
+        <gpu_power_readings>
+            <power_state>P0</power_state>
+            <average_power_draw>11.77 W</average_power_draw>
+            <instant_power_draw>13.32 W</instant_power_draw>
+            <current_power_limit>N/A</current_power_limit>
+        </gpu_power_readings>
+        <clocks>
+            <graphics_clock>2405 MHz</graphics_clock>
+            <sm_clock>2405 MHz</sm_clock>
+            <mem_clock>N/A</mem_clock>
+        </clocks>
+        <processes>
+            <process_info>
+                <pid>2425</pid>
+                <type>G</type>
+                <process_name>/usr/lib/xorg/Xorg</process_name>
+                <used_memory>18 MiB</used_memory>
+            </process_info>
+            <process_info>
+                <pid>2788</pid>
+                <type>G</type>
+                <process_name>/usr/bin/gnome-shell</process_name>
+                <used_memory>6 MiB</used_memory>
+            </process_info>
+            <process_info>
+                <pid>51787</pid>
+                <type>C</type>
+                <process_name>VLLM::EngineCore</process_name>
+                <used_memory>80564 MiB</used_memory>
+            </process_info>
+        </processes>
+    </gpu>
+</nvidia_smi_log>

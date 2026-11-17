@@ -87,3 +87,29 @@ func lastElem(p string) string {
 	}
 	return p
 }
+
+// DGX Spark: GB10 on NVLink-C2C, no memory of its own, T.Limit instead of a
+// slowdown threshold.
+func TestNvidiaSMIGB10(t *testing.T) {
+	b, err := os.ReadFile("testdata/gb10.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gs, err := ParseNvidiaSMI(b)
+	if err != nil || len(gs) != 1 {
+		t.Fatalf("%v %d", err, len(gs))
+	}
+	g := gs[0]
+	if g.BusID != "000f:01:00.0" || g.Product != "NVIDIA GB10" || g.AddressingMode != "ATS" || g.C2CMode != "Enabled" {
+		t.Errorf("identity %+v", g)
+	}
+	if g.MemTotalBytes != nil || g.MemUsedBytes != nil || g.TempSlowC != nil || *g.TempTLimitC != 56 || *g.TempC != 39 || *g.PowerW != 11.77 || g.PowerCapW != nil {
+		t.Errorf("mem/temp/power %+v", g)
+	}
+	if len(g.Processes) != 3 || g.Processes[2].Name != "VLLM::EngineCore" || g.Processes[2].PID != 51787 || *g.ProcessMemBytes != (18+6+80564)<<20 {
+		t.Errorf("processes %+v", g.Processes)
+	}
+	if g.ECCVolatileUE != nil || g.RetiredPages != nil || g.RemapPending != nil || len(g.ThrottleReasons) != 0 {
+		t.Errorf("N/A counters must stay empty: %+v", g)
+	}
+}

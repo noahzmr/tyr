@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -146,8 +147,18 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 			if nv == nil {
 				nv = c.nvidia(ctx, env, h)
 			}
-			if g, ok := nv[d.Address]; ok {
+			g, ok := nv[d.Address]
+			if ok {
 				fillNvidia(&a, g)
+			}
+			nvidiaC2C(&a, g)
+		}
+		if a.MemTotalBytes == nil && (a.Integrated || a.Interconnect != "") {
+			a.SharedMemory = true
+			if b, err := f.ReadFile("/proc/meminfo"); err == nil {
+				if m, err := sysfs.ParseMeminfo(b); err == nil {
+					a.SharedMemBytes = model.U(m["MemTotal"])
+				}
 			}
 		}
 		if a.Serial == "" {
@@ -335,6 +346,12 @@ func fillNvidia(a *model.Accelerator, g gpu.NvidiaGPU) {
 	a.PowerWatts, a.PowerCapWatts, a.ClockMHz = g.PowerW, g.PowerCapW, g.ClockMHz
 	if g.TempC != nil {
 		th := &model.Thresholds{Origin: "nvidia-smi", UpperWarn: g.TempSlowC, UpperCrit: g.TempMaxC}
+		if g.TempSlowC == nil && g.TempMaxC == nil && g.TempTLimitC != nil && *g.TempTLimitC > 0 {
+			// Blackwell reports T.Limit, the margin to slowdown, instead of
+			// thresholds: at the limit the GPU throttles.
+			lim := *g.TempC + *g.TempTLimitC
+			th = &model.Thresholds{Origin: "nvidia-smi T.Limit", UpperWarn: model.F(lim - 5), UpperCrit: model.F(lim)}
+		}
 		s := model.Sensor{Name: "GPU", Kind: model.KindTemperature, Value: g.TempC, Unit: model.UnitCelsius,
 			Thresholds: check.TempThresholds(th, check.Defaults{WarnTempC: 85, CritTempC: 95}), Source: "nvidia-smi"}
 		check.EvalSensor(&s)
@@ -361,12 +378,39 @@ func fillNvidia(a *model.Accelerator, g gpu.NvidiaGPU) {
 		a.RemapPending = &t
 	}
 	a.ThrottleReasons = append(a.ThrottleReasons, g.ThrottleReasons...)
+	for _, p := range g.Processes {
+		a.Processes = append(a.Processes, model.GPUProcess{PID: p.PID, Type: p.Type, Name: p.Name, MemBytes: p.MemBytes})
+	}
+	sort.SliceStable(a.Processes, func(i, j int) bool {
+		x, y := a.Processes[i].MemBytes, a.Processes[j].MemBytes
+		return x != nil && (y == nil || *x > *y)
+	})
 	// nvidia-smi knows the trained link generation even when sysfs reads 2.5 GT/s at idle
 	if g.LinkWidth != nil {
 		a.LinkWidth = g.LinkWidth
 	}
 	if g.MaxLinkWidth != nil {
 		a.MaxLinkWidth = g.MaxLinkWidth
+	}
+}
+
+// grace matches the NVIDIA parts that sit next to a Grace CPU on
+// NVLink-C2C: GB10 (DGX Spark), GH200, GB200, GB300.
+var grace = regexp.MustCompile(`\bG[BH]\d{2,3}\b`)
+
+// nvidiaC2C marks NVIDIA GPUs attached to the CPU over NVLink-C2C. Their
+// PCIe function is a stub (GB10: x1 at 2.5 GT/s), so its link says nothing
+// about the GPU. Recognised by name, by nvidia-smi's ATS addressing mode, or
+// by a device that can do no more than PCIe Gen1, which no discrete NVIDIA
+// GPU of the last fifteen years reports.
+func nvidiaC2C(a *model.Accelerator, g gpu.NvidiaGPU) {
+	if grace.MatchString(a.Model) || g.AddressingMode == "ATS" || g.C2CMode == "Enabled" || strings.HasPrefix(a.MaxLinkSpeed, "2.5 GT/s") {
+		a.Interconnect = "NVLink-C2C"
+		// GB10 puts the CPU and GPU dies in one package
+		a.Integrated = strings.Contains(a.Model, "GB10")
+		if a.MemTotalBytes == nil && g.ProcessMemBytes != nil {
+			a.MemUsedBytes = g.ProcessMemBytes
+		}
 	}
 }
 
@@ -400,7 +444,7 @@ func findings(h *model.Header, a *model.Accelerator, errs []kernellog.Entry) mod
 	if v := a.RetiredPages; v != nil && *v > 0 {
 		add(model.StatusWarn, "retired_pages", fmt.Sprintf("%d retired memory pages", *v))
 	}
-	if !a.Integrated && a.LinkWidth != nil && a.MaxLinkWidth != nil && *a.LinkWidth < *a.MaxLinkWidth {
+	if !a.Integrated && a.Interconnect == "" && a.LinkWidth != nil && a.MaxLinkWidth != nil && *a.LinkWidth < *a.MaxLinkWidth {
 		add(model.StatusWarn, "pcie_width", fmt.Sprintf("PCIe link x%d, device supports x%d", *a.LinkWidth, *a.MaxLinkWidth))
 	}
 	var hwt []string

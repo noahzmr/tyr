@@ -457,6 +457,8 @@ func accelSection(m *md, x *model.Accel) {
 			mem := ""
 			if a.MemTotalBytes != nil {
 				mem = bytesGiB(*a.MemTotalBytes)
+			} else if a.SharedMemory {
+				mem = "shared"
 			}
 			rows = append(rows, []string{strings.ToUpper(a.Kind), a.Model, a.PCIAddress, a.Serial, strings.TrimSpace(a.Driver + " " + a.DriverVersion),
 				a.Firmware, mem, temp, u(a.ECCUncorrectable), status(a.Status)})

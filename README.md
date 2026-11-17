@@ -111,7 +111,7 @@ guard that keeps it safe, and gives a verdict you can trust.
 | Memory | DIMMs per slot, ECC corrected / uncorrected (EDAC), poisoned pages, DIMM temperatures, memory the OS cannot see |
 | Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, filesystems; iSCSI / FC volumes with their session and path |
 | Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, drops and losses with where and why (NIC ring, kernel, bond), transceiver optics, LLDP neighbours, BMC LAN |
-| GPU/NPU | PCIe link width and speed, temperatures, power, ECC, retired/remapped rows, driver errors (Xid) |
+| GPU/NPU | PCIe link width and speed (not for NVLink-C2C GPUs such as GB10, whose PCIe link is a stub), temperatures (Blackwell: from the T.Limit margin), power, memory (shared with the system on GB10), ECC, retired/remapped rows, driver errors (Xid), processes holding GPU memory |
 | System | identity, BIOS, BMC, PSU inventory, fans (also HPE duty cycle) and chassis temperatures, boot history with crashes and resets |
 | Power | power supplies with state, input voltage, output and rating; total draw and cap; redundancy (BMC Redfish, else SMBIOS) |
 | Events | the BMC's event logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages in one timeline |

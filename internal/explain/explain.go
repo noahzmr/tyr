@@ -315,7 +315,7 @@ var entries = map[string]Entry{
 		Check: []string{"lspci -k -s {dev}", "journalctl -k -b | grep -iE 'nvidia|amdgpu|i915|xe'"}},
 	"accel/accel_temp": {Title: "GPU temperature high", Meaning: "The GPU or its memory is near its slowdown or shutdown temperature.",
 		Causes: []string{"cooling: fans, airflow, blocked intake", "a sustained full load"}, Check: []string{"nvidia-smi -q -d TEMPERATURE -i {dev}"}},
-	"accel/pcie_width": {Title: "GPU PCIe link narrower than supported", Meaning: "The GPU runs on fewer PCIe lanes than it supports: lower bandwidth.",
+	"accel/pcie_width": {Title: "GPU PCIe link narrower than supported", Meaning: "The GPU runs on fewer PCIe lanes than it supports: lower bandwidth. Not raised for GPUs on NVLink-C2C (DGX Spark's GB10, GH200, GB200): their PCIe function is a stub (x1, 2.5 GT/s) and not the data path.",
 		Causes: []string{"the slot, a riser, or a bad seat"}, Check: []string{"lspci -vv -s {dev} | grep -E 'LnkCap|LnkSta'"}},
 
 	// --- system -------------------------------------------------------------

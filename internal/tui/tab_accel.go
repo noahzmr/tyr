@@ -109,6 +109,11 @@ func (a *accelTab) View(t *Theme) string {
 			}
 			pct := float64(used) / float64(*it.MemTotalBytes) * 100
 			mem = memBar(t, pct, model.StatusOK, 8) + " " + bytesGB(used) + "/" + bytesGB(*it.MemTotalBytes)
+		} else if it.SharedMemory {
+			mem = t.Sub.Render("shared")
+			if it.SharedMemBytes != nil {
+				mem += " " + bytesGB(*it.SharedMemBytes)
+			}
 		}
 		pw := watts(it.PowerWatts)
 		if it.PowerCapWatts != nil {
@@ -120,7 +125,9 @@ func (a *accelTab) View(t *Theme) string {
 			tc = t.StatusBold(tst, tc)
 		}
 		link := t.Sub.Render("–")
-		if it.Integrated {
+		if it.Interconnect != "" {
+			link = t.Sub.Render("C2C")
+		} else if it.Integrated {
 			link = t.Sub.Render("internal")
 		} else if it.LinkWidth != nil {
 			link = fmt.Sprintf("x%d", *it.LinkWidth)
@@ -203,7 +210,9 @@ func (a *accelTab) inspectorBlock(t *Theme, x model.Accelerator) string {
 	if x.UtilizationPercent != nil {
 		rows = append(rows, kvPair{"Util", spark(t.sess.history("accel/"+x.PCIAddress+"/load"), 16, 100, t.Series[0]) + fmt.Sprintf(" %.0f %%", *x.UtilizationPercent)})
 	}
-	if x.LinkWidth != nil && !x.Integrated {
+	if x.Interconnect != "" {
+		rows = append(rows, kvPair{"Link", x.Interconnect + " " + t.Sub.Render("to the CPU")})
+	} else if x.LinkWidth != nil && !x.Integrated {
 		l := fmt.Sprintf("x%d", *x.LinkWidth)
 		if x.MaxLinkWidth != nil {
 			l += fmt.Sprintf(" of x%d", *x.MaxLinkWidth)
@@ -323,7 +332,14 @@ func (a *accelTab) Detail(t *Theme, w int) (string, string) {
 			link += t.Dim.Render(fmt.Sprintf("  (device max x%d %s)", *x.MaxLinkWidth, x.MaxLinkSpeed))
 		}
 	}
-	doc.kv([2]string{"Link", link}, [2]string{"Power state", x.PowerState}, [2]string{"Runtime PM", x.RuntimeStatus},
+	cpuLink := ""
+	if x.Interconnect != "" {
+		cpuLink = x.Interconnect
+		if link != "" {
+			link += t.Dim.Render("  (a stub: data goes over " + x.Interconnect + ", not PCIe)")
+		}
+	}
+	doc.kv([2]string{"CPU link", cpuLink}, [2]string{"PCIe link", link}, [2]string{"Power state", x.PowerState}, [2]string{"Runtime PM", x.RuntimeStatus},
 		[2]string{"Awake", optF(x.AwakePercent, "%.0f%% of last interval")}, [2]string{"Power mode", x.PowerMode})
 	doc.section("Sensors", t.Dim.Render(x.SensorNote))
 	for _, s := range x.Temps {
@@ -351,6 +367,16 @@ func (a *accelTab) Detail(t *Theme, w int) (string, string) {
 		}
 		pct := float64(used) / float64(*x.MemTotalBytes) * 100
 		mem = usageBar(t, &pct, model.StatusOK, 20) + fmt.Sprintf("  %s of %s", bytesGB(used), bytesGB(*x.MemTotalBytes))
+	} else if x.SharedMemory {
+		mem = "unified with system memory"
+		switch {
+		case x.SharedMemBytes != nil && x.MemUsedBytes != nil && *x.SharedMemBytes > 0:
+			pct := float64(*x.MemUsedBytes) / float64(*x.SharedMemBytes) * 100
+			mem = usageBar(t, &pct, model.StatusOK, 20) + fmt.Sprintf("  GPU processes hold %s of %s", bytesGB(*x.MemUsedBytes), bytesGB(*x.SharedMemBytes)) +
+				t.Dim.Render("  (unified with system memory: the Memory tab shows all of it)")
+		case x.SharedMemBytes != nil:
+			mem += " (" + bytesGB(*x.SharedMemBytes) + ")"
+		}
 	}
 	util := ""
 	if x.UtilizationPercent != nil {
@@ -369,6 +395,23 @@ func (a *accelTab) Detail(t *Theme, w int) (string, string) {
 	}
 	doc.kv([2]string{"Load", util}, [2]string{"Memory", mem}, [2]string{"Clock", optF(x.ClockMHz, "%.0f MHz")},
 		[2]string{"Running contexts", ctx}, [2]string{"AIE columns", cols}, [2]string{"Busy time", optU(x.BusyTimeUs)})
+	if len(x.Processes) > 0 {
+		doc.section("Processes", t.Dim.Render("holding GPU memory, largest first"))
+		var kv [][2]string
+		for i, p := range x.Processes {
+			if i == 8 {
+				kv = append(kv, [2]string{"", t.Dim.Render(fmt.Sprintf("… %d more", len(x.Processes)-i))})
+				break
+			}
+			m := "–"
+			if p.MemBytes != nil {
+				m = bytesGB(*p.MemBytes)
+			}
+			typ := map[string]string{"C": "compute", "G": "graphics", "C+G": "compute+graphics"}[p.Type]
+			kv = append(kv, [2]string{fmt.Sprintf("%d", p.PID), fmt.Sprintf("%-9s %s  %s", m, p.Name, t.Dim.Render(typ))})
+		}
+		doc.kv(kv...)
+	}
 	doc.section("Reliability", "")
 	remap := ""
 	if x.RemapPending != nil && *x.RemapPending {

@@ -81,6 +81,14 @@ func (n *node) get(paths string) string {
 	return ""
 }
 
+// NvidiaProcess is one process holding GPU memory.
+type NvidiaProcess struct {
+	PID      int
+	Type     string // C compute, G graphics, C+G
+	Name     string
+	MemBytes *uint64
+}
+
 // NvidiaGPU is the subset of `nvidia-smi -q -x` Tyr uses.
 type NvidiaGPU struct {
 	BusID           string // normalized 0000:3b:00.0
@@ -114,6 +122,18 @@ type NvidiaGPU struct {
 	RemapPending    *bool
 	RemapFailed     *bool
 	ThrottleReasons []string
+	// AddressingMode is "ATS" on Grace (NVLink-C2C) systems, "HMM" or
+	// empty elsewhere.
+	AddressingMode string
+	// C2CMode is "Enabled" when the GPU is on NVLink-C2C.
+	C2CMode string
+	// TempTLimitC is the margin to the slowdown temperature (Blackwell
+	// reports this instead of the slowdown threshold).
+	TempTLimitC *float64
+	Processes   []NvidiaProcess
+	// ProcessMemBytes sums the memory the GPU's processes use: the only
+	// usage figure when the GPU has no memory of its own (GB10).
+	ProcessMemBytes *uint64
 }
 
 func num(s string) *float64 {
@@ -233,6 +253,21 @@ func ParseNvidiaSMI(data []byte) ([]NvidiaGPU, error) {
 		x.RetirePending = strings.EqualFold(g.get("retired_pages/pending_retirement|retired_pages/pending_blacklist"), "Yes")
 		x.RemapPending = yesNo(g.get("remapped_rows/remapped_row_pending"))
 		x.RemapFailed = yesNo(g.get("remapped_rows/remapped_row_failure"))
+		x.AddressingMode, x.C2CMode = g.get("addressing_mode"), g.get("c2c_mode")
+		x.TempTLimitC = num(g.get("temperature/gpu_temp_tlimit"))
+		if ps := g.child("processes"); ps != nil {
+			for _, pi := range ps.Children {
+				if pi.Name != "process_info" {
+					continue
+				}
+				pr := NvidiaProcess{Type: pi.get("type"), Name: pi.get("process_name"), MemBytes: mib(pi.get("used_memory"))}
+				if v := num(pi.get("pid")); v != nil {
+					pr.PID = int(*v)
+				}
+				x.Processes = append(x.Processes, pr)
+				x.ProcessMemBytes = sum(x.ProcessMemBytes, pr.MemBytes)
+			}
+		}
 		for _, sec := range []string{"clocks_event_reasons", "clocks_throttle_reasons"} {
 			r := g.child(sec)
 			if r == nil {

@@ -144,3 +144,60 @@ func TestIntelGPUAndNPU(t *testing.T) {
 		t.Errorf("npu %+v", n)
 	}
 }
+
+// DGX Spark: the GB10's GPU sits on NVLink-C2C. Its PCIe function trains at
+// x1 2.5 GT/s by design and it has no memory of its own.
+func TestGB10(t *testing.T) {
+	dir := t.TempDir()
+	w := func(p, v string) {
+		os.MkdirAll(filepath.Dir(dir+"/root"+p), 0o755)
+		os.WriteFile(dir+"/root"+p, []byte(v+"\n"), 0o644)
+	}
+	ln := func(p, target string) {
+		os.MkdirAll(filepath.Dir(dir+"/root"+p), 0o755)
+		os.Symlink(target, dir+"/root"+p)
+	}
+	d := "/sys/devices/pci000f:00/000f:00:00.0/000f:01:00.0"
+	for k, v := range map[string]string{"class": "0x030200", "vendor": "0x10de", "device": "0x2e12", "power_state": "D0",
+		"current_link_speed": "2.5 GT/s PCIe", "current_link_width": "1", "max_link_speed": "2.5 GT/s PCIe", "max_link_width": "16"} {
+		w(d+"/"+k, v)
+	}
+	ln(d+"/driver", "../../../../bus/pci/drivers/nvidia")
+	ln("/sys/bus/pci/devices/000f:01:00.0", "../../../devices/pci000f:00/000f:00:00.0/000f:01:00.0")
+	w("/proc/meminfo", "MemTotal:       127535520 kB\nMemFree:        100000000 kB")
+	w("/proc/stat", "cpu 1 0 1 1 0 0 0 0\nbtime 1700000000")
+	os.MkdirAll(dir+"/cmd", 0o755)
+	os.WriteFile(dir+"/cmd/nvsmi.xml", []byte(`<?xml version="1.0" ?>
+<nvidia_smi_log><driver_version>580.95.05</driver_version>
+<gpu id="0000000F:01:00.0"><product_name>NVIDIA GB10</product_name><addressing_mode>ATS</addressing_mode>
+<pci><pci_bus_id>0000000F:01:00.0</pci_bus_id><pci_gpu_link_info><pcie_gen><max_link_gen>1</max_link_gen><current_link_gen>1</current_link_gen></pcie_gen>
+<link_widths><max_link_width>16x</max_link_width><current_link_width>1x</current_link_width></link_widths></pci_gpu_link_info></pci>
+<fb_memory_usage><total>N/A</total><used>N/A</used><free>N/A</free></fb_memory_usage>
+<temperature><gpu_temp>41 C</gpu_temp><gpu_temp_tlimit>56 C</gpu_temp_tlimit></temperature>
+<processes><process_info><pid>4242</pid><used_memory>2048 MiB</used_memory></process_info>
+<process_info><pid>4243</pid><used_memory>1024 MiB</used_memory></process_info></processes>
+</gpu></nvidia_smi_log>`), 0o644)
+	os.WriteFile(dir+"/manifest.json", []byte(`{"hostname":"spark","virtualization":"none","arch":"arm64",
+"tools":{"nvidia-smi":"/usr/bin/nvidia-smi"},
+"commands":[{"argv":["nvidia-smi","-q","-x"],"exit":0,"stdout":"cmd/nvsmi.xml"}]}`), 0o644)
+	a := collect(t, dir)
+	if len(a.GPUs) != 1 {
+		t.Fatalf("%+v", a)
+	}
+	for _, f := range a.Findings {
+		if f.Code == "pcie_width" {
+			t.Errorf("C2C GPU flagged: %s", f.Message)
+		}
+	}
+	g := a.GPUs[0]
+	if g.Interconnect != "NVLink-C2C" || !g.Integrated || !g.SharedMemory || g.MemTotalBytes != nil ||
+		g.SharedMemBytes == nil || *g.SharedMemBytes != 127535520*1024 || g.MemUsedBytes == nil || *g.MemUsedBytes != 3072<<20 {
+		t.Errorf("gb10 %+v", g)
+	}
+	if len(g.Processes) != 2 || g.Processes[0].PID != 4242 {
+		t.Errorf("processes %+v", g.Processes)
+	}
+	if th := g.Temps[0].Thresholds; *th.UpperWarn != 92 || *th.UpperCrit != 97 || th.Origin != "nvidia-smi T.Limit" {
+		t.Errorf("slowdown from T.Limit: %+v", g.Temps[0].Thresholds)
+	}
+}
