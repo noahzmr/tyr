@@ -11,7 +11,7 @@ DIST        := dist
 
 export CGO_ENABLED=0
 
-.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden cross diagrams clean
+.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross diagrams clean
 
 PREFIX  ?= /usr/local
 ARCHIFY ?= $(HOME)/src/archify
@@ -68,6 +68,11 @@ fixtures:
 # Regenerate the workload golden table (only after changing a kernel!).
 golden:
 	go test ./internal/workload -run TestGoldenTable -update
+
+# Regenerate the torture test's residues (only after changing its cases;
+# exact arithmetic with math/big, about a minute).
+ll-table:
+	go test ./internal/workload -run TestLLTable -update -timeout 30m
 
 # Static binaries to copy to other hosts: dist/tyr-linux-{amd64,arm64}
 # plus dist/SHA256SUMS (see README "Run on a remote host").

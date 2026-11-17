@@ -35,6 +35,7 @@ CGO_ENABLED=0 go build -o tyr ./cmd/tyr     # static binary in the repo root
 | `make live` | collectors against this host, read-only |
 | `make fixtures` | regenerate the synthetic server fixtures |
 | `make golden` | regenerate the workload golden table (only after changing a kernel) |
+| `make ll-table` | regenerate the torture test's residues (only after changing its cases; about a minute) |
 | `make diagrams` | re-render the archify diagrams and export their SVGs |
 
 `CGO_ENABLED=0` is exported by the Makefile; a plain `go build` links against
@@ -65,7 +66,7 @@ flowchart LR
 | `internal/affinity`, `internal/cpuset` | CPU pinning and CPU list parsing for the core tests |
 | `internal/model` | `Snapshot` and the shared types; the JSON schema |
 | `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series, the isolated offline-core test |
-| `internal/workload` | deterministic compute kernels checked against golden values |
+| `internal/workload` | deterministic compute kernels checked against golden values; the torture test's Lucas-Lehmer FFT (Go, plus AVX-512 / AVX2 FMA assembly in `fft_amd64.s`) checked against exact residues |
 | `internal/report` | Markdown reports, Mermaid charts, history, glamour rendering |
 | `internal/tui` | the Bubble Tea front end |
 | `internal/hostfs`, `internal/execx` | read-only host access; tool execution without a shell, with deadlines |
@@ -87,7 +88,9 @@ More: [docs/architecture.md](docs/architecture.md).
 4. **Status without colour.** Every status has a glyph and a word
    (`● OK ▲ WARN ✖ CRIT ? UNKNOWN ○ unavailable`); golden tests render dark,
    light and NO_COLOR and require the same text.
-5. **No new dependencies** without a discussion first.
+5. **No new dependencies** without a discussion first. No cgo; assembly only
+   where it pays (the torture FFT), always with a Go fallback and a test
+   that every path gives the same results.
 6. **Commit messages, comments and files describe the work only** - no notes or
    trailers crediting the tool that helped write them (see §8).
 
@@ -104,7 +107,8 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 |---|---|---|
 | Unit | every package | fixtures, no root, no network |
 | Golden screens | `internal/tui/testdata/golden` | 22 screens × 80×24, 120×40, 160×50; dark, light and NO_COLOR must match |
-| Workload goldens | `internal/workload` | `make golden` only after changing a kernel |
+| Workload goldens | `internal/workload` | `make golden` only after changing a kernel; `make ll-table` only after changing the torture cases |
+| FFT paths | `TestKernelsExact` | the Go, AVX2 and AVX-512 butterflies must all give the exact residues; `go test ./internal/workload -bench LL` measures them |
 | Live collectors | `make live` | `TYR_LIVE=1`, read-only, this host |
 | Live clipboard | `TYR_CLIP_LIVE=1 go test ./internal/tui -run TestCopyLiveDesktop` | copies through `xclip`/`wl-copy` and restores the clipboard |
 | Screen dumps | `TYR_SHOW=server-degraded:4,6+enter:120x40 go test ./internal/tui -run TestDumpTabs -v` | prints screens; `TYR_STRESS=server-degraded:120x40` dumps a stress run |

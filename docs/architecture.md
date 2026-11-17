@@ -14,6 +14,7 @@ read that snapshot or its JSON.
 | Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data; SMBIOS (`/sys/firmware/dmi/tables`), NICs (`SIOCETHTOOL`) and the BMC (`/dev/ipmi0`) natively, their tools only as fallback |
 | Collectors | `collector/system`, `cpu`, `memory`, `storage`, `power`, `network`, `accel`, `events` | combine sources into a section with findings |
 | Checks | `check` | thresholds → `OK` / `WARN` / `CRIT` / `UNKNOWN` |
+| Workloads | `workload` | the verified compute kernels of the core and CPU tests; the torture test's Lucas-Lehmer FFT (AVX-512 / AVX2 FMA or Go) |
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
 | Consumers | `tui`, `cmd/tyr`, `stress`, `report` | show, export, load, report |

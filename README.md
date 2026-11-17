@@ -462,7 +462,7 @@ tyr/
 │   ├── explain/             the alert catalog: meaning, causes, commands
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
 │   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
-│   ├── workload/            self-checking compute kernels (golden values)
+│   ├── workload/            self-checking compute kernels; the torture test's FFT (Go + AVX asm)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
 │   ├── tui/                 Bubble Tea TUI
 │   ├── netpeer/, netproto/  network test peer and protocol

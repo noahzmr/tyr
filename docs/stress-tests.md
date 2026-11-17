@@ -73,7 +73,7 @@ engine: [tools.md](tools.md).
 
 | Component | Choice | Default |
 |---|---|---|
-| CPU | CPU list (`--cpus 0-7,16`, `S` on the CPU tab: the selected core and its sibling) | all online CPUs |
+| CPU | CPU list (`--cpus 0-7,16`, `S` on the CPU tab: the selected core and its sibling); torture engine: FFT sizes (`--fft small\|large\|blend`, the FFTs field) | all online CPUs except suspect cores; `blend` |
 | Memory | percent of available memory, up to 100 (`--mem-percent`) | 70 %; a reserve of max(1 GiB, 5 % of RAM) always stays free |
 | Storage | `read` a disk or all disks in parallel; `file` on a writable filesystem (`--size`) | `read`, all disks; file size min(4 GiB, 10 % of free space) |
 | Network | peer, streams, direction (`--reverse`: the peer sends) | 4 streams, this host sends |
