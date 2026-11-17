@@ -547,7 +547,8 @@ func (s *storageTab) raidDetail(t *Theme) string {
 	case ri.pd != nil:
 		p := ri.pd
 		return t.HeadingFocus("PD "+p.Slot, "", "enter drive page", s.w) + "\n" + kvBlock(t, []kvPair{
-			{"Model", p.Model}, {"Serial", t.Bold.Render(p.Serial)}, {"State", t.StatusText(p.Status, p.State)}, {"Group", p.Group}}, "")
+			{"Model", p.Model}, {"Serial", t.Bold.Render(p.Serial)}, {"State", t.StatusText(p.Status, strings.TrimSpace(p.State+" "+strings.Join(p.Reasons, ", ")))},
+			{"Group", p.Group}, {"Life left", optF(p.LifeLeftPercent, "%.0f %%")}}, "")
 	case ri.vd != nil:
 		v := ri.vd
 		return t.HeadingFocus("VD "+v.ID, "", "enter page", s.w) + "\n" + kvBlock(t, []kvPair{
@@ -890,17 +891,30 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 		case it.pd != nil:
 			p := it.pd
 			doc.section("Physical drive "+p.Slot, t.Badge(p.Status))
-			doc.kv([2]string{"State", p.State}, [2]string{"Drive group", p.Group}, [2]string{"Model", p.Model}, [2]string{"Serial", p.Serial},
+			var hrs, pred string
+			if p.PowerOnHours != nil {
+				hrs = fmt.Sprintf("%d h (%.1f years)", *p.PowerOnHours, float64(*p.PowerOnHours)/8766)
+			}
+			if p.FailurePredicted {
+				pred = t.StatusText(model.StatusWarn, "yes")
+			}
+			doc.kv([2]string{"State", p.State}, [2]string{"Reasons", strings.Join(p.Reasons, ", ")}, [2]string{"Failure predicted", pred},
+				[2]string{"Drive group", p.Group}, [2]string{"Model", p.Model}, [2]string{"Serial", p.Serial},
 				[2]string{"WWN", p.WWN}, [2]string{"Firmware", p.Firmware}, [2]string{"Media", p.Media}, [2]string{"Interface", p.Interface},
-				[2]string{"Size", p.SizeText})
+				[2]string{"Size", p.SizeText}, [2]string{"Endurance left", optF(p.LifeLeftPercent, "%.0f %%")}, [2]string{"Power-on", hrs},
+				[2]string{"Temperature", optF(p.TempCelsius, "%.0f°C")})
 		case it.bat != nil:
 			b := it.bat
 			doc.section(b.Type, t.Badge(b.Status))
 			doc.kv([2]string{"Model", b.Model}, [2]string{"State", b.State}, [2]string{"Temperature", optF(b.TempCelsius, "%.0f°C")})
 		}
 		doc.section("Controller", t.Badge(c.Status))
-		doc.kv([2]string{"Model", c.Model}, [2]string{"Serial", c.Serial}, [2]string{"Firmware", c.Firmware},
-			[2]string{"State", c.State}, [2]string{"Read via", c.Tool})
+		via := c.Tool
+		if via == "redfish" {
+			via = "the BMC (Redfish)"
+		}
+		doc.kv([2]string{"Model", c.Model}, [2]string{"Location", c.Location}, [2]string{"Serial", c.Serial}, [2]string{"Firmware", c.Firmware},
+			[2]string{"State", c.State}, [2]string{"Read via", via})
 		keys := []string{name}
 		if it.vd != nil {
 			keys = append(keys, it.vd.ID)

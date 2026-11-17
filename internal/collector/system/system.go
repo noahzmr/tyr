@@ -48,6 +48,12 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		h.Sources = append(h.Sources, st)
 	}
 
+	// The BMC's device and firmware inventory (Redfish, cached for minutes).
+	if hw, st := env.RedfishHardware(ctx); len(hw.Devices) > 0 || len(hw.Firmware) > 0 {
+		out.Devices, out.Firmware = hw.Devices, hw.Firmware
+		h.SetSource("redfish", st.State, strings.TrimSpace("device and firmware inventory; "+st.Reason))
+	}
+
 	if s, err := hostfs.String(f, "/proc/uptime"); err == nil {
 		if fs := strings.Fields(s); len(fs) > 0 {
 			if v, err := strconv.ParseFloat(fs[0], 64); err == nil {

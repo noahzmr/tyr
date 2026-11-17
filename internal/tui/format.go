@@ -51,6 +51,14 @@ func optI(v *int, format string) string {
 	return fmt.Sprintf(format, *v)
 }
 
+// prefixed is p+v, or "" when v is empty.
+func prefixed(p, v string) string {
+	if strings.TrimSpace(v) == "" {
+		return ""
+	}
+	return p + v
+}
+
 func orDash(s string) string {
 	if strings.TrimSpace(s) == "" {
 		return "–"

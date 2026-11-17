@@ -31,10 +31,14 @@ type System struct {
 	ChassisAsset  string   `json:"chassis_asset_tag,omitempty"`
 	PSUs          []PSUFRU `json:"psus"` // SMBIOS type 39 inventory
 	FRUs          []FRU    `json:"frus"` // BMC FRU devices
-	Kernel        string   `json:"kernel,omitempty"`
-	UptimeSeconds *float64 `json:"uptime_seconds"`
-	Fans          []Sensor `json:"fans"`
-	Temps         []Sensor `json:"temps"` // inlet/exhaust/ambient
+	// From the BMC over Redfish: the device inventory (cards, controllers,
+	// batteries with part and serial numbers) and every firmware it lists.
+	Devices       []Device       `json:"devices,omitempty"`
+	Firmware      []FirmwareItem `json:"firmware,omitempty"`
+	Kernel        string         `json:"kernel,omitempty"`
+	UptimeSeconds *float64       `json:"uptime_seconds"`
+	Fans          []Sensor       `json:"fans"`
+	Temps         []Sensor       `json:"temps"` // inlet/exhaust/ambient
 	// Boots are the boots the journal knows, oldest first.
 	Boots []Boot `json:"boots,omitempty"`
 }
@@ -165,6 +169,30 @@ func (p PSUFRU) Health() Status {
 		return StatusOK
 	}
 	return StatusUnknown
+}
+
+// Device is one entry of the BMC's device inventory (HPE iLO System
+// Information > Device Inventory, Redfish Chassis Devices or PCIeDevices).
+type Device struct {
+	Name         string `json:"name"`
+	Location     string `json:"location,omitempty"` // "PCI-E Slot 1", "Embedded RAID"
+	Type         string `json:"type,omitempty"`     // "LOM/NIC", "Smart Storage", "SmartStorageBattery"
+	Manufacturer string `json:"manufacturer,omitempty"`
+	Model        string `json:"model,omitempty"`
+	PartNumber   string `json:"part_number,omitempty"`
+	ProductPart  string `json:"product_part_number,omitempty"` // HPE option kit number (727055-B21)
+	Serial       string `json:"serial,omitempty"`
+	Firmware     string `json:"firmware,omitempty"`
+	Status       Status `json:"status"`
+}
+
+// FirmwareItem is one firmware the BMC lists (Redfish FirmwareInventory).
+type FirmwareItem struct {
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Location string `json:"location,omitempty"` // HPE DeviceContext: "System Board", "Slot 12"
+	ID       string `json:"id,omitempty"`
+	Status   Status `json:"status"`
 }
 
 // FRU is one BMC FRU device (chassis/board/product/PSU records).

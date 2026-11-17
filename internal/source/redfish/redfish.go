@@ -1,6 +1,8 @@
 // Package redfish reads the BMC's Redfish service: event logs (HPE IML,
-// iLO event log, SEL) and power (supplies, draw, cap). Read-only: the
-// client only issues GET requests.
+// iLO event log, SEL), power (supplies, draw, cap), the drives behind RAID
+// controllers (HPE Smart Storage, Redfish Storage), the device inventory
+// and the firmware inventory. Read-only: the client only issues GET
+// requests.
 //
 // Access: the BMC's host interface (SMBIOS type 42, HPE iLO "Virtual
 // NIC") when it answers, else an address from --redfish, TYR_REDFISH or

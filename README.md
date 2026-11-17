@@ -109,10 +109,10 @@ guard that keeps it safe, and gives a verdict you can trust.
 |---|---|
 | CPU | online cores, per-core temperature and clock, throttling, microcode, an optional per-core compute test; machine checks across boots (journal, pstore crash records, rasdaemon, BMC) by unit; program crashes per core; offline cores: since when, whether the core is fully out of service, whether that survives a reboot |
 | Memory | DIMMs per slot, ECC corrected / uncorrected (EDAC), poisoned pages, DIMM temperatures, memory the OS cannot see |
-| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, filesystems; iSCSI / FC volumes with their session and path |
+| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, the drives behind HPE Smart Array and other controllers from the BMC (Redfish: bay, wear, power-on hours, status reasons), filesystems; iSCSI / FC volumes with their session and path |
 | Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, drops and losses with where and why (NIC ring, kernel, bond), transceiver optics, LLDP neighbours, BMC LAN |
 | GPU/NPU | PCIe link width and speed (not for NVLink-C2C GPUs such as GB10, whose PCIe link is a stub), temperatures (Blackwell: from the T.Limit margin), power, memory (shared with the system on GB10), ECC, retired/remapped rows, driver errors (Xid), processes holding GPU memory |
-| System | identity, BIOS, BMC, PSU inventory, fans (also HPE duty cycle) and chassis temperatures, boot history with crashes and resets |
+| System | identity, BIOS, BMC, PSU inventory, fans (also HPE duty cycle) and chassis temperatures, boot history with crashes and resets; from the BMC (Redfish): part and serial numbers of cards, controllers and the storage battery, and the firmware inventory |
 | Power | power supplies with state, input voltage, output and rating; total draw and cap; redundancy (BMC Redfish, else SMBIOS) |
 | Events | the BMC's event logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages in one timeline |
 
@@ -224,7 +224,8 @@ Which tool adds what, the package names per distribution and how to install
 the vendor tools, with links to their official documentation:
 **[docs/tools.md](docs/tools.md)**.
 
-The BMC's Redfish service (event logs, live power readings) needs no tool but
+The BMC's Redfish service (event logs, live power readings, the drives behind
+RAID controllers, device and firmware inventory) needs no tool but
 an account: `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or
 `/etc/tyr/redfish.conf`, reached through the BMC's host interface (HPE iLO
 Virtual NIC) or `--redfish HOST`. See

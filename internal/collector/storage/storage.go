@@ -150,6 +150,7 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 
 	// --- hardware RAID --------------------------------------------------------
 	c.hwRAID(ctx, env, out)
+	redfishRAID(ctx, env, out)
 
 	// --- filesystems --------------------------------------------------------------
 	out.Filesystems = filesystems(env, mounts)
@@ -672,6 +673,94 @@ func (c *Collector) hwRAID(ctx context.Context, env *collector.Env, out *model.S
 		out.Controllers = append(out.Controllers, ctrls...)
 		return
 	}
+}
+
+// redfishRAID adds the controllers the BMC reports over Redfish (HPE Smart
+// Array, and any other Redfish Storage) that the vendor tool did not: the
+// drives behind them are invisible to the host without ssacli or storcli.
+// A controller whose drives the host sees itself (HBA mode, direct NVMe)
+// and that has no logical drives adds nothing and is left out.
+func redfishRAID(ctx context.Context, env *collector.Env, out *model.Storage) {
+	hw, st := env.RedfishHardware(ctx)
+	if len(hw.Controllers) == 0 {
+		return
+	}
+	norm := func(s string) string { return strings.ToUpper(strings.TrimSpace(s)) }
+	known := map[string]bool{} // serials already reported: storcli controllers and drives, OS disks
+	for _, rc := range out.Controllers {
+		known[norm(rc.Serial)] = true
+		for _, p := range rc.PDs {
+			known[norm(p.Serial)] = true
+		}
+	}
+	osDisk := map[string]bool{}
+	for _, d := range out.Disks {
+		osDisk[norm(d.Serial)] = true
+	}
+	delete(known, "")
+	delete(osDisk, "")
+	h := &out.Header
+	added := 0
+	for _, rc := range hw.Controllers {
+		if known[norm(rc.Serial)] {
+			continue
+		}
+		var pds []model.PhysicalDrive
+		visible := 0
+		for _, p := range rc.PDs {
+			if known[norm(p.Serial)] {
+				continue
+			}
+			if osDisk[norm(p.Serial)] {
+				visible++
+			}
+			pds = append(pds, p)
+		}
+		if len(rc.VDs) == 0 && visible == len(pds) {
+			continue
+		}
+		rc.PDs = pds
+		rc.Index = len(out.Controllers)
+		name := fmt.Sprintf("controller %d", rc.Index)
+		if rc.Status >= model.StatusWarn {
+			h.Find(model.StatusWarn, "raid_controller", name, "redfish", fmt.Sprintf("RAID %s (%s %s): %s", name, rc.Model, rc.Location, rc.State))
+		}
+		for _, v := range rc.VDs {
+			if v.Status >= model.StatusWarn {
+				h.Find(v.Status, "raid_vd", v.ID, "redfish", fmt.Sprintf("RAID logical drive %s (%s %s) on %s: %s", v.ID, v.Level, v.Name, rc.Model, v.State))
+			}
+		}
+		for _, p := range rc.PDs {
+			if p.Status >= model.StatusWarn {
+				h.Find(p.Status, "raid_pd", p.Slot, "redfish", "RAID physical drive "+p.Slot+" ("+strings.TrimSpace(p.Model+" "+p.Serial)+"): "+pdProblem(p))
+			}
+		}
+		if b := rc.Battery; b != nil && b.Status >= model.StatusWarn {
+			h.Find(b.Status, "raid_battery", b.Type, "redfish", fmt.Sprintf("RAID %s %s: %s", name, b.Type, b.State))
+		}
+		out.Controllers = append(out.Controllers, rc)
+		added++
+	}
+	if added > 0 {
+		st.Reason = strings.TrimSpace("RAID controllers and their drives; " + st.Reason)
+		h.Sources = append(h.Sources, st)
+	}
+}
+
+// pdProblem says what is wrong with a drive the BMC reports.
+func pdProblem(p model.PhysicalDrive) string {
+	var parts []string
+	if p.State != "" {
+		parts = append(parts, p.State)
+	}
+	parts = append(parts, p.Reasons...)
+	if p.FailurePredicted {
+		parts = append(parts, "failure predicted")
+	}
+	if l := p.LifeLeftPercent; l != nil && *l <= 10 {
+		parts = append(parts, fmt.Sprintf("%.0f%% endurance left", *l))
+	}
+	return strings.Join(parts, ", ")
 }
 
 // --- filesystems ----------------------------------------------------------

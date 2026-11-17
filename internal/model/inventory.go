@@ -7,7 +7,7 @@ import (
 
 // Component is one row of the hardware inventory.
 type Component struct {
-	Category   string `json:"category"` // system, chassis, board, bmc, cpu, dimm, disk, raid_controller, raid_drive, nic, transceiver, gpu, npu, psu, fru
+	Category   string `json:"category"` // system, chassis, board, bmc, cpu, dimm, disk, volume, raid_controller, raid_drive, nic, transceiver, gpu, npu, device (BMC device inventory), psu, fru
 	Location   string `json:"location"` // slot, socket, device name, PCI address
 	Vendor     string `json:"vendor,omitempty"`
 	Model      string `json:"model,omitempty"`
@@ -20,7 +20,7 @@ type Component struct {
 
 // InventoryCategories in display order.
 var InventoryCategories = []string{"system", "chassis", "board", "bmc", "cpu", "dimm", "disk", "volume", "raid_controller",
-	"raid_drive", "nic", "transceiver", "gpu", "npu", "psu", "fru"}
+	"raid_drive", "nic", "transceiver", "gpu", "npu", "device", "psu", "fru"}
 
 func gib(b uint64) string {
 	switch {
@@ -133,9 +133,19 @@ func BuildInventory(s *Snapshot) []Component {
 			}
 			add(Component{Category: cat, Location: d.Path, Vendor: d.Vendor, Model: d.Model, Serial: d.Serial, Firmware: d.Firmware, Detail: det, Status: d.Status})
 		}
+		osDisk := map[string]bool{}
+		for _, d := range x.Disks {
+			if k := serialKey(d.Serial); k != "" {
+				osDisk[k] = true
+			}
+		}
 		for _, c := range x.Controllers {
-			add(Component{Category: "raid_controller", Location: fmt.Sprintf("controller %d", c.Index), Model: c.Model, Serial: c.Serial, Firmware: c.Firmware, Status: c.Status})
+			add(Component{Category: "raid_controller", Location: strings.TrimSpace(fmt.Sprintf("controller %d %s", c.Index, c.Location)), Model: c.Model,
+				Serial: c.Serial, Firmware: c.Firmware, Detail: map[bool]string{true: "via the BMC (Redfish)"}[c.Tool == "redfish"], Status: c.Status})
 			for _, p := range c.PDs {
+				if osDisk[serialKey(p.Serial)] {
+					continue // the host sees the drive itself (JBOD, HBA mode): listed as a disk
+				}
 				add(Component{Category: "raid_drive", Location: fmt.Sprintf("c%d %s", c.Index, p.Slot), Model: p.Model, Serial: p.Serial,
 					Firmware: p.Firmware, Detail: strings.TrimSpace(p.SizeText + " " + p.Interface + " " + p.Media + " " + p.State), Status: p.Status})
 			}
@@ -169,7 +179,67 @@ func BuildInventory(s *Snapshot) []Component {
 			}
 		}
 	}
+	if x := s.System; x != nil {
+		out = addDevices(out, x.Devices)
+		fillFirmware(out, x.Firmware)
+	}
 	return out
+}
+
+func serialKey(s string) string { return strings.ToUpper(strings.TrimSpace(s)) }
+
+// addDevices merges the BMC's device inventory: a device whose serial is
+// already listed (a RAID controller, a NIC, a GPU) lends that component
+// its part number and firmware; the others (cards the host lists only by
+// PCI ID, the storage battery, embedded controllers) become "device" rows.
+func addDevices(out []Component, devs []Device) []Component {
+	bySerial := map[string]int{}
+	for i, c := range out {
+		if k := serialKey(c.Serial); k != "" {
+			bySerial[k] = i
+		}
+	}
+	for _, d := range devs {
+		if k := serialKey(d.Serial); k != "" {
+			if i, ok := bySerial[k]; ok {
+				c := &out[i]
+				if c.PartNumber == "" {
+					c.PartNumber = d.PartNumber
+				}
+				if c.Firmware == "" {
+					c.Firmware = d.Firmware
+				}
+				continue
+			}
+		}
+		det := d.Type
+		if d.ProductPart != "" {
+			det = strings.TrimSpace(det + " option " + d.ProductPart)
+		}
+		if d.Model != "" && d.Model != d.Name {
+			det = strings.TrimSpace(det + " " + d.Model)
+		}
+		out = append(out, Component{Category: "device", Location: d.Location, Vendor: d.Manufacturer, Model: d.Name, PartNumber: d.PartNumber,
+			Serial: strings.TrimSpace(d.Serial), Firmware: d.Firmware, Detail: det, Status: d.Status})
+	}
+	return out
+}
+
+// fillFirmware gives a component without a firmware version the version
+// of the BMC's firmware entry with exactly its model name.
+func fillFirmware(out []Component, fw []FirmwareItem) {
+	byName := map[string]string{}
+	for _, f := range fw {
+		byName[strings.ToLower(f.Name)] = f.Version
+	}
+	for i := range out {
+		if out[i].Firmware != "" || out[i].Model == "" {
+			continue
+		}
+		if v, ok := byName[strings.ToLower(out[i].Model)]; ok {
+			out[i].Firmware = v
+		}
+	}
 }
 
 func assetTag(s string) string {

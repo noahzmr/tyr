@@ -67,6 +67,7 @@ Some data is expensive and changes slowly, so it is read once or cached:
 | Machine checks and program crashes of earlier boots, crash records (pstore), rasdaemon, boot history | once per process | they only change with a reboot |
 | Receive ring and queue size of each NIC (`ethtool -g` / `-l`) | once per interface | configuration |
 | Redfish event logs / power | every 2 min / 15 s, in the background | a BMC answers slowly; a collection round never waits longer than its timeout, the data arrives with the next refresh |
+| Redfish storage (drives behind RAID controllers), device and firmware inventory | every 10 min, in the background | many requests (one per drive, device and firmware), and it changes only with a part or a firmware update |
 
 The Redfish client is found once per process: the BMC's host interface
 (SMBIOS type 42) first, then a configured address.

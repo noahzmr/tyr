@@ -16,7 +16,10 @@ import (
 const (
 	redfishLogTTL   = 2 * time.Minute
 	redfishPowerTTL = 15 * time.Second
-	redfishMaxLog   = 500
+	// storage, device and firmware inventory change rarely and take many
+	// requests to read
+	redfishHardwareTTL = 10 * time.Minute
+	redfishMaxLog      = 500
 )
 
 type rfCache struct {
@@ -26,6 +29,7 @@ type rfCache struct {
 	mu    sync.Mutex
 	logs  rfJob[rfLogs]
 	power rfJob[*model.Power]
+	hw    rfJob[redfish.Hardware]
 }
 
 type rfLogs struct {
@@ -191,5 +195,22 @@ func (e *Env) RedfishPower(ctx context.Context) (*model.Power, model.SourceState
 			st.State, st.Reason = model.AvailUnavailable, err.Error()
 		}
 		return p, st
+	})
+}
+
+// RedfishHardware is what the BMC knows about drives behind RAID
+// controllers, the device inventory and the firmware inventory (cached for
+// 10 minutes, refreshed in the background).
+func (e *Env) RedfishHardware(ctx context.Context) (redfish.Hardware, model.SourceState) {
+	return fetch(e, ctx, &e.rf.hw, redfishHardwareTTL, func(bg context.Context) (redfish.Hardware, model.SourceState) {
+		g, st := e.RedfishClient(bg)
+		if g == nil {
+			return redfish.Hardware{}, st
+		}
+		hw, errs := redfish.ReadHardware(bg, g)
+		if len(errs) > 0 {
+			st.Reason += "; some resources unreadable: " + strings.Join(errs, "; ")
+		}
+		return hw, st
 	})
 }

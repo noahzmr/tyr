@@ -63,7 +63,15 @@ disk, its partitions, its ATA link or its iSCSI connection.
 
 Vendor, product, serial, BIOS, board, chassis, BMC firmware, kernel and
 uptime; the PSU inventory (SMBIOS type 39); fans and inlet/exhaust
-temperatures (hwmon, else the BMC).
+temperatures (hwmon, else the BMC). From the BMC over Redfish (read every 10
+minutes in the background): the device inventory, with the part and serial
+numbers of cards, controllers and the storage battery that the host knows
+only by PCI ID (HPE iLO: System Information > Device Inventory; else the
+standard PCIe devices), and the firmware inventory, every firmware the BMC
+lists (System ROM, iLO, controllers, NICs, power supplies, CPLD) with its
+version. Both are in the inventory (devices as `device` rows; a device whose
+serial is already listed lends that component its part number) and in the
+report.
 
 Findings: `fan_failed` ✖, `fan_low` ▲, temperatures past their limits, and:
 
@@ -197,7 +205,13 @@ BMC SEL memory events.
 
 Disks (SATA, SAS, NVMe) with SMART, wear and spare, I/O errors from the kernel
 log, md RAID (`/proc/mdstat`), MegaRAID / PERC controllers with virtual and
-physical drives and the battery, filesystems. iSCSI and Fibre Channel LUNs are
+physical drives and the battery, filesystems. The drives behind a RAID
+controller that no vendor tool reports (HPE Smart Array without ssacli, PERC
+without perccli) come from the BMC over Redfish: bay (`1I:1:3`), model,
+serial, size, endurance left, power-on hours, temperature, predicted failure
+and the controller's status reasons, and the logical drives and the cache
+battery. A controller whose drives the host sees itself (HBA mode, direct
+NVMe) is not listed again. iSCSI and Fibre Channel LUNs are
 listed as **network volumes**, not disks: their session or remote port, target,
 portal and state, and the kernel I/O errors on the path to the storage system.
 Their SMART belongs to the storage system and is not queried.
@@ -217,6 +231,7 @@ fresh, and the storage stress test reads it every 30 s.
 | `md_degraded`, `md_inactive`, `md_member_failed` | ✖ | software RAID lost redundancy |
 | `md_sync` | ▲ | resync / recovery running |
 | `raid_controller` | ▲ / ✖ | hardware RAID: degraded VD, failed PD, battery |
+| `raid_vd`, `raid_pd`, `raid_battery` | ▲ / ✖ | a degraded logical drive; a failed, predictive-failure or (BMC) worn-out drive: 90 % of its endurance used is a warning, 100 % critical; the cache battery |
 | `fs_read_only` | ✖ | a filesystem was remounted read-only |
 | `fs_full` | ▲ / ✖ | 85 / 95 % space or inodes |
 
@@ -373,9 +388,10 @@ pin 16.1.15.1:443 = sha256:…   # added by Tyr on first use
 BMCs use self-signed certificates, so Tyr pins the certificate's SHA-256
 fingerprint on first use (appending the `pin` line) and refuses a different
 certificate later; delete the line after replacing the iLO certificate.
-Event logs are read every 2 minutes and power every 15 seconds, in the
-background: a slow BMC does not hold up the TUI, and the first read shows up
-with the next refresh. `--no-redfish` turns it off.
+Event logs are read every 2 minutes, power every 15 seconds, and storage,
+the device and the firmware inventory every 10 minutes, in the background: a
+slow BMC does not hold up the TUI, and the first read shows up with the next
+refresh. `--no-redfish` turns it off.
 
 ## Without root
 

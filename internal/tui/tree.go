@@ -74,6 +74,18 @@ func buildTree(s *model.Snapshot) *hwNode {
 				fans.add(&hwNode{label: f.Name, info: optF(f.Value, "%.0f rpm"), status: f.Status, module: model.ModSystem})
 			}
 		}
+		if len(x.Devices) > 0 {
+			devs := plat.add(&hwNode{label: fmt.Sprintf("Devices (%d, BMC)", len(x.Devices)), module: model.ModSystem})
+			for _, d := range x.Devices {
+				devs.add(&hwNode{label: orDash(d.Location), info: strings.TrimSpace(d.Name + " " + prefixed("PN ", d.PartNumber)), serial: d.Serial, status: d.Status, module: model.ModSystem})
+			}
+		}
+		if len(x.Firmware) > 0 {
+			fw := plat.add(&hwNode{label: fmt.Sprintf("Firmware (%d, BMC)", len(x.Firmware)), module: model.ModSystem})
+			for _, f := range x.Firmware {
+				fw.add(&hwNode{label: f.Name, info: strings.TrimSpace(f.Version + " " + prefixed("· ", f.Location)), status: f.Status, module: model.ModSystem})
+			}
+		}
 	}
 	if c := s.CPU; c != nil {
 		cpu := root.add(&hwNode{label: "Processors", info: countLabel(c.SocketCount, "socket", "sockets") + fmt.Sprintf(" · %d cores · %d threads", c.CoreCount, c.ThreadCount), status: c.Status, module: model.ModCPU})

@@ -119,14 +119,16 @@ type MDMember struct {
 	Spare  bool   `json:"spare"`
 }
 
-// RAIDController is a hardware RAID controller (storcli/perccli).
+// RAIDController is a hardware RAID controller (storcli/perccli), or one
+// the BMC reports over Redfish (HPE Smart Array and other Redfish Storage).
 type RAIDController struct {
 	Index    int             `json:"index"`
 	Model    string          `json:"model"`
 	Serial   string          `json:"serial,omitempty"`
 	Firmware string          `json:"firmware,omitempty"`
+	Location string          `json:"location,omitempty"` // Redfish: "Slot 12", "Embedded RAID"
 	State    string          `json:"state"`
-	Tool     string          `json:"tool"`
+	Tool     string          `json:"tool"` // storcli, perccli, redfish
 	VDs      []VirtualDrive  `json:"virtual_drives"`
 	PDs      []PhysicalDrive `json:"physical_drives"`
 	Battery  *RAIDBattery    `json:"battery,omitempty"`
@@ -145,17 +147,24 @@ type VirtualDrive struct {
 
 // PhysicalDrive is a disk behind a RAID controller.
 type PhysicalDrive struct {
-	Slot      string `json:"slot"`  // EID:Slt
-	State     string `json:"state"` // Onln, Offln, UGood, UBad, Rbld, Failed, GHS, DHS, JBOD
+	Slot      string `json:"slot"`  // EID:Slt (storcli), Port:Box:Bay "1I:1:3" (Redfish)
+	State     string `json:"state"` // Onln, Offln, UGood, UBad, Rbld, Failed, GHS, DHS, JBOD; Redfish: OK, Warning, Critical
 	Group     string `json:"group,omitempty"`
 	SizeText  string `json:"size"`
+	SizeBytes uint64 `json:"size_bytes,omitempty"`
 	Interface string `json:"interface,omitempty"`
 	Media     string `json:"media,omitempty"`
 	Model     string `json:"model,omitempty"`
 	Serial    string `json:"serial,omitempty"`
 	WWN       string `json:"wwn,omitempty"`
 	Firmware  string `json:"firmware,omitempty"`
-	Status    Status `json:"status"`
+	// From the BMC (Redfish): what the controller knows about the drive's health.
+	LifeLeftPercent  *float64 `json:"life_left_percent,omitempty"` // SSD endurance left
+	PowerOnHours     *uint64  `json:"power_on_hours,omitempty"`
+	TempCelsius      *float64 `json:"temp_celsius,omitempty"`
+	FailurePredicted bool     `json:"failure_predicted,omitempty"`
+	Reasons          []string `json:"status_reasons,omitempty"` // HPE DiskDriveStatusReasons, Redfish Status.Conditions
+	Status           Status   `json:"status"`
 }
 
 // RAIDBattery is a BBU or CacheVault.

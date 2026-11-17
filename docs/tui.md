@@ -18,13 +18,13 @@ the keys that work here. `?` shows all keys and this tab's own.
 | `1` | Overview | - | a card per module (from 150 columns with a sparkline: CPU load and temperature, memory in use, network traffic, power draw, GPU load), then all findings worst first - `n` or `↓` enters them, `enter` opens the component, `i` explains the alert; on the right the counters that grew this session (with readable names), what resolved, missing data sources |
 | `2` | CPU | Grid · Cores · Details | every logical CPU by socket and thread (`t`: load ↔ temperature), per-core table, socket details and graphs; an offline CPU's page shows how and since when it went offline, the other thread of its core, program crashes on that core and its machine check history |
 | `3` | Memory | Table · Slot map | DIMMs with an inspector; slots per socket and channel (`a`: empty slots) |
-| `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID, filesystems |
+| `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID (also the drives behind HPE Smart Array from the BMC: bay, endurance, power-on hours, status reasons), filesystems |
 | `5` | Power | - | power supplies with state, input voltage, output and rating; total draw, average, cap, redundancy, the draw over the session; fans (BMC Redfish, else SMBIOS) |
 | `6` | Network | - | ports with bonds and VLANs under them, transceivers, LLDP (`h`: virtual interfaces); an interface's page explains its drops and losses: where, why, ring size, commands |
 | `7` | GPU/NPU | - | load, memory, power, temperature, PCIe link; NPUs. GPUs on NVLink-C2C (DGX Spark's GB10, GH200) show `C2C` as their link and `shared` memory (the system's RAM); a GPU's page lists the processes holding its memory |
 | `8` | Events | - | one timeline of the BMC's logs (HPE IML, iLO event log, SEL) and the kernel's hardware messages; severity / source chips, search, `space` details, `enter` the whole entry |
 | `9` | Stress | form · confirm · live · result | the stress tests (see [stress-tests.md](stress-tests.md)) |
-| `0` | Inventory | List · Tree | every component with serials; search, category chips; the topology tree |
+| `0` | Inventory | List · Tree | every component with serials (also the BMC's devices with part numbers); search, category chips; the topology tree, with the BMC's devices and firmware under Platform |
 
 `enter` on a row opens its detail page: a breadcrumb instead of the tab bar,
 everything Tyr knows about the component, `/` search with `n`/`N`, `c` copies

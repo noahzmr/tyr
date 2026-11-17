@@ -157,7 +157,7 @@ var entries = map[string]Entry{
 	"storage/md_sync": {Title: "Software RAID rebuilding", Meaning: "The array is resyncing or recovering; performance is lower and redundancy is not complete yet.",
 		Causes: []string{"a disk replacement or an unclean shutdown"}, Check: []string{"cat /proc/mdstat"}},
 	"storage/raid_controller": {Title: "Hardware RAID problem", Meaning: "The RAID controller reports a degraded volume, a failed drive or a battery/cache problem.",
-		Causes: []string{"a failed drive", "the cache battery or capacitor"}, Check: []string{"storcli /c0 show all   (perccli for Dell)"}},
+		Causes: []string{"a failed drive", "the cache battery or capacitor"}, Check: []string{"storcli /c0 show all   (perccli for Dell)", "ssacli ctrl all show status   (HPE), or iLO: System Information > Storage"}},
 	"storage/fs_read_only": {Title: "Filesystem switched to read-only", Meaning: "The kernel stopped writing to the filesystem after errors to protect it; writes by applications fail.",
 		Causes: []string{"I/O errors on the device below it", "filesystem corruption"},
 		Check:  []string{"journalctl -k -b | grep -iE 'ext4|xfs|btrfs|remount'", "fsck / xfs_repair after unmounting, once the device is healthy"}},
@@ -173,9 +173,10 @@ var entries = map[string]Entry{
 		Causes: []string{"an aged battery or capacitor", "a disconnected cable", "a learn cycle (temporary)"},
 		Check:  []string{"storcli /c0/bbu show all   or   storcli /c0/cv show all", "ssacli ctrl all show status   (HPE)"}},
 	"storage/raid_vd": {Title: "Hardware RAID volume degraded", Meaning: "A virtual drive of the RAID controller lost redundancy or is offline.",
-		Causes: []string{"a failed or missing physical drive (see raid_pd)"}, Check: []string{"storcli /c0/vall show all   (perccli for Dell)"}},
-	"storage/raid_pd": {Title: "Hardware RAID drive failed", Meaning: "The controller marked a physical drive as failed, missing or predictive failure.",
-		Causes: []string{"the drive", "its slot or the backplane"}, Check: []string{"storcli /c0/eall/sall show all   (perccli for Dell)"}},
+		Causes: []string{"a failed or missing physical drive (see raid_pd)"}, Check: []string{"storcli /c0/vall show all   (perccli for Dell)", "ssacli ctrl all show config   (HPE), or iLO: System Information > Storage"}},
+	"storage/raid_pd": {Title: "Hardware RAID drive failed", Meaning: "The controller marked a physical drive as failed, missing or predictive failure, or (as the BMC reports it) the SSD's rated endurance is nearly used up.",
+		Causes: []string{"the drive", "its slot or the backplane", "flash wear (endurance)"},
+		Check:  []string{"storcli /c0/eall/sall show all   (perccli for Dell)", "ssacli ctrl all show config detail   (HPE), or iLO: System Information > Storage"}},
 
 	// --- CPU ----------------------------------------------------------------
 	"cpu/core_offline": {Title: "A CPU is offline", Meaning: "A logical CPU is not running work: taken offline by an administrator, or by the kernel after hardware errors.",

@@ -124,6 +124,22 @@ func systemSection(m *md, x *model.System) {
 		m.table([]string{"PSU", "Model", "Serial", ">Rating", "State"}, rows)
 	}
 	sensorTable(m, "Fans and chassis temperatures", append(append([]model.Sensor{}, x.Fans...), x.Temps...))
+	if len(x.Devices) > 0 {
+		var rows [][]string
+		for _, d := range x.Devices {
+			rows = append(rows, []string{d.Location, d.Name, d.Type, d.PartNumber, d.Serial, d.Firmware, status(d.Status)})
+		}
+		m.h(3, "Devices (BMC)")
+		m.table([]string{"Location", "Device", "Type", "Part number", "Serial", "Firmware", "Status"}, rows)
+	}
+	if len(x.Firmware) > 0 {
+		var rows [][]string
+		for _, f := range x.Firmware {
+			rows = append(rows, []string{f.Name, f.Version, f.Location, status(f.Status)})
+		}
+		m.h(3, "Firmware (BMC)")
+		m.table([]string{"Component", "Version", "Location", "Status"}, rows)
+	}
 	bootsTable(m, x)
 }
 
@@ -403,6 +419,24 @@ func storageSection(m *md, x *model.Storage) {
 			rows = append(rows, []string{fmt.Sprintf("c%d", c.Index), c.Model, c.Serial, c.Firmware, fmt.Sprintf("%d VD · %d PD", len(c.VDs), len(c.PDs)), status(c.Status)})
 		}
 		m.table([]string{"Controller", "Model", "Serial", "Firmware", "Drives", "Status"}, rows)
+		var pds [][]string
+		for _, c := range x.Controllers {
+			for _, p := range c.PDs {
+				var hrs string
+				if p.PowerOnHours != nil {
+					hrs = fmt.Sprintf("%d h", *p.PowerOnHours)
+				}
+				state := strings.TrimSpace(p.State + " " + strings.Join(p.Reasons, ", "))
+				if p.FailurePredicted {
+					state += " (failure predicted)"
+				}
+				pds = append(pds, []string{fmt.Sprintf("c%d %s", c.Index, p.Slot), p.Model, p.Serial, p.SizeText, strings.TrimSpace(p.Interface + " " + p.Media),
+					f0(p.LifeLeftPercent, " %"), hrs, f0(p.TempCelsius, " °C"), state, status(p.Status)})
+			}
+		}
+		if len(pds) > 0 {
+			m.table([]string{"Drive", "Model", "Serial", ">Size", "Type", ">Life left", ">Power-on", ">Temp", "State", "Status"}, pds)
+		}
 	}
 	if len(x.Filesystems) > 0 {
 		m.h(3, "Filesystems")

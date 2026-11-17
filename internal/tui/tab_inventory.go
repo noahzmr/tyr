@@ -348,7 +348,7 @@ func highlight(t *Theme, s, q string) string {
 }
 
 var catLabels = map[string]string{"bmc": "BMC", "psu": "PSU", "cpu": "CPU", "dimm": "DIMM", "raid_controller": "RAID",
-	"raid_drive": "RAID PD", "volume": "volume", "nic": "NIC", "transceiver": "xcvr", "gpu": "GPU", "npu": "NPU", "fru": "FRU"}
+	"raid_drive": "RAID PD", "volume": "volume", "nic": "NIC", "transceiver": "xcvr", "gpu": "GPU", "npu": "NPU", "fru": "FRU", "device": "device"}
 
 // catLabel is the short display name of an inventory category.
 func catLabel(c string) string {
