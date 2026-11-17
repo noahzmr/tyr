@@ -197,8 +197,23 @@ func (e *Env) DMI(ctx context.Context) (*dmi.Tables, model.SourceState) {
 			c.dmiSt.State, c.dmiSt.Reason = model.AvailUnavailable, "requires root"
 			return
 		}
+		// the kernel's copy of the SMBIOS table, decoded natively; dmidecode
+		// only when it cannot be read
+		var nativeErr error
+		if tab, err := e.FS.ReadFile("/sys/firmware/dmi/tables/DMI"); err == nil && len(tab) > 0 {
+			entry, _ := e.FS.ReadFile("/sys/firmware/dmi/tables/smbios_entry_point")
+			t, err := dmi.ParseTable(tab, entry)
+			if err == nil {
+				c.dmi, c.dmiSt.Reason = t, "SMBIOS table, read natively"
+				return
+			}
+			nativeErr = err
+		}
 		if _, err := e.Exec.LookPath("dmidecode"); err != nil {
-			c.dmiSt.State, c.dmiSt.Reason = model.AvailUnavailable, "dmidecode not installed"
+			c.dmiSt.State, c.dmiSt.Reason = model.AvailUnavailable, "SMBIOS table not readable and dmidecode not installed"
+			if nativeErr != nil {
+				c.dmiSt.Reason = nativeErr.Error() + ", and dmidecode not installed"
+			}
 			return
 		}
 		t, err := dmi.Read(ctx, e.Exec)
@@ -206,7 +221,7 @@ func (e *Env) DMI(ctx context.Context) (*dmi.Tables, model.SourceState) {
 			c.dmiSt.State, c.dmiSt.Reason = model.AvailUnavailable, err.Error()
 			return
 		}
-		c.dmi = t
+		c.dmi, c.dmiSt.Reason = t, "via dmidecode"
 	})
 	return c.dmi, c.dmiSt
 }
