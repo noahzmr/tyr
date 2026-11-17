@@ -130,7 +130,7 @@ func TestServerDegraded(t *testing.T) {
 	if f := finding(c, "core_half_offline"); f == nil || f.Subject != "cpu7" || !strings.Contains(f.Message, "cpu39") {
 		t.Errorf("core_half_offline %+v", f)
 	}
-	if f := finding(c, "mce_history"); f == nil || f.Status != model.StatusCrit || !strings.HasPrefix(f.Message, "machine checks before this boot: cpu7 4× (core: L1 data cache (DCU))") ||
+	if f := finding(c, "mce_history"); f == nil || f.Status != model.StatusCrit || !strings.HasPrefix(f.Message, "machine checks in earlier boots, crash records or the BMC log: cpu7 4× (core: L1 data cache (DCU))") ||
 		!strings.Contains(f.Message, "cpu12 1× (shared: uncore bank 13") {
 		t.Errorf("mce_history %+v", f)
 	}

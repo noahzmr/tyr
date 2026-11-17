@@ -241,6 +241,14 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		h.SetSource(s.Name, s.State, s.Reason)
 	}
 	out.MCEHistory = mceHistory(klog, hist, amd)
+	if !env.IsVM() {
+		// firmware-first servers (HPE, Dell) report CPU errors to the BMC,
+		// not to the kernel
+		if sel, _ := env.SEL(ctx); sel != nil {
+			out.MCEHistory = append(out.MCEHistory, selProcessorRecords(sel)...)
+			sort.SliceStable(out.MCEHistory, func(i, j int) bool { return out.MCEHistory[i].Time.Before(out.MCEHistory[j].Time) })
+		}
+	}
 	out.CrashRecords = hist.crashes
 	c.offlineInfo(env, out, klog)
 

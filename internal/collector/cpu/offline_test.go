@@ -76,3 +76,15 @@ func TestRasdaemonLine(t *testing.T) {
 		t.Errorf("unit %v", u)
 	}
 }
+
+// both threads offline: the socket comes from the NUMA node
+func TestSocketOfNode(t *testing.T) {
+	ls := []model.LogicalCPU{{ID: 0, Online: true, NUMANode: 0, SocketID: 0}, {ID: 1, Online: true, NUMANode: 1, SocketID: 1},
+		{ID: 22, NUMANode: 1, SocketID: -1}, {ID: 5, Online: true, NUMANode: 2, SocketID: 0}, {ID: 6, Online: true, NUMANode: 2, SocketID: 1}}
+	if s := socketOfNode(ls, 1); s != 1 {
+		t.Errorf("node 1: socket %d", s)
+	}
+	if s := socketOfNode(ls, 2); s != -1 { // a node across sockets says nothing
+		t.Errorf("node 2: socket %d", s)
+	}
+}

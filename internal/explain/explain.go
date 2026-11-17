@@ -54,10 +54,22 @@ func All() []Known {
 }
 
 // Commands returns the check commands with {dev} replaced by subject.
+// A finding about several components ("cpu22,cpu46") gets each command
+// once per component (at most four), never "cpu22,cpu46" in a path.
 func (e Entry) Commands(subject string) []string {
-	out := make([]string, len(e.Check))
-	for i, c := range e.Check {
-		out[i] = strings.ReplaceAll(c, "{dev}", subject)
+	subs := strings.Split(subject, ",")
+	if len(subs) > 4 {
+		subs = subs[:4]
+	}
+	var out []string
+	for _, c := range e.Check {
+		if !strings.Contains(c, "{dev}") {
+			out = append(out, c)
+			continue
+		}
+		for _, s := range subs {
+			out = append(out, strings.ReplaceAll(c, "{dev}", strings.TrimSpace(s)))
+		}
 	}
 	return out
 }

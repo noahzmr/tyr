@@ -126,6 +126,9 @@ func (c *Collector) offlineInfo(env *collector.Env, out *model.CPU, klog *kernel
 				}
 			}
 		}
+		if l.SocketID < 0 {
+			l.SocketID = socketOfNode(out.Logical, l.NUMANode)
+		}
 		if sib < 0 {
 			continue
 		}
@@ -138,6 +141,25 @@ func (c *Collector) offlineInfo(env *collector.Env, out *model.CPU, klog *kernel
 			o.L3SharedWith = l3Shared(env.FS, sib)
 		}
 	}
+}
+
+// socketOfNode is the socket of a NUMA node when all its online CPUs sit
+// on one socket (the usual one node per socket); -1 otherwise.
+func socketOfNode(logical []model.LogicalCPU, node int) int {
+	if node < 0 {
+		return -1
+	}
+	sock := -1
+	for _, x := range logical {
+		if !x.Online || x.NUMANode != node || x.SocketID < 0 {
+			continue
+		}
+		if sock >= 0 && x.SocketID != sock {
+			return -1
+		}
+		sock = x.SocketID
+	}
+	return sock
 }
 
 // l3Shared is the shared_cpu_list of a CPU's level-3 cache.

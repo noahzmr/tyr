@@ -16,6 +16,7 @@ import (
 	"github.com/noahzmr/tyr/internal/execx"
 	"github.com/noahzmr/tyr/internal/hostfs"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/source/ipmi"
 	"github.com/noahzmr/tyr/internal/source/kernellog"
 )
 
@@ -226,7 +227,11 @@ func (h *staticHistory) journal(ctx context.Context, env *collector.Env, amd boo
 			h.recs = append(h.recs, r)
 		}
 	}
-	h.sources = append(h.sources, model.SourceState{Name: "journal", State: model.AvailOK, Reason: fmt.Sprintf("%d earlier boots with machine checks", len(boots))})
+	reason := fmt.Sprintf("%d earlier boots with machine checks", len(boots))
+	if !hostfs.Exists(env.FS, "/var/log/journal") {
+		reason += "; the journal is not persistent (no /var/log/journal): earlier boots are not kept"
+	}
+	h.sources = append(h.sources, model.SourceState{Name: "journal", State: model.AvailOK, Reason: reason})
 }
 
 // pstore reads crash records the kernel saved before a panic, in place or
@@ -422,7 +427,7 @@ func historyFindings(h *model.Header, out *model.CPU) {
 			}
 			name := "cpu" + strconv.Itoa(c)
 			if c < 0 {
-				name = "firmware reports"
+				name = "BMC / firmware"
 			} else {
 				subj = append(subj, name)
 			}
@@ -444,7 +449,7 @@ func historyFindings(h *model.Header, out *model.CPU) {
 		if subject == "" {
 			subject = "cpu"
 		}
-		msg := "machine checks before this boot: " + strings.Join(parts, ", ")
+		msg := "machine checks in earlier boots, crash records or the BMC log: " + strings.Join(parts, ", ")
 		if !last.IsZero() {
 			msg += " · last " + last.Local().Format("2006-01-02")
 		}
@@ -462,4 +467,20 @@ func historyFindings(h *model.Header, out *model.CPU) {
 		}
 		h.Find(model.StatusCrit, "crash_record", subj, "pstore", "the kernel crashed"+on+when+": "+strings.TrimPrefix(cr.Reason, "Kernel panic - not syncing: "))
 	}
+}
+
+// selProcessorRecords turns processor events of the BMC event log (IERR,
+// machine check, thermal trip, configuration error) into history records.
+// The BMC names the socket, not the logical CPU.
+func selProcessorRecords(sel *ipmi.SEL) []model.MCERecord {
+	var out []model.MCERecord
+	for _, e := range sel.Entries {
+		if e.Category != "processor" || !e.Asserted || e.Severity < model.StatusWarn {
+			continue
+		}
+		out = append(out, model.MCERecord{Time: e.Time, Source: "BMC event log", CPU: -1, Bank: -1,
+			Unit: strings.TrimSpace(e.Sensor + ": " + e.Event), Severity: e.Severity,
+			Text: strings.TrimSpace(e.SensorType + " " + e.Sensor + ": " + e.Event)})
+	}
+	return out
 }

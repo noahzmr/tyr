@@ -18,7 +18,7 @@
 Findings 19 ✖ · 21 ▲ ────────────────────────────────────────────────────────────── i explain · worst first · 1–20 of 40
  ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot    10:00        ┃
 ▌✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - stil… 10:00        ┃
- ✖ CPU      cpu7,cpu12,c… machine checks before this boot: cpu7 4× (core: L1 data cache (DCU)), cpu12 1×… 10:00        ┃
+ ✖ CPU      cpu7,cpu12,c… machine checks in earlier boots, crash records or the BMC log: cpu7 4× (core: … 10:00        ┃
  ✖ CPU      cpu7          the kernel crashed on cpu7 (2026-11-07 09:48): Fatal machine check              10:00        ┃
  ✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(… 10:00        ┃
  ✖ Memory   memory        4 kB of memory poisoned by the kernel (HardwareCorrupted)                       10:00        ┃

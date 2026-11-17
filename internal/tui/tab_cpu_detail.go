@@ -597,7 +597,9 @@ func (c *cpuTab) Detail(t *Theme, w int) (string, string) {
 	}
 	offlineSection(doc, c.cpu, l)
 	mceHistorySection(doc, c.cpu, l)
-	doc.section("Live", "")
+	if l.Online {
+		doc.section("Live", "")
+	}
 	hist := func(k string) string {
 		h := t.sess.history("cpu/" + id + "/" + k)
 		if len(h) < 2 {
@@ -733,7 +735,9 @@ func mceHistorySection(doc *doc, c *model.CPU, l model.LogicalCPU) {
 	var sts []model.Status
 	for i := len(c.MCEHistory) - 1; i >= 0; i-- {
 		r := c.MCEHistory[i]
-		if r.CPU != l.ID && (sib < 0 || r.CPU != sib) {
+		// records without a CPU number (BMC log, firmware reports) concern
+		// the whole host: shown on every CPU page
+		if r.CPU >= 0 && r.CPU != l.ID && (sib < 0 || r.CPU != sib) {
 			continue
 		}
 		when := "-"
@@ -745,17 +749,33 @@ func mceHistorySection(doc *doc, c *model.CPU, l model.LogicalCPU) {
 		if r.Bank >= 0 {
 			bank = fmt.Sprint(r.Bank)
 		}
-		rows = append(rows, []string{when, cpuKey(r.CPU), bank, r.Unit, scope, strings.ToLower(r.Severity.String()), r.Source})
+		cpu := "–"
+		if r.CPU >= 0 {
+			cpu = cpuKey(r.CPU)
+		}
+		rows = append(rows, []string{when, cpu, bank, r.Unit, scope, strings.ToLower(r.Severity.String()), r.Source})
 		sts = append(sts, r.Severity)
 	}
 	if len(rows) == 0 {
+		if l.Offline != nil {
+			doc.section("Machine check history", doc.t.Dim.Render("none found"))
+			lines := []string{"No machine check for this core in the kernel log, the journal, crash records (pstore), rasdaemon or the BMC event log."}
+			if st, ok := c.Source("journal"); ok && strings.Contains(st.Reason, "not persistent") {
+				lines = append(lines, "The journal is not persistent, so errors from before this boot are gone: mkdir /var/log/journal keeps them from now on.")
+			}
+			lines = append(lines, "Firmware-first servers log CPU errors in the BMC instead: HPE iLO's Integrated Management Log (iLO web UI, or ilorest serverlogs --selectlog=IML), Dell iDRAC's Lifecycle Log (racadm lclog view).",
+				"ipmitool sel elist | grep -iE 'processor|cpu|ierr|machine'")
+			for _, s := range lines {
+				doc.add(hang("   ", doc.t.Sub.Render(s), doc.w-1))
+			}
+		}
 		return
 	}
 	note := "this CPU"
 	if sib >= 0 {
 		note = "this CPU and " + cpuKey(sib) + " (same core)"
 	}
-	doc.section("Machine check history", doc.t.Dim.Render(note+" · this boot, earlier boots, crash records, rasdaemon"))
+	doc.section("Machine check history", doc.t.Dim.Render(note+" · this boot, earlier boots, crash records, rasdaemon, BMC"))
 	doc.table([]string{"Time", "CPU", "Bank", "Unit", "Where", "Severity", "Source"}, rows, sts)
 	doc.add(hang("   ", doc.t.Sub.Render("Errors in the core (L1/L2, fetch, load-store, execution) point at this core; errors in shared units (L3, memory controller, fabric) are only reported by it."), doc.w-1))
 }

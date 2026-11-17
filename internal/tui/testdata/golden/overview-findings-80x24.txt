@@ -14,7 +14,7 @@ Modules ────────────────────────
 Findings 19 ✖ · 21 ▲ ─────────────────────── i explain · worst first · 1–8 of 40
  ✖ CPU      1 core offline (cpu7); taken offline at runtime - back onl…        ┃
 ▌✖ CPU      cpu7 is offline, but cpu39 - the other thread of the same …        │
- ✖ CPU      machine checks before this boot: cpu7 4× (core: L1 data ca…        │
+ ✖ CPU      machine checks in earlier boots, crash records or the BMC …        │
  ✖ CPU      the kernel crashed on cpu7 (2026-11-07 09:48): Fatal machi…        │
  ✖ Memory   1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorr…        │
  ✖ Memory   4 kB of memory poisoned by the kernel (HardwareCorrupted)          │

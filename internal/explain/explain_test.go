@@ -49,3 +49,11 @@ func TestCommands(t *testing.T) {
 		t.Errorf("All: %d entries, first %v", len(All()), All()[0].Module)
 	}
 }
+
+func TestCommandsSeveralSubjects(t *testing.T) {
+	e, _ := For(model.ModCPU, "core_offline")
+	got := strings.Join(e.Commands("cpu22,cpu46"), "\n")
+	if strings.Contains(got, "cpu22,cpu46") || !strings.Contains(got, "cpu/cpu22/online") || !strings.Contains(got, "cpu/cpu46/online") {
+		t.Errorf("commands:\n%s", got)
+	}
+}
