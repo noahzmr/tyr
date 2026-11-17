@@ -22,7 +22,7 @@ read that snapshot or its JSON.
 flowchart LR
     subgraph host["Host"]
         sys["sysfs · hwmon · procfs · /dev/kmsg"]
-        tools["dmidecode · smartctl · nvme · storcli · nvidia-smi · ethtool · lldpctl · journalctl"]
+        tools["smartctl · storcli · nvidia-smi · lldpctl · journalctl · (fallbacks: dmidecode, ethtool, ipmitool)"]
         bmc["BMC: IPMI and Redfish (read-only)"]
     end
     subgraph tyr["tyr"]

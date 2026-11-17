@@ -59,7 +59,7 @@ flowchart LR
 | `cmd/tyr` | flags and subcommands (stdlib `flag`) |
 | `internal/collector` | the collector interface, the shared environment, parallel collection |
 | `internal/collector/{system,cpu,memory,storage,power,network,accel,events}` | one module each; fill a section and its findings |
-| `internal/source/*` | readers and parsers: sysfs, dmidecode, SMART, IPMI, Redfish, RAID, PCI, GPU tools, kernel log, netinfo |
+| `internal/source/*` | readers and parsers: sysfs, SMBIOS (table and dmidecode), SMART, IPMI (`/dev/ipmi0` and tools), Redfish, RAID, PCI, GPU tools, kernel log, netinfo (ethtool requests) |
 | `internal/check` | thresholds and status evaluation |
 | `internal/explain` | the alert catalog: meaning, causes and commands for every finding code (a test keeps it in step with the collectors) |
 | `internal/affinity`, `internal/cpuset` | CPU pinning and CPU list parsing for the core tests |

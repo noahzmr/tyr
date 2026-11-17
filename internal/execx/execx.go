@@ -59,7 +59,7 @@ func Host() Runner { return hostRunner{} }
 type hostRunner struct{}
 
 // extraPath is searched in addition to $PATH; non-root users often lack sbin.
-var extraPath = []string{"/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin", "/opt/MegaRAID/storcli", "/opt/MegaRAID/perccli", "/opt/dell/srvadmin/bin"}
+var extraPath = []string{"/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin", "/opt/MegaRAID/storcli", "/opt/MegaRAID/perccli", "/opt/dell/srvadmin/bin", "/opt/xilinx/xrt/bin"}
 
 func (hostRunner) LookPath(name string) (string, error) {
 	if p, err := exec.LookPath(name); err == nil {

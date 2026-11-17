@@ -12,6 +12,7 @@ Deeper documentation that doesn't belong in the top-level `README.md`
 | [stress-tests.md](stress-tests.md) | operators | lifecycle, engines, guard rules, verdicts, the network peer |
 | [reports.md](reports.md) | operators | Markdown reports, Mermaid charts, history, viewing and copying |
 | [tui.md](tui.md) | users | every tab, view and key; layouts and themes |
+| [tools.md](tools.md) | operators | external tools: what Tyr reads itself, what to install from the distribution or the vendor, official docs |
 | [DESIGN.md](DESIGN.md) | engineers | the original design proposal (data model, JSON schema, stress interface) |
 | [design/](design/) | designers | the brief for the TUI redesign and the screens before it |
 

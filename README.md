@@ -203,26 +203,22 @@ into Markdown. Details: [docs/architecture.md](docs/architecture.md).
 |---|---|
 | Go | 1.26 or newer, to build |
 | Linux | amd64 or arm64; any distribution (the binary is static) |
-| root | recommended: serials (dmidecode, PCI VPD), SMART, the kernel log, the BMC |
+| root | recommended: serials (SMBIOS, PCI VPD), SMART, the kernel log, the BMC |
 
-Tyr reads the SMBIOS table, the NICs (link modes, statistics, rings,
-transceivers) and the BMC (sensors, event log, FRU, LAN) itself, through the
-kernel's interfaces: `dmidecode`, `ethtool` and `ipmitool` are only fallbacks.
-Optional tools Tyr uses when they are installed:
+Tyr runs without any other tool: it reads the SMBIOS table, the NICs and the
+BMC itself, and `dmidecode`, `ethtool` and `ipmitool` are only fallbacks.
+Tools add data where Linux has no interface Tyr can read:
 
-| Tool | For |
-|---|---|
-| `dmidecode` | fallback when the SMBIOS table cannot be read or decoded |
-| `smartctl`, `nvme` | SMART and NVMe health |
-| `storcli` / `perccli` | MegaRAID / PERC hardware RAID |
-| `ipmitool` or `ipmiutil` | fallback when `/dev/ipmi0` cannot be used (read-only commands only) |
-| `journalctl` | kernel log, earlier boots (machine checks, program crashes), boot history |
-| `ras-mc-ctl` (rasdaemon) | machine check records rasdaemon kept |
-| `nvidia-smi`, `xrt-smi` | NVIDIA GPUs, AMD NPUs |
-| `ethtool` | fallback for drivers that refuse a request, externally calibrated transceivers |
-| `lldpctl` | LLDP neighbours |
-| `stress-ng`, `memtester`, `iperf3`, `mprime` | extra stress engines |
-| `wl-copy`, `xclip` or `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) |
+| Kind | Tools | Install |
+|---|---|---|
+| Recommended | `smartctl` (SATA/SAS SMART), `ras-mc-ctl` (rasdaemon), `lldpctl` (switch port) | distribution packages `smartmontools`, `rasdaemon`, `lldpd` |
+| Stress engines | `stress-ng`, `memtester`, `iperf3` | distribution packages, or `i` on the Stress tab |
+| Vendor, manual | `storcli64` / `perccli64` (MegaRAID / PERC), `nvidia-smi` (with the NVIDIA driver), `xrt-smi` (AMD NPUs), `mprime` (Prime95) | vendor downloads |
+| Desktop copy | `wl-copy`, `xclip` or `xsel` | distribution packages |
+
+Which tool adds what, the package names per distribution and how to install
+the vendor tools, with links to their official documentation:
+**[docs/tools.md](docs/tools.md)**.
 
 The BMC's Redfish service (event logs, live power readings) needs no tool but
 an account: `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or
@@ -354,10 +350,9 @@ and cron work unchanged.
 | Flag | Default | Meaning |
 |---|---|---|
 | `--crit-temp`, `--warn-temp` | 90, 75 | limits for sensors without their own; given explicitly they also replace the built-in AMD CPU limits |
-| `--no-ipmi`, `--no-dmidecode`, `--no-smart` | off | skip a source |
+| `--no-ipmi`, `--no-dmidecode`, `--no-smart`, `--no-redfish` | off | skip a source (`--no-dmidecode` skips SMBIOS altogether) |
 | `--smart-interval` | 5m | reuse SMART data this long (`r` and stress snapshots always read fresh) |
 | `--redfish HOST` | | BMC address for Redfish when its host interface (iLO Virtual NIC) is off; credentials from `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or `/etc/tyr/redfish.conf` |
-| `--no-redfish` | off | do not query the BMC's Redfish service |
 | `--nic-all` | off | include virtual interfaces |
 | `--sel-all` | off | all SEL entries, not only warnings and errors |
 | `--timeout` | 10s | per collector |
@@ -503,6 +498,7 @@ git config core.hooksPath scripts/hooks
 | [docs/stress-tests.md](docs/stress-tests.md) | operators | engines, guard, verdicts, network peer |
 | [docs/reports.md](docs/reports.md) | operators | Markdown, Mermaid, history, clipboard |
 | [docs/tui.md](docs/tui.md) | users | every tab and key |
+| [docs/tools.md](docs/tools.md) | operators | external tools: which are needed, how to install them, official docs |
 | [docs/DESIGN.md](docs/DESIGN.md) | engineers | the original design proposal |
 
 ---

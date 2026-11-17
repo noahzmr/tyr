@@ -127,7 +127,7 @@ func (c *common) register(fs *flag.FlagSet) {
 	fs.BoolVar(&c.version, "version", false, "print version and exit")
 	fs.DurationVar(&c.opts.Timeout, "timeout", c.opts.Timeout, "timeout per collector")
 	fs.BoolVar(&c.opts.NoIPMI, "no-ipmi", false, "do not query the BMC")
-	fs.BoolVar(&c.opts.NoDMI, "no-dmidecode", false, "do not run dmidecode")
+	fs.BoolVar(&c.opts.NoDMI, "no-dmidecode", false, "do not read SMBIOS (neither the table nor dmidecode)")
 	fs.BoolVar(&c.opts.NoSMART, "no-smart", false, "do not run smartctl/nvme")
 	fs.StringVar(&c.opts.Redfish, "redfish", "", "BMC address for Redfish (event logs, power) when its host interface (iLO Virtual NIC) is off; credentials: TYR_REDFISH_USER/TYR_REDFISH_PASSWORD or the config file")
 	fs.StringVar(&c.opts.RedfishConfig, "redfish-config", c.opts.RedfishConfig, "Redfish config file: host=, user=, password=, pinned certificates (keep it root-only)")

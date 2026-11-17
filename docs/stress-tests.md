@@ -63,9 +63,11 @@ sequenceDiagram
 External engines appear when installed. In the TUI, `i` on the Stress form
 installs the packaged ones (`stress-ng`, `memtester`, `iperf3`) through the
 host's package manager after a confirmation; `mprime` has no distribution
-package, and `memtest86+` is never installed because its package changes the
-boot loader. A pre-OS test of all RAM still needs memtest86+: Tyr detects it
-and says how to boot it.
+package ([install it by hand](tools.md#prime95--mprime-the-hottest-cpu-test)),
+and `memtest86+` is never installed because its package changes the boot
+loader. A pre-OS test of all RAM still needs memtest86+: Tyr detects it and
+says how to boot it. Package names and official documentation of every
+engine: [tools.md](tools.md).
 
 ## Sizes and targets
 

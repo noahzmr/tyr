@@ -303,7 +303,8 @@ the session's growth and the commands to look closer. The Overview's
 PCI inventory and link (width and generation against the device's maximum),
 driver, firmware, temperatures, power and cap, clocks, memory use, ECC,
 retired / remapped rows, Xid driver errors from the kernel log. NVIDIA through
-`nvidia-smi`, AMD and Intel GPUs through sysfs, AMD NPUs through `xrt-smi`.
+`nvidia-smi`, AMD and Intel GPUs through sysfs, AMD NPUs through `xrt-smi`
+(see [tools.md](tools.md) for installing them).
 BMC display adapters are listed but not counted.
 
 ### Power
@@ -367,7 +368,7 @@ with the next refresh. `--no-redfish` turns it off.
 ## Without root
 
 Tyr runs, and every module lists what it skipped. Root adds: serials and DIMM
-slots (dmidecode), PCI VPD, SMART on most drives, `/dev/kmsg`, IPMI, PPIN,
+slots (the SMBIOS table is root-only), PCI VPD, SMART on most drives, `/dev/kmsg`, IPMI (`/dev/ipmi0`), PPIN,
 crash records (pstore), the full journal of earlier boots (members of the
 `adm` or `systemd-journal` group can read it too), and the config file with
 the Redfish credentials. The offline-core test always needs root.
