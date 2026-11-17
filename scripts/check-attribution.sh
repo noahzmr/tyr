@@ -10,12 +10,16 @@
 # The hooks in scripts/hooks call this; so does the CI workflow.
 set -eu
 
+# Byte-wise matching: in a UTF-8 locale GNU grep treats a line with an invalid byte as
+# binary and prints no line for it, which would let such a line pass unnoticed.
+export LC_ALL=C
+
 pattern='claude|anthropic|co-authored-by|generated with'
 root=$(git rev-parse --show-toplevel)
 
 case "${1:-}" in
 text)
-	if grep -inE "$pattern" "$2" >&2; then
+	if grep -a -inE "$pattern" "$2" >&2; then
 		echo "check-attribution: text matches /$pattern/i (lines above)." >&2
 		exit 1
 	fi
@@ -23,7 +27,7 @@ text)
 commits)
 	bad=0
 	for c in $(git rev-list "${2:-HEAD}"); do
-		if git log -1 --format=%B "$c" | grep -inE "$pattern" >&2; then
+		if git log -1 --format=%B "$c" | grep -a -inE "$pattern" >&2; then
 			echo "check-attribution: commit $c matches /$pattern/i (lines above)." >&2
 			bad=1
 		fi
@@ -34,7 +38,7 @@ tree)
 	cd "$root"
 	# This script and the hooks spell the pattern out and are exempt.
 	hits=$(git grep -I -n -i -E "$pattern" -- . ':(exclude)scripts/check-attribution.sh' ':(exclude)scripts/hooks' || true)
-	names=$(git ls-files | grep -iE "$pattern" || true)
+	names=$(git ls-files | grep -a -iE "$pattern" || true)
 	if [ -n "$hits$names" ]; then
 		echo "check-attribution: tracked files match /$pattern/i:" >&2
 		[ -z "$hits" ] || echo "$hits" >&2
