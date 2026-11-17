@@ -1,4 +1,5 @@
-// Package ipmi reads BMC data through ipmiutil (preferred) or ipmitool.
+// Package ipmi reads BMC data: natively through the kernel's IPMI driver
+// (/dev/ipmi0), else through ipmiutil or ipmitool.
 //
 // Only read-only subcommands are ever executed; the allowlist below is the
 // single place that decides what may run. Clearing the SEL is a separate,
@@ -20,6 +21,7 @@ type Tool string
 const (
 	IPMIUtil Tool = "ipmiutil"
 	IPMITool Tool = "ipmitool"
+	Native   Tool = "native" // /dev/ipmi0, no tool
 )
 
 // allowed lists the read-only invocations per tool (argv after the tool).
@@ -38,6 +40,7 @@ var ErrNotAllowed = errors.New("ipmi: command not in read-only allowlist")
 type Client struct {
 	Tool Tool
 	r    execx.Runner
+	nat  *native
 }
 
 // Find returns a client for the first installed tool (ipmiutil, then ipmitool).
@@ -78,6 +81,13 @@ func slicesEqual(a, b []string) bool {
 
 // Sensors reads all sensors with their BMC status.
 func (c *Client) Sensors(ctx context.Context) ([]Sensor, error) {
+	if c.nat != nil {
+		recs, err := c.nat.sdr()
+		if err != nil && len(recs) == 0 {
+			return nil, err
+		}
+		return readSensors(c.nat.t, recs), nil
+	}
 	switch c.Tool {
 	case IPMIUtil:
 		out, err := c.run(ctx, "sensor", "-c")
@@ -96,6 +106,9 @@ func (c *Client) Sensors(ctx context.Context) ([]Sensor, error) {
 
 // SEL reads the system event log.
 func (c *Client) SEL(ctx context.Context) (*SEL, error) {
+	if c.nat != nil {
+		return c.nat.sel()
+	}
 	switch c.Tool {
 	case IPMIUtil:
 		out, err := c.run(ctx, "sel")
@@ -122,6 +135,9 @@ func (c *Client) SEL(ctx context.Context) (*SEL, error) {
 // LanPrint returns `ipmitool lan print` output. ipmiutil's lan listing uses
 // a different layout and is not parsed yet.
 func (c *Client) LanPrint(ctx context.Context) ([]byte, error) {
+	if c.nat != nil {
+		return c.nat.lanText()
+	}
 	if c.Tool != IPMITool {
 		return nil, errors.New("BMC LAN config only parsed from ipmitool")
 	}
@@ -130,6 +146,9 @@ func (c *Client) LanPrint(ctx context.Context) ([]byte, error) {
 
 // FRUs returns the BMC FRU inventory (`ipmitool fru print`).
 func (c *Client) FRUs(ctx context.Context) ([]FRU, error) {
+	if c.nat != nil {
+		return c.nat.frus()
+	}
 	if c.Tool != IPMITool {
 		return nil, errors.New("FRU inventory only parsed from ipmitool")
 	}
@@ -142,6 +161,9 @@ func (c *Client) FRUs(ctx context.Context) ([]FRU, error) {
 
 // MCInfo returns BMC manufacturer and firmware (`ipmitool mc info`).
 func (c *Client) MCInfo(ctx context.Context) (vendor, firmware string, err error) {
+	if c.nat != nil {
+		return c.nat.mcInfo()
+	}
 	if c.Tool != IPMITool {
 		return "", "", errors.New("BMC info only parsed from ipmitool")
 	}

@@ -139,6 +139,23 @@ records can name hosts and paths.
 
 ---
 
+### Native readers
+
+SMBIOS, the NICs and the BMC are read without their tools (`dmi.ParseTable`,
+`netinfo.Ethtool`, `ipmi.OpenNative`); the tools stay as fallbacks. Their
+unit tests build SMBIOS tables, SFP/QSFP EEPROMs and BMC answers to the specs.
+On real hardware, compare them with the tools:
+
+```bash
+sudo tyr check-native          # SMBIOS vs dmidecode, NICs vs ethtool, BMC vs ipmitool
+TYR_LIVE=1 go test ./internal/source/netinfo -run TestEthtoolLive -v
+```
+
+`check-native` prints every difference and exits 1 if there is one - run it
+on each new kind of server and fix the reader, not the comparison.
+
+---
+
 ## 6. Diagrams
 
 Architecture pictures are [archify](https://github.com/tt-a1i/archify)

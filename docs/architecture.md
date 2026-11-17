@@ -11,7 +11,7 @@ read that snapshot or its JSON.
 | Layer | Packages | Job |
 |---|---|---|
 | Host access | `hostfs`, `execx` | read-only `/proc`, `/sys`, `/dev`; tools without a shell, with deadlines |
-| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data |
+| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data; SMBIOS (`/sys/firmware/dmi/tables`), NICs (`SIOCETHTOOL`) and the BMC (`/dev/ipmi0`) natively, their tools only as fallback |
 | Collectors | `collector/system`, `cpu`, `memory`, `storage`, `power`, `network`, `accel`, `events` | combine sources into a section with findings |
 | Checks | `check` | thresholds → `OK` / `WARN` / `CRIT` / `UNKNOWN` |
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
@@ -123,7 +123,10 @@ any of them back (see [reports.md](reports.md)).
   tab and the offline-core test, which brings one CPU online in an isolated
   cpuset partition and puts everything back (a state file in `/run` makes
   that recoverable after a kill).
-- **Local first.** Linux interfaces before tools, tools before the BMC.
+- **Local first.** Linux interfaces before tools, tools before the BMC. Where
+  Tyr reads a kernel interface itself (SMBIOS, ethtool requests, the IPMI
+  driver), the tool is only a fallback; native IPMI sends only the read-only
+  requests of one allowlist (`source/ipmi/dev.go`).
 - **Nothing silent.** Unusable sources are listed with their reason.
 - **Limits of the part first.** A sensor's own threshold wins; defaults fill gaps.
 - **Status without colour.** Glyph and word for every status.

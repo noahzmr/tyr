@@ -112,9 +112,14 @@ type Env struct {
 	// is found on first use (RedfishClient).
 	Redfish redfish.Getter
 
-	mu    sync.Mutex
-	round *roundCache
-	rf    rfCache
+	mu      sync.Mutex
+	round   *roundCache
+	rf      rfCache
+	ipmiNat struct { // /dev/ipmi0, opened once per process
+		once sync.Once
+		cl   *ipmi.Client
+		err  error
+	}
 }
 
 // NewHostEnv builds an Env for the live system.
@@ -271,9 +276,20 @@ func (e *Env) IPMI() (*ipmi.Client, model.SourceState) {
 				st.Reason = "no /dev/ipmi0 (no BMC, or ipmi_si/ipmi_devintf not loaded)"
 			}
 		default:
+			if e.FS.IsHost() { // the BMC through the kernel driver, no tool needed
+				e.ipmiNat.once.Do(func() { e.ipmiNat.cl, e.ipmiNat.err = ipmi.OpenNative() })
+				if e.ipmiNat.cl != nil {
+					c.ipmi = e.ipmiNat.cl
+					st.State, st.Reason = model.AvailOK, "via /dev/ipmi0 (native)"
+					break
+				}
+			}
 			cl, err := ipmi.Find(e.Exec)
 			if err != nil {
 				st.Reason = err.Error()
+				if e.ipmiNat.err != nil {
+					st.Reason = "native: " + e.ipmiNat.err.Error() + "; " + st.Reason
+				}
 				break
 			}
 			c.ipmi = cl

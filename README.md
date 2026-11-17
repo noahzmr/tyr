@@ -205,18 +205,22 @@ into Markdown. Details: [docs/architecture.md](docs/architecture.md).
 | Linux | amd64 or arm64; any distribution (the binary is static) |
 | root | recommended: serials (dmidecode, PCI VPD), SMART, the kernel log, the BMC |
 
+Tyr reads the SMBIOS table, the NICs (link modes, statistics, rings,
+transceivers) and the BMC (sensors, event log, FRU, LAN) itself, through the
+kernel's interfaces: `dmidecode`, `ethtool` and `ipmitool` are only fallbacks.
 Optional tools Tyr uses when they are installed:
 
 | Tool | For |
 |---|---|
-| `dmidecode` | DIMM slots, serials, PSU inventory (SMBIOS) |
+| `dmidecode` | fallback when the SMBIOS table cannot be read or decoded |
 | `smartctl`, `nvme` | SMART and NVMe health |
 | `storcli` / `perccli` | MegaRAID / PERC hardware RAID |
-| `ipmitool` or `ipmiutil` | BMC sensors, SEL, FRU (read-only commands only) |
+| `ipmitool` or `ipmiutil` | fallback when `/dev/ipmi0` cannot be used (read-only commands only) |
 | `journalctl` | kernel log, earlier boots (machine checks, program crashes), boot history |
 | `ras-mc-ctl` (rasdaemon) | machine check records rasdaemon kept |
 | `nvidia-smi`, `xrt-smi` | NVIDIA GPUs, AMD NPUs |
-| `ethtool`, `lldpctl` | transceiver data, LLDP neighbours |
+| `ethtool` | fallback for drivers that refuse a request, externally calibrated transceivers |
+| `lldpctl` | LLDP neighbours |
 | `stress-ng`, `memtester`, `iperf3`, `mprime` | extra stress engines |
 | `wl-copy`, `xclip` or `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) |
 
@@ -342,6 +346,7 @@ and cron work unchanged.
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
 | `tyr net-peer` | far end of the network test, on a second host |
+| `tyr check-native` | compare Tyr's own SMBIOS, NIC and BMC readers with dmidecode, ethtool and ipmitool on this host (root); lists every difference |
 | `tyr version` | version, commit, build time |
 
 ### Common flags

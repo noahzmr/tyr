@@ -38,6 +38,8 @@ Usage:
   tyr stress [flags]     stress test: --component cpu|memory|storage|network|full
   tyr core-test CPU      test an offline (suspect) CPU: online only for the test,
                          isolated, offline again after; --restore cleans up after a kill
+  tyr check-native       compare Tyr's own SMBIOS, NIC and BMC readers with
+                         dmidecode, ethtool and ipmitool on this host (as root)
   tyr net-peer [flags]   far end for the network stress test (run on another host)
   tyr history PATH...    history of hosts from saved JSON (snapshots, stress results)
   tyr view PATH...       show a report in the terminal: a .md file, one JSON document,
@@ -71,6 +73,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runStress(args, os.Stdin, stdout, stderr)
 	case "core-test":
 		return runCoreTest(args, os.Stdin, stdout, stderr)
+	case "check-native":
+		return runCheckNative(stdout, stderr)
 	case stress.WorkerArg:
 		if len(args) != 1 {
 			return 3
