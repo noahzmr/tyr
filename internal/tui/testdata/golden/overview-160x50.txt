@@ -11,7 +11,7 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
 │ ✖ Network                  CRIT · 9 │ │ ✖ GPU/NPU                  CRIT · 6 │ │ ✖ Events                   CRIT · 5 │ │ ▲ System                   WARN · 1 │
-│ 2/4 up · bond0 1/2                  │ │ 1/2 GPUs OK, max 92°C               │ │ System Event Log 6 · BMC Event Log… │ │ Debian GNU/Linux 12 (bookworm) · B… │
+│ 2/4 up · bond0 1/2                  │ │ 1/2 GPUs OK, max 92°C               │ │ System Event Log 6 · BMC Event Log… │ │ Debian GNU/Linux 12 (bookworm)      │
 │ ▸ bond0 degraded: ens1f1 down (1/2  │ │ ▸ GPU1 ca:00.0: 2 uncorrectable ECC │ │ ▸ System Event Log 2026-11-15       │ │ ▸ 1 of 2 boots in the last 30 days  │
 │   members up)                       │ │   errors                            │ │   10:00: PS2 Status: Power Supply … │ │   ended without a clean shutdown (… │
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │

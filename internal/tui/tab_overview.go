@@ -302,7 +302,7 @@ func (o *overviewTab) card(t *Theme, mod model.ModuleID, w int, focused bool) st
 		} else if mod != model.ModSystem {
 			lines = []string{t.StatusText(model.StatusOK, "✓ no findings")}
 		} else {
-			lines = []string{systemLine(t, o.snap.System)}
+			lines = systemLines(t, o.snap.System)
 		}
 	default:
 		glyph = lipgloss.NewStyle().Foreground(t.NA).Render("○")
@@ -439,10 +439,13 @@ func (o *overviewTab) cardSummary(mod model.ModuleID) string {
 		}
 	case model.ModSystem:
 		if sys := s.System; sys != nil {
-			var p []string
-			if sys.OS != "" {
-				p = append(p, sys.OS)
+			if sys.OS != "" { // the OS here, kernel and BIOS on the lines below
+				if sys.LiveSystem {
+					return sys.OS + " (live)"
+				}
+				return sys.OS
 			}
+			var p []string
 			if sys.BIOSVersion != "" {
 				p = append(p, "BIOS "+sys.BIOSVersion)
 			}
@@ -658,6 +661,26 @@ func plural(n int, one, many string) string {
 		return one
 	}
 	return many
+}
+
+// systemLines are the System card's two lines without findings: the
+// kernel (and BIOS), then fans and inlet temperature (or the uptime).
+func systemLines(t *Theme, s *model.System) []string {
+	if s == nil {
+		return nil
+	}
+	var first []string
+	if s.Kernel != "" {
+		first = append(first, t.Dim.Render("kernel ")+s.Kernel)
+	}
+	if s.OS != "" && s.BIOSVersion != "" { // without an OS the BIOS is in the summary line
+		first = append(first, t.Dim.Render("BIOS ")+s.BIOSVersion)
+	}
+	second := systemLine(t, s)
+	if len(first) == 0 {
+		return []string{second}
+	}
+	return []string{strings.Join(first, t.Dim.Render(" · ")), second}
 }
 
 func systemLine(t *Theme, s *model.System) string {
