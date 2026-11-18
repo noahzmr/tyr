@@ -438,3 +438,23 @@ func TestVerdictCPUAtLimitIsWarn(t *testing.T) {
 		t.Errorf("verdict %s %v", res.Verdict, res.Reasons)
 	}
 }
+
+// Right after a test of the same run the load average is still that test's:
+// no "host is busy" warning for the next component.
+func TestBusyAfterOwnTest(t *testing.T) {
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "proc"), 0o755)
+	os.WriteFile(filepath.Join(root, "proc", "loadavg"), []byte("4.30 3.10 1.20 2/300 1234\n"), 0o644)
+	env := &Env{Collector: &collector.Env{FS: hostfs.New(root)}, Baseline: &model.Snapshot{CPU: &model.CPU{ThreadCount: 4}}}
+	if w := busyWarnings(env); len(w) != 1 || !strings.Contains(w[0], "host is busy") {
+		t.Errorf("busy host not flagged: %v", w)
+	}
+	env.lastEnd = time.Now().Add(-time.Minute)
+	if w := busyWarnings(env); len(w) != 0 {
+		t.Errorf("own previous test flagged as other work: %v", w)
+	}
+	env.lastEnd = time.Now().Add(-loadSettle - time.Minute)
+	if w := busyWarnings(env); len(w) != 1 {
+		t.Errorf("long after the own test: %v", w)
+	}
+}

@@ -170,12 +170,17 @@ func (a *acceptRun) run(ctx context.Context) int {
 	p, stdout := a.p, a.w
 	r := &accept.Result{SchemaVersion: "1.0", Kind: "acceptance", TyrVersion: buildinfo.Version, Profile: p, StartedAt: time.Now()}
 	a.r = r
+	// One set of collectors for the whole run: the storage collector counts
+	// the I/O errors Tyr's own SMART queries cause (some drives reject a few
+	// of them), across the health checks and every stress snapshot; with
+	// a new set per check the final check would count them as the disk's.
+	cols := all.Collectors()
 	var incomplete []string
 	check := func(name string) *model.Snapshot {
 		a.send(acceptui.StepStartMsg{Name: name})
 		fmt.Fprintf(stdout, "\n== %s\n", name)
 		t0 := time.Now()
-		s := collector.Collect(ctx, a.cenv, all.Collectors(), nil)
+		s := collector.Collect(ctx, a.cenv, cols, nil)
 		n := 0
 		var details []string
 		for _, f := range s.Findings() {
@@ -255,7 +260,7 @@ func (a *acceptRun) run(ctx context.Context) int {
 		}
 	}
 
-	env := &stress.Env{Collector: a.cenv, Cols: all.Collectors(), RunDir: filepath.Join(dir, "runs")}
+	env := &stress.Env{Collector: a.cenv, Cols: cols, RunDir: filepath.Join(dir, "runs")}
 	var runs []*stress.Result
 	for _, comp := range accept.Components {
 		d := time.Duration(p.Durations[comp])
@@ -467,7 +472,11 @@ func banner(w io.Writer, r *accept.Result, color bool) {
 		return "\033[" + col + ";1m" + s + "\033[0m"
 	}
 	fmt.Fprintln(w)
-	for _, s := range []string{line, pad(title), pad(strings.TrimSpace(r.Machine.Vendor + " " + r.Machine.Product + "  S/N " + r.Machine.Serial)), line} {
+	machine := strings.TrimSpace(r.Machine.Vendor + " " + r.Machine.Product)
+	if sn := strings.TrimSpace(r.Machine.Serial); sn != "" {
+		machine += "  S/N " + sn
+	}
+	for _, s := range []string{line, pad(title), pad(machine), line} {
 		fmt.Fprintln(w, paint(s))
 	}
 	show := func(head string, items []string) {

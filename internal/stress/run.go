@@ -36,7 +36,14 @@ type Env struct {
 
 	prepVM vmRaw // /proc/vmstat when Prepare started (background swap rate)
 	prepAt time.Time
+	// lastEnd is when the previous test of this Env ended: the load
+	// average still carries it for minutes (tyr accept, the full test).
+	lastEnd time.Time
 }
+
+// loadSettle is how long the 1-minute load average carries a finished
+// full-load test (it decays by e every minute).
+const loadSettle = 5 * time.Minute
 
 // Simulated reports whether Tyr runs on fixtures (no real load).
 func (e *Env) Simulated() bool { return e.Collector != nil && e.Collector.Simulated }
@@ -228,7 +235,8 @@ func busyWarnings(env *Env) []string {
 			if c := env.Baseline.CPU; c != nil && c.ThreadCount > 0 {
 				n = c.ThreadCount
 			}
-			if la > float64(n)*0.5 {
+			ours := !env.lastEnd.IsZero() && time.Since(env.lastEnd) < loadSettle
+			if la > float64(n)*0.5 && !ours { // right after our own test the load is still that test's
 				out = append(out, fmt.Sprintf("the host is busy: load average %.1f on %d CPUs; the test competes with running work", la, n))
 			}
 		}
@@ -493,6 +501,9 @@ func (r *Run) verdict(env *Env, base, after *model.Snapshot, baseCounters map[st
 		Component: r.Cfg.Component, Engine: r.Cfg.Engine, Config: r.Cfg, Plan: r.Plan, StartedAt: r.Start, EndedAt: time.Now(),
 		VerifyErrors: append([]VerifyError{}, r.verify...), Log: append([]string{}, r.log...), Baseline: base, After: after,
 		CounterDeltas: deltas(baseCounters, after.Counters()), NewFindings: []model.Finding{}, Reasons: []string{}}
+	if env != nil {
+		env.lastEnd = res.EndedAt
+	}
 	for _, m := range r.metrics {
 		res.Metrics = append(res.Metrics, *m)
 	}

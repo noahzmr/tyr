@@ -165,3 +165,41 @@ func TestControllerWideIOErrors(t *testing.T) {
 		t.Errorf("after the hold: new %d", *d.IOErrorsNew)
 	}
 }
+
+// An acceptance run: a health check, stress snapshots that read SMART
+// fresh, a final check. With one collector for the whole run the errors
+// its own queries caused stay Tyr's and the counter does not grow; a new
+// collector per check knows only its own queries and counts the rest as
+// the disk's (the false "disk.sda.io_errors +36" of a Kingston SKC600M).
+func TestAcceptRunOwnSMARTErrors(t *testing.T) {
+	root, errFile := sasDisk(t)
+	runner := &rejectingSMART{errFile: errFile}
+	now := time.Date(2026, 11, 18, 7, 27, 0, 0, time.UTC)
+	env := &collector.Env{FS: hostfs.New(root), Exec: runner, Now: func() time.Time { return now }, Opts: collector.DefaultOptions()}
+	counter := func(c *Collector, ctx context.Context) uint64 {
+		sec, err := c.Collect(ctx, env, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return (&model.Snapshot{Storage: sec.(*model.Storage)}).Counters()["disk.sda.io_errors"]
+	}
+	fresh := collector.WithSMARTMaxAge(context.Background(), 0)
+
+	shared := New()
+	before := counter(shared, context.Background())
+	for range 18 { // stress snapshots
+		now = now.Add(10 * time.Second)
+		counter(shared, fresh)
+	}
+	if after := counter(shared, fresh); after != before {
+		t.Errorf("one collector: io_errors %d -> %d, Tyr's own queries counted as disk errors", before, after)
+	}
+
+	before = counter(New(), context.Background())
+	for range 18 {
+		counter(New(), fresh)
+	}
+	if after := counter(New(), fresh); after == before {
+		t.Error("a new collector per check should not know the earlier queries (what the shared one fixes)")
+	}
+}
