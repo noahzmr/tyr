@@ -56,6 +56,10 @@ type Options struct {
 	Redfish       string
 	RedfishConfig string
 	NoRedfish     bool
+	// RequireEncryption makes unencrypted filesystems and swap a warning
+	// (--require-encryption, TYR_REQUIRE_ENCRYPTION, the acceptance
+	// profile's require_encryption). Without it encryption is only shown.
+	RequireEncryption bool
 }
 
 type smartAgeKey struct{}

@@ -154,6 +154,9 @@ func ParseStorcli(data []byte, tool string) ([]model.RAIDController, error) {
 		for _, p := range pds {
 			pd := model.PhysicalDrive{Slot: str(p["EID:Slt"]), State: strings.TrimSpace(str(p["State"])), Group: str(p["DG"]),
 				SizeText: str(p["Size"]), Interface: str(p["Intf"]), Media: str(p["Med"]), Model: strings.TrimSpace(str(p["Model"]))}
+			if sed := str(p["SED"]); sed == "Y" || sed == "F" { // F: FIPS SED
+				pd.SED = map[string]string{"Y": "self-encrypting", "F": "self-encrypting (FIPS)"}[sed]
+			}
 			pd.Status = pdStatus(pd.State)
 			rc.PDs = append(rc.PDs, pd)
 		}

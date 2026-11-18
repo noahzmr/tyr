@@ -150,8 +150,18 @@ func (c *common) register(fs *flag.FlagSet) {
 	fs.DurationVar(&c.opts.SMARTInterval, "smart-interval", c.opts.SMARTInterval, "reuse SMART data this long before querying the drives again (r in the TUI and stress snapshots always read fresh)")
 	fs.BoolVar(&c.opts.NICAll, "nic-all", false, "include virtual network interfaces")
 	fs.BoolVar(&c.opts.SELAll, "sel-all", false, "show all SEL entries, not only warnings and errors")
+	fs.BoolVar(&c.opts.RequireEncryption, "require-encryption", envBool("TYR_REQUIRE_ENCRYPTION"), "warn about filesystems, data disks and swap that are not encrypted (also TYR_REQUIRE_ENCRYPTION=1)")
 	fs.Float64Var(&c.warn, "warn-temp", c.opts.Thresholds.WarnTempC, "default warning temperature (°C) when a sensor has no own limit")
 	fs.Float64Var(&c.crit, "crit-temp", c.opts.Thresholds.CritTempC, "critical temperature (°C) for sensors without their own limit; given explicitly it also replaces the built-in AMD CPU limits")
+}
+
+// envBool reads a yes/no environment variable (1, true, yes, on).
+func envBool(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
 }
 
 func (c *common) env() (*collector.Env, string, error) {

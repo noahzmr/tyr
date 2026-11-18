@@ -249,6 +249,9 @@ func readStorage(ctx context.Context, g Getter, sys string) ([]model.RAIDControl
 				}
 				rc.Battery = &model.RAIDBattery{Type: "Smart Storage Battery", State: bp, Status: st}
 			}
+			if e, ok := c.get("EncryptionEnabled").(bool); ok { // HPE Smart Array Secure Encryption
+				rc.Encryption = map[bool]string{true: "enabled", false: "disabled"}[e]
+			}
 			ci := add(rc)
 			// array controllers link PhysicalDrives, host bus adapters Drives
 			drvColl := first(c.link("Links", "PhysicalDrives"), c.link("Links", "Drives"))
@@ -332,6 +335,9 @@ func smartDrive(d obj) model.PhysicalDrive {
 	} else if v, ok := d.num("CapacityGB"); ok && v > 0 {
 		p.SizeBytes = uint64(v * 1e9)
 	}
+	if e, ok := d.get("EncryptedDrive").(bool); ok && e {
+		p.Encryption = "encrypted"
+	}
 	if v, ok := d.num("SSDEnduranceUtilizationPercentage"); ok {
 		left := 100 - v
 		p.LifeLeftPercent = &left
@@ -366,6 +372,10 @@ func standardDrive(d obj) model.PhysicalDrive {
 		State:            d.str("Status", "Health"),
 		Status:           health(d.str("Status", "Health")),
 		FailurePredicted: d.get("FailurePredicted") == true,
+		Encryption:       d.str("EncryptionStatus"),
+	}
+	if a := d.str("EncryptionAbility"); a != "" && a != "None" {
+		p.SED = a // SelfEncryptingDrive, Other
 	}
 	if v, ok := d.num("CapacityBytes"); ok && v > 0 {
 		p.SizeBytes = uint64(v)
@@ -420,6 +430,8 @@ func mergeDrive(dst *model.PhysicalDrive, src model.PhysicalDrive) {
 	fill(&dst.Interface, src.Interface)
 	fill(&dst.Media, src.Media)
 	fill(&dst.State, src.State)
+	fill(&dst.SED, src.SED)
+	fill(&dst.Encryption, src.Encryption)
 	if dst.SizeBytes == 0 {
 		dst.SizeBytes, dst.SizeText = src.SizeBytes, src.SizeText
 	}
@@ -472,6 +484,9 @@ func logicalDrive(l obj) model.VirtualDrive {
 	}
 	if r := l.str("Raid"); r != "" {
 		v.Level = "RAID " + r
+	}
+	if e, ok := l.get("LogicalDriveEncryption").(bool); ok {
+		v.Encrypted = &e
 	}
 	if c, ok := l.num("CapacityMiB"); ok && c > 0 {
 		v.SizeText = sizeText(uint64(c) << 20)

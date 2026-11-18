@@ -447,10 +447,59 @@ func storageSection(m *md, x *model.Storage) {
 			if f.ReadOnly {
 				mode = "ro"
 			}
-			rows = append(rows, []string{f.Mountpoint, f.Source, f.FSType, mode, bytesSI(f.SizeBytes), f0(f.UsedPercent, " %"), status(f.Status)})
+			errs := ""
+			if f.Health != nil && f.Health.Errors != nil {
+				errs = fmt.Sprint(*f.Health.Errors)
+			}
+			rows = append(rows, []string{f.Mountpoint, f.Source, f.FSType, mode, bytesSI(f.SizeBytes), f0(f.UsedPercent, " %"),
+				encCell(f.Encryption), errs, status(f.Status)})
 		}
-		m.table([]string{"Mount", "Device", "Type", "Mode", ">Size", ">Used", "Status"}, rows)
+		m.table([]string{"Mount", "Device", "Type", "Mode", ">Size", ">Used", "Encryption", ">FS errors", "Status"}, rows)
 	}
+	var enc [][]string
+	for _, d := range x.Disks {
+		if d.Encryption == nil && d.SED == nil {
+			continue
+		}
+		sed := ""
+		if s := d.SED; s != nil {
+			sed = s.SSC
+			if s.LockingEnabled {
+				sed += ", locking enabled"
+			}
+			if s.ATASecurity != "" {
+				sed = strings.TrimPrefix(sed+", ATA security "+s.ATASecurity, ", ")
+			}
+		}
+		enc = append(enc, []string{d.Name, d.Serial, encCell(d.Encryption), sed})
+	}
+	for _, sw := range x.Swap {
+		enc = append(enc, []string{"swap " + sw.Path, "", encCell(sw.Encryption), ""})
+	}
+	if len(enc) > 0 {
+		m.h(3, "Encryption")
+		m.table([]string{"Disk", "Serial", "Encryption", "Self-encrypting drive"}, enc)
+	}
+}
+
+// encCell: "LUKS2 aes-xts-plain64 512-bit (dm-0 (cryptroot))", "no", "".
+func encCell(e *model.Encryption) string {
+	switch {
+	case e == nil:
+		return ""
+	case e.Protected:
+		s := strings.TrimSpace(e.Method + " (" + e.Via + ")")
+		if e.Note != "" {
+			s += ", " + e.Note
+		}
+		return s
+	case e.Method != "":
+		return "partly: " + e.Method + ", " + e.Note
+	}
+	if e.Note != "" {
+		return "no (" + e.Note + ")"
+	}
+	return "no"
 }
 
 func networkSection(m *md, x *model.Network) {

@@ -68,6 +68,12 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	c.opts.CoreTest = true // the quick per-core test finds dead cores before the long load
+	if p.RequireEncryption {
+		c.opts.RequireEncryption = true
+	}
+	if c.opts.RequireEncryption {
+		p.FailOnWarn = append(p.FailOnWarn, "not_encrypted", "swap_not_encrypted")
+	}
 	cenv, _, err := c.env()
 	if err != nil {
 		fmt.Fprintln(stderr, "tyr:", err)

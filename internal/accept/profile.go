@@ -61,6 +61,9 @@ type Profile struct {
 	// disk, dimm). Without an entry the sensors' own limits apply.
 	MaxTempC map[string]float64 `json:"max_temp_c,omitempty"`
 	Min      Minimums           `json:"min"`
+	// RequireEncryption: unencrypted filesystems, data disks and swap
+	// fail the test (not_encrypted, swap_not_encrypted).
+	RequireEncryption bool `json:"require_encryption,omitempty"`
 }
 
 // Minimums the machine must have; zero = not checked.

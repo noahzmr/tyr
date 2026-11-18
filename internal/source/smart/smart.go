@@ -27,6 +27,7 @@ type Info struct {
 	RotationRPM *int
 	TempC       *float64
 	TempMaxC    *float64 // the highest operating temperature the drive is specified for
+	ATASecurity string   // "enabled, locked", "disabled, frozen" (smartctl's ATA Security)
 	Protocol    string   // ATA, SCSI, NVMe
 }
 
@@ -119,6 +120,12 @@ type ctlJSON struct {
 			Count *uint64 `json:"count"`
 		} `json:"summary"`
 	} `json:"ata_smart_error_log"`
+	ATASecurity *struct {
+		String  string `json:"string"`
+		Enabled bool   `json:"enabled"`
+		Frozen  bool   `json:"frozen"`
+		Locked  *bool  `json:"locked"`
+	} `json:"ata_security"`
 	ScsiGrownDefects *uint64 `json:"scsi_grown_defect_list"`
 	ScsiErrors       *struct {
 		Read  scsiErrCounters `json:"read"`
@@ -210,6 +217,16 @@ func ParseSmartctl(data []byte) (*Info, error) {
 		parseATAAttrs(j, s)
 	}
 	parseDevStats(j, in)
+	if a := j.ATASecurity; a != nil {
+		parts := []string{map[bool]string{true: "enabled", false: "disabled"}[a.Enabled]}
+		if a.Locked != nil && *a.Locked {
+			parts = append(parts, "locked")
+		}
+		if a.Frozen {
+			parts = append(parts, "frozen")
+		}
+		in.ATASecurity = strings.Join(parts, ", ")
+	}
 	if e := j.ATAErrorLog; e != nil {
 		switch {
 		case e.Extended != nil && e.Extended.Count != nil:
@@ -496,6 +513,19 @@ const nvmeIoctlAdminCmd = 0xC0484E41
 // (/dev/nvme0) with a Get Log Page admin command. Requires CAP_SYS_ADMIN.
 // It is read-only: opcode 0x02 never modifies the device.
 func ReadNVMeLog(ctrlDev string) ([]byte, error) {
+	numd := uint32(512/4 - 1)
+	return NVMeAdminRead(ctrlDev, 0x02, 0xffffffff, numd<<16|0x02, 0, 512)
+}
+
+// NVMeAdminRead sends one admin command that transfers n bytes from the
+// controller and returns them. Callers pass only commands that read: Get
+// Log Page (0x02), Identify (0x06), Security Receive (0x82).
+func NVMeAdminRead(ctrlDev string, opcode uint8, nsid, cdw10, cdw11 uint32, n int) ([]byte, error) {
+	switch opcode {
+	case 0x02, 0x06, 0x82:
+	default:
+		return nil, fmt.Errorf("nvme: opcode %#x is not a read-only command", opcode)
+	}
 	if unsafe.Sizeof(nvmeAdminCmd{}) != 72 {
 		return nil, errors.New("nvme: admin command struct has wrong size")
 	}
@@ -504,12 +534,11 @@ func ReadNVMeLog(ctrlDev string) ([]byte, error) {
 		return nil, err
 	}
 	defer unix.Close(fd)
-	buf := make([]byte, 512)
-	numd := uint32(len(buf)/4 - 1)
+	buf := make([]byte, n)
 	cmd := nvmeAdminCmd{
-		Opcode: 0x02, NSID: 0xffffffff,
-		Addr: uint64(uintptr(unsafe.Pointer(&buf[0]))), DataLen: uint32(len(buf)),
-		Cdw10: numd<<16 | 0x02, TimeoutMs: 5000,
+		Opcode: opcode, NSID: nsid,
+		Addr: uint64(uintptr(unsafe.Pointer(&buf[0]))), DataLen: uint32(n),
+		Cdw10: cdw10, Cdw11: cdw11, TimeoutMs: 5000,
 	}
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(fd), nvmeIoctlAdminCmd, uintptr(unsafe.Pointer(&cmd)))
 	runtime.KeepAlive(buf)

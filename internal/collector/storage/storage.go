@@ -21,6 +21,7 @@ import (
 	"github.com/noahzmr/tyr/internal/execx"
 	"github.com/noahzmr/tyr/internal/hostfs"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/source/crypt"
 	"github.com/noahzmr/tyr/internal/source/kernellog"
 	"github.com/noahzmr/tyr/internal/source/raid"
 	"github.com/noahzmr/tyr/internal/source/smart"
@@ -43,6 +44,11 @@ type Collector struct {
 	ioerr map[string]*ioState
 	// journal: the node's iscsid / kubelet journal lines, cached
 	journal journalCache
+	// sed and luks: what drives and LUKS headers reported, read again
+	// after sedMaxAge (they change only when someone sets them up)
+	sed  map[string]sedCache
+	luks map[string]*crypt.LUKS
+	zfs  zfsCache
 }
 
 // smartCache is one disk's last SMART read (also a failed one).
@@ -72,7 +78,7 @@ const sharedHold = 90 * time.Second
 
 // New returns a storage collector.
 func New() *Collector {
-	return &Collector{smart: map[string]smartCache{}, ioerr: map[string]*ioState{}}
+	return &Collector{smart: map[string]smartCache{}, ioerr: map[string]*ioState{}, sed: map[string]sedCache{}, luks: map[string]*crypt.LUKS{}}
 }
 
 func (*Collector) ID() model.ModuleID { return model.ModStorage }
@@ -180,6 +186,8 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 	}
 
 	c.remoteStorage(ctx, env, out, h, klog, mounts)
+	c.encryption(ctx, env, out, h, mounts, devs)
+	fsHealth(env.FS, out, h, mounts)
 
 	h.Summary = summary(out)
 	h.Rollup()
@@ -298,6 +306,9 @@ func (c *Collector) smartAll(ctx context.Context, env *collector.Env, out *model
 			}
 			used[src] = true
 			d.SMART = &info.SMART
+			if info.ATASecurity != "" {
+				d.SED = &model.SED{ATASecurity: info.ATASecurity, Source: "smartctl"}
+			}
 			if d.Model == "" {
 				d.Model = info.Model
 			}

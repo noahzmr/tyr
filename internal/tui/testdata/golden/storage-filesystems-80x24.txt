@@ -2,11 +2,11 @@
 1✖53 2✖8 3✖9  4 Storage ✖13  5✖2 6✖9 7✖6 8✖5 9 0                          ? help
  ✖ CRIT  7 disks · 26 TB · 1 network vo…  v Disks · RAID · Filesystems · Network
 
-   Mountpoint                    Type   Size     Used                 Inodes
-▌✖ /data                         xfs    10.9 TB  ███████████░  96%    1%     ro
- ● /                             ext4   1.7 TB   ██░░░░░░░░░░  22%    2%
- ● /boot/efi                     vfat   1.0 GB   ░░░░░░░░░░░░   1%    –
- ● /archive                      ext4   5.5 TB   ██░░░░░░░░░░  20%    0%
+   Mountpoint             Type   Size     Used                 Inodes Crypt
+▌✖ /data                  xfs    10.9 TB  ███████████░  96%    1%     –      ro
+ ● /                      ext4   1.7 TB   ██░░░░░░░░░░  22%    2%     –
+ ● /boot/efi              vfat   1.0 GB   ░░░░░░░░░░░░   1%    –      –
+ ● /archive               ext4   5.5 TB   ██░░░░░░░░░░  20%    0%     –
 
 Findings · Storage 9 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
  ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O

@@ -566,7 +566,7 @@ func (s *storageTab) raidDetail(t *Theme) string {
 }
 
 func (s *storageTab) filesystems(t *Theme, maxRows int) string {
-	cols := []column{{"Mountpoint", 0}, {"Type", 6}, {"Size", 8}, {"Used", 20}, {"Inodes", 6}, {"", 2}}
+	cols := []column{{"Mountpoint", 0}, {"Type", 6}, {"Size", 8}, {"Used", 20}, {"Inodes", 6}, {"Crypt", 6}, {"", 2}}
 	byMount := map[string]model.Filesystem{}
 	for _, f := range s.st.Filesystems {
 		byMount[f.Mountpoint] = f
@@ -578,8 +578,11 @@ func (s *storageTab) filesystems(t *Theme, maxRows int) string {
 		if f.ReadOnly {
 			ro = t.StatusText(model.StatusCrit, "ro")
 		}
+		if f.Health != nil && f.Health.Errors != nil && *f.Health.Errors > 0 && ro == "" {
+			ro = t.StatusText(model.StatusWarn, "err")
+		}
 		l.shown[i].row = row{cells: []string{f.Mountpoint, f.FSType, bytesGB(f.SizeBytes), usageBar(t, f.UsedPercent, f.Status, 12),
-			optF(f.InodesUsedPercent, "%.0f%%"), ro}}
+			optF(f.InodesUsedPercent, "%.0f%%"), encShort(t, f.Encryption), ro}}
 	}
 	return l.render(t, cols, s.w, maxRows)
 }
@@ -612,10 +615,13 @@ func (s *storageTab) Detail(t *Theme, w int) (string, string) {
 		if f.ReadOnly {
 			ro = t.StatusText(model.StatusCrit, "READ-ONLY")
 		}
-		doc.kv([2]string{"Device", f.Source}, [2]string{"Type", f.FSType}, [2]string{"Mode", ro},
-			[2]string{"Size", bytesGB(f.SizeBytes)}, [2]string{"Used", bytesGB(f.UsedBytes) + "  " + usageBar(t, f.UsedPercent, f.Status, 24)},
-			[2]string{"Inodes used", optF(f.InodesUsedPercent, "%.0f%%")})
+		rows := [][2]string{{"Device", f.Source}, {"Type", f.FSType}, {"Mode", ro},
+			{"Size", bytesGB(f.SizeBytes)}, {"Used", bytesGB(f.UsedBytes) + "  " + usageBar(t, f.UsedPercent, f.Status, 24)},
+			{"Inodes used", optF(f.InodesUsedPercent, "%.0f%%")}, {"Encryption", encText(t, f.Encryption)}}
+		doc.kv(append(rows, fsHealthRows(t, f.Health)...)...)
+		doc.add("", t.Dim.Render(" B browse the files · K check or repair the filesystem"))
 		doc.findings(model.ModStorage, relatedFindings(s.st.Findings, f.Mountpoint))
+		cryptSection(doc, s.st)
 	}
 	return "Filesystem " + it.key, doc.String()
 }
@@ -684,6 +690,12 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 		{"Location", d.Location}}
 	if len(flags) > 0 {
 		idRows = append(idRows, kvPair{"Flags", strings.Join(flags, ", ")})
+	}
+	if d.Encryption != nil || d.SED != nil {
+		idRows = append(idRows, kvPair{"Encryption", encText(t, d.Encryption)})
+	}
+	if st := sedText(t, d.SED); st != "" {
+		idRows = append(idRows, kvPair{"Self-encrypt", st})
 	}
 	if r := d.Remote; r != nil {
 		idRows[6] = kvPair{"Interface", transportName(r) + t.Sub.Render(" · a storage system's volume")}
@@ -902,7 +914,12 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 		case it.vd != nil:
 			v := it.vd
 			doc.section("Virtual drive "+v.ID, t.Badge(v.Status))
-			doc.kv([2]string{"Name", v.Name}, [2]string{"Level", v.Level}, [2]string{"State", v.State}, [2]string{"Size", v.SizeText})
+			enc := ""
+			if v.Encrypted != nil {
+				enc = map[bool]string{true: t.StatusText(model.StatusOK, "● encrypted by the controller"), false: t.Dim.Render("not encrypted")}[*v.Encrypted]
+			}
+			doc.kv([2]string{"Name", v.Name}, [2]string{"Level", v.Level}, [2]string{"State", v.State}, [2]string{"Size", v.SizeText},
+				[2]string{"Encryption", enc})
 		case it.pd != nil:
 			p := it.pd
 			doc.section("Physical drive "+p.Slot, t.Badge(p.Status))
@@ -917,7 +934,7 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 				[2]string{"Drive group", p.Group}, [2]string{"Model", p.Model}, [2]string{"Serial", p.Serial},
 				[2]string{"WWN", p.WWN}, [2]string{"Firmware", p.Firmware}, [2]string{"Media", p.Media}, [2]string{"Interface", p.Interface},
 				[2]string{"Size", p.SizeText}, [2]string{"Endurance left", optF(p.LifeLeftPercent, "%.0f %%")}, [2]string{"Power-on", hrs},
-				[2]string{"Temperature", optF(p.TempCelsius, "%.0f°C")})
+				[2]string{"Temperature", optF(p.TempCelsius, "%.0f°C")}, [2]string{"Self-encrypt", p.SED}, [2]string{"Encryption", p.Encryption})
 		case it.bat != nil:
 			b := it.bat
 			doc.section(b.Type, t.Badge(b.Status))
@@ -929,7 +946,7 @@ func (s *storageTab) raidPage(doc *doc, it raidItem, name string) string {
 			via = "the BMC (Redfish)"
 		}
 		doc.kv([2]string{"Model", c.Model}, [2]string{"Location", c.Location}, [2]string{"Serial", c.Serial}, [2]string{"Firmware", c.Firmware},
-			[2]string{"State", c.State}, [2]string{"Read via", via})
+			[2]string{"State", c.State}, [2]string{"Encryption", c.Encryption}, [2]string{"Read via", via})
 		keys := []string{name}
 		if it.vd != nil {
 			keys = append(keys, it.vd.ID)

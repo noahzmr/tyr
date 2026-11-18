@@ -20,6 +20,62 @@ type Storage struct {
 	Remote *RemoteStorage `json:"remote_storage,omitempty"`
 	// Longhorn is set on a Longhorn node: its data disks, replicas and logs.
 	Longhorn *Longhorn `json:"longhorn,omitempty"`
+	// Crypt are the dm-crypt mappings (LUKS, plain, BitLocker) of this host.
+	Crypt []CryptDevice `json:"crypt_devices,omitempty"`
+	// Swap are the active swap areas and whether they are encrypted.
+	Swap []SwapArea `json:"swap,omitempty"`
+}
+
+// Encryption is whether data at rest on a disk, volume or filesystem is
+// encrypted, and by what. Protected is true only when the key is not
+// simply there for anyone who has the drive: LUKS, ZFS with a key, a
+// self-encrypting drive with locking enabled, controller encryption.
+type Encryption struct {
+	Protected bool   `json:"protected"`
+	Method    string `json:"method,omitempty"` // "LUKS2 aes-xts-plain64 512-bit", "Opal 2 SED", "ZFS aes-256-gcm", "HPE Smart Array"
+	Via       string `json:"via,omitempty"`    // the layer that does it: dm-0 (luks-…), sda, the controller
+	Note      string `json:"note,omitempty"`   // "locked", "media encryption without locking: no protection at rest"
+}
+
+// SED is what a drive's TCG Storage discovery and ATA security report.
+type SED struct {
+	SSC              string `json:"ssc,omitempty"` // Opal 2, Opal 1, Enterprise, Pyrite 2, Ruby, Opalite
+	LockingSupported bool   `json:"locking_supported"`
+	LockingEnabled   bool   `json:"locking_enabled"` // a locking range is set up with a password
+	Locked           bool   `json:"locked"`
+	MediaEncryption  bool   `json:"media_encryption"` // the drive encrypts everything it stores
+	MBREnabled       bool   `json:"mbr_shadow,omitempty"`
+	ATASecurity      string `json:"ata_security,omitempty"` // "enabled, frozen" (smartctl)
+	Source           string `json:"source,omitempty"`       // opal ioctl, nvme security receive, smartctl
+}
+
+// CryptDevice is one dm-crypt mapping.
+type CryptDevice struct {
+	Name    string   `json:"name"`             // the mapping: luks-3f2…, cryptroot
+	DM      string   `json:"dm"`               // dm-0
+	Type    string   `json:"type"`             // LUKS1, LUKS2, PLAIN, BITLK, TCRYPT
+	Cipher  string   `json:"cipher,omitempty"` // aes-xts-plain64 (from the LUKS header, root)
+	KeyBits int      `json:"key_bits,omitempty"`
+	Backing []string `json:"backing"`           // sda3, md0, sdc (a Longhorn volume)
+	UsedBy  []string `json:"used_by,omitempty"` // mountpoints, swap, LVM
+}
+
+// SwapArea is one active swap device or file.
+type SwapArea struct {
+	Path       string      `json:"path"`
+	Type       string      `json:"type"` // partition, file
+	SizeBytes  uint64      `json:"size_bytes"`
+	Encryption *Encryption `json:"encryption,omitempty"`
+}
+
+// FSHealth is what the filesystem itself recorded about errors.
+type FSHealth struct {
+	Errors      *uint64 `json:"errors"` // ext4 errors_count; btrfs device error counters
+	FirstError  string  `json:"first_error,omitempty"`
+	LastError   string  `json:"last_error,omitempty"`
+	LastChecked string  `json:"last_checked,omitempty"` // ext: last fsck
+	State       string  `json:"state,omitempty"`        // ext: clean, not clean, errors
+	Source      string  `json:"source,omitempty"`
 }
 
 // Disk is one physical (or virtual, in VMs) block device.
@@ -56,6 +112,8 @@ type Disk struct {
 	KernelLines    []string    `json:"kernel_log_lines,omitempty"` // the latest kernel log lines that name the disk (or its session)
 	SMARTAt        time.Time   `json:"smart_at,omitzero"`          // when SMART was read (it is cached)
 	Holders        []string    `json:"holders,omitempty"`          // md/dm devices using it
+	SED            *SED        `json:"sed,omitempty"`
+	Encryption     *Encryption `json:"encryption,omitempty"` // nil: not known
 	Mounted        []string    `json:"mountpoints,omitempty"`
 	SMART          *SMART      `json:"smart,omitempty"`
 	Status         Status      `json:"status"`
@@ -128,17 +186,19 @@ type MDMember struct {
 // RAIDController is a hardware RAID controller (storcli/perccli), or one
 // the BMC reports over Redfish (HPE Smart Array and other Redfish Storage).
 type RAIDController struct {
-	Index    int             `json:"index"`
-	Model    string          `json:"model"`
-	Serial   string          `json:"serial,omitempty"`
-	Firmware string          `json:"firmware,omitempty"`
-	Location string          `json:"location,omitempty"` // Redfish: "Slot 12", "Embedded RAID"
-	State    string          `json:"state"`
-	Tool     string          `json:"tool"` // storcli, perccli, redfish
-	VDs      []VirtualDrive  `json:"virtual_drives"`
-	PDs      []PhysicalDrive `json:"physical_drives"`
-	Battery  *RAIDBattery    `json:"battery,omitempty"`
-	Status   Status          `json:"status"`
+	Index    int    `json:"index"`
+	Model    string `json:"model"`
+	Serial   string `json:"serial,omitempty"`
+	Firmware string `json:"firmware,omitempty"`
+	Location string `json:"location,omitempty"` // Redfish: "Slot 12", "Embedded RAID"
+	State    string `json:"state"`
+	Tool     string `json:"tool"` // storcli, perccli, redfish
+	// Encryption is the controller's own encryption (HPE Secure Encryption): "enabled", "disabled", "" not reported.
+	Encryption string          `json:"encryption,omitempty"`
+	VDs        []VirtualDrive  `json:"virtual_drives"`
+	PDs        []PhysicalDrive `json:"physical_drives"`
+	Battery    *RAIDBattery    `json:"battery,omitempty"`
+	Status     Status          `json:"status"`
 }
 
 // VirtualDrive is a hardware RAID logical volume.
@@ -148,7 +208,9 @@ type VirtualDrive struct {
 	Level    string `json:"level"`
 	State    string `json:"state"` // Optl, Dgrd, Pdgd, OfLn, Rec
 	SizeText string `json:"size"`
-	Status   Status `json:"status"`
+	// Encrypted by the controller (HPE Secure Encryption, Redfish Volume.Encrypted); nil: not reported.
+	Encrypted *bool  `json:"encrypted,omitempty"`
+	Status    Status `json:"status"`
 }
 
 // PhysicalDrive is a disk behind a RAID controller.
@@ -169,6 +231,8 @@ type PhysicalDrive struct {
 	PowerOnHours     *uint64  `json:"power_on_hours,omitempty"`
 	TempCelsius      *float64 `json:"temp_celsius,omitempty"`
 	FailurePredicted bool     `json:"failure_predicted,omitempty"`
+	SED              string   `json:"sed,omitempty"`            // storcli SED column, Redfish EncryptionAbility
+	Encryption       string   `json:"encryption,omitempty"`     // Redfish EncryptionStatus: Unencrypted, Unlocked, Locked, Foreign
 	Reasons          []string `json:"status_reasons,omitempty"` // HPE DiskDriveStatusReasons, Redfish Status.Conditions
 	Status           Status   `json:"status"`
 }
@@ -184,15 +248,17 @@ type RAIDBattery struct {
 
 // Filesystem is a mounted local filesystem.
 type Filesystem struct {
-	Mountpoint        string   `json:"mountpoint"`
-	Source            string   `json:"source"`
-	FSType            string   `json:"fstype"`
-	ReadOnly          bool     `json:"read_only"`
-	SizeBytes         uint64   `json:"size_bytes"`
-	UsedBytes         uint64   `json:"used_bytes"`
-	UsedPercent       *float64 `json:"used_percent"`
-	InodesUsedPercent *float64 `json:"inodes_used_percent"`
-	Status            Status   `json:"status"`
+	Mountpoint        string      `json:"mountpoint"`
+	Source            string      `json:"source"`
+	FSType            string      `json:"fstype"`
+	ReadOnly          bool        `json:"read_only"`
+	SizeBytes         uint64      `json:"size_bytes"`
+	UsedBytes         uint64      `json:"used_bytes"`
+	UsedPercent       *float64    `json:"used_percent"`
+	InodesUsedPercent *float64    `json:"inodes_used_percent"`
+	Encryption        *Encryption `json:"encryption,omitempty"`
+	Health            *FSHealth   `json:"health,omitempty"`
+	Status            Status      `json:"status"`
 }
 
 // RemoteDisk is the path to a network block device.
@@ -293,7 +359,9 @@ type LHVolume struct {
 	Session  string   `json:"session,omitempty"`
 	Mounts   []string `json:"mountpoints,omitempty"`
 	ReadOnly bool     `json:"read_only"` // mounted read-only (after a filesystem error)
-	Status   Status   `json:"status"`
+	// Encrypted: a Longhorn encrypted volume (dm-crypt on the LUN).
+	Encrypted bool   `json:"encrypted,omitempty"`
+	Status    Status `json:"status"`
 }
 
 // LHDisk is a Longhorn data path (a directory with longhorn-disk.cfg).

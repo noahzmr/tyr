@@ -384,3 +384,26 @@ func fcLink(f hostfs.FS, sysPath string) *RemoteLink {
 	}
 	return l
 }
+
+// UdevProps reads what udev recorded about a block device
+// (/run/udev/data/b<major>:<minor>): ID_FS_TYPE, ID_FS_LABEL, ID_FS_UUID,
+// ID_PART_ENTRY_TYPE. Readable without root; empty where udev is not running.
+func UdevProps(f hostfs.FS, name string) map[string]string {
+	out := map[string]string{}
+	mm := hostfs.StringOr(f, "/sys/class/block/"+name+"/dev", "")
+	if mm == "" {
+		return out
+	}
+	b, err := f.ReadFile("/run/udev/data/b" + mm)
+	if err != nil {
+		return out
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if kv, ok := strings.CutPrefix(line, "E:"); ok {
+			if k, v, ok := strings.Cut(kv, "="); ok {
+				out[k] = v
+			}
+		}
+	}
+	return out
+}
