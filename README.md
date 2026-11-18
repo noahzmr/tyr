@@ -408,6 +408,7 @@ Delete the pod afterwards (`kubectl delete pod node-debugger-…`).
 | `--redfish HOST` | | BMC address for Redfish when its host interface (iLO Virtual NIC) is off; credentials from `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or `/etc/tyr/redfish.conf` |
 | `--nic-all` | off | include virtual interfaces (bridges, veth …; VPN tunnels are always shown) |
 | `--sel-all` | off | all SEL entries, not only warnings and errors |
+| `--require-encryption` | off | unencrypted filesystems, data disks and swap become warnings (also `TYR_REQUIRE_ENCRYPTION=1`, or `require_encryption` in an acceptance profile) |
 | `--timeout` | 10s | per collector |
 | `--fixtures DIR` | | run against a recorded host |
 
@@ -422,7 +423,8 @@ of the live view on a terminal), `--netbox` / `--no-netbox`, `--webhooks FILE` /
 `--no-webhook`. Stress also takes `--webhooks` / `--no-webhook`. NetBox:
 `--netbox-config FILE`, `--tags FILE`, `--dry-run`, `--facts`, `--test`,
 `--validate`, `--from DIR|FILE`. Core test: `--duration`, `--yes`, `--restore`.
-Net peer: `--listen`, `--token`, `--idle`.
+Net peer: `--listen`, `--token`, `--idle`. Fsck: `--repair`, `--confirm DEVICE`
+(repair without the prompt), `--yes` (unmount for a check without asking).
 
 ### Exit codes
 
@@ -435,7 +437,8 @@ Net peer: `--listen`, `--token`, `--idle`.
 
 `tyr netbox`: 0 written, 1 written with problems, 2 nothing written (no
 connection, token refused), 3 bad settings. `tyr notify --test`: 0 delivered,
-2 a webhook failed, 3 bad or no settings.
+2 a webhook failed, 3 bad or no settings. `tyr fsck`: 0 clean or repaired,
+1 errors remain or the run failed, 2 blocked or not confirmed, 3 bad usage.
 
 ### Environment
 
@@ -445,6 +448,7 @@ connection, token refused), 3 bad settings. `tyr notify --test`: 0 delivered,
 | `TYR_NETBOX_URL`, `TYR_NETBOX_TOKEN` | NetBox ([docs/netbox.md](docs/netbox.md)) |
 | `TYR_WEBHOOK_URL`, `_FORMAT`, `_EVENTS`, `_TOKEN`, `_SECRET`, `_INSECURE` | one more webhook ([docs/webhooks.md](docs/webhooks.md)) |
 | `TYR_SOURCE` | the source tree for building the ISO from the TUI (`I`) |
+| `TYR_REQUIRE_ENCRYPTION` | `1`: like `--require-encryption` |
 
 Given to `make iso`, every `TYR_NETBOX_*` and `TYR_WEBHOOK_*` variable goes
 into the image ([docs/acceptance.md](docs/acceptance.md#build)).
@@ -462,6 +466,7 @@ into the image ([docs/acceptance.md](docs/acceptance.md#build)).
 | `pgup` `pgdn` | page | `/` | search | `R` | reports |
 | | | | | `N` `W` | NetBox, webhooks |
 | | | | | `I` | build the ISO, write a USB stick |
+| | | | | `B` `K` | browse files, check / repair a filesystem |
 | | | `i` | explain the selected alert | `A` | alert reference |
 | `g` `G` | top / end | `t` | CPU load ↔ temperature | `s` `S` `F` | Stress tab, stress this, full test |
 | `enter` | open | `a` | empty DIMM slots | `q` | quit |

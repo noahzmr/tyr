@@ -246,7 +246,9 @@ binfmt once: `sudo apt install qemu-user-binfmt`.
 
 - **Limits for every machine**: `iso/accept.json` becomes
   `/etc/tyr/accept.json` in the image (a `TYR-RESULTS` stick's
-  `accept.json` still wins).
+  `accept.json` still wins). To fail machines whose disks are not encrypted,
+  put `"require_encryption": true` in it; `TYR_REQUIRE_ENCRYPTION` is not
+  carried into the image.
 - **Vendor tools** (StorCLI, PERCCLI, ssacli): put their `.deb` or `.rpm`
   into `iso/vendor/`; see [tools.md](tools.md) for the downloads. Their
   licences usually forbid passing them on: keep such ISOs inside your
