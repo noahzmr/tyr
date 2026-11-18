@@ -1,0 +1,53 @@
+# Release build: static Linux binaries for amd64 and arm64 in tar.gz
+# archives with SHA256SUMS, published as a GitHub release. Run through
+# `make publish` (scripts/release.sh), which writes the release notes;
+# `make release-snapshot` builds the same archives without publishing.
+version: 2
+project_name: tyr
+# dist/ also holds `make cross` binaries and ISOs; --clean only empties this
+dist: dist/release
+
+builds:
+  - id: tyr
+    main: ./cmd/tyr
+    binary: tyr
+    env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/noahzmr/tyr/internal/buildinfo.Version=v{{ .Version }}
+      - -X github.com/noahzmr/tyr/internal/buildinfo.Commit={{ .ShortCommit }}
+      - -X github.com/noahzmr/tyr/internal/buildinfo.Date={{ .Date }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: tyr
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+    files:
+      - README.md
+      - CHANGELOG.md
+      - docs/*.md
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
+
+# the notes come from tools/relnotes (--release-notes)
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: noahzmr
+    name: tyr
+  name_template: "Tyr v{{ .Version }}"
+  prerelease: auto
+  mode: replace

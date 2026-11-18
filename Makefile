@@ -11,7 +11,8 @@ DIST        := dist
 
 export CGO_ENABLED=0
 
-.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross iso iso-arm64 diagrams clean
+.PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross iso iso-arm64 diagrams clean \
+	release-notes release-snapshot publish publish-retry
 
 PREFIX  ?= /usr/local
 ARCHIFY ?= $(HOME)/src/archify
@@ -86,6 +87,20 @@ cross:
 		else GOOS=linux GOARCH=$$arch go build ./... || exit 1; fi; \
 	done
 	@cd $(DIST) && sha256sum $(BINARY)-linux-* > SHA256SUMS && cat SHA256SUMS
+
+# Releases (DEVELOPER.md "Releasing"): BUMP=patch|minor|major or RELEASE=vX.Y.Z;
+# the first release is v1.0.0. publish needs GITHUB_TOKEN.
+release-notes:
+	@scripts/release.sh notes $(or $(RELEASE),$(BUMP))
+
+release-snapshot:
+	scripts/release.sh snapshot
+
+publish:
+	scripts/release.sh publish $(or $(RELEASE),$(BUMP))
+
+publish-retry:
+	scripts/release.sh retry
 
 # Bootable live ISO that runs `tyr accept` (docs/acceptance.md); needs Docker.
 iso:
