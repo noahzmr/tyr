@@ -5,8 +5,10 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"sort"
@@ -300,4 +302,13 @@ func forDevices(o obj) bool {
 		}
 	}
 	return false
+}
+
+// Unreachable reports whether err means NetBox could not be reached (no
+// network yet, DNS, a timeout) - worth trying again - rather than an
+// answer or a problem with the data.
+func Unreachable(err error) bool {
+	var ue *url.Error
+	var ne net.Error
+	return errors.As(err, &ue) || errors.As(err, &ne)
 }

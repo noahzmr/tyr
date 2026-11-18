@@ -230,33 +230,33 @@ func genericHost(h string) bool {
 }
 
 // junkSerial matches serial numbers that firmware fills in by default.
-var junkSerial = regexp.MustCompile(`(?i)^(|0+|1234567890?|0123456789|none|n/?a|not (specified|available|applicable)|to be filled.*|system serial number|default string|serial number|chassis serial number|\.+)$`)
+var junkSerial = regexp.MustCompile(`(?i)^(|0+|1234567890?|0123456789|none|n/?a|not (specified|available|applicable)|to be filled.*|fill by oem|system serial number|default string|serial number|chassis serial number|part number|unknown|\.+)$`)
+
+// clean drops the placeholders firmware fills in ("Fill By OEM", "To Be
+// Filled By O.E.M.", "Not Specified") from part and serial numbers.
+func clean(v string) string {
+	if v = strings.TrimSpace(v); junkSerial.MatchString(v) {
+		return ""
+	}
+	return v
+}
 
 func (s *syncer) device() error {
 	y := s.in.Snap.System
 	if y == nil {
 		y = &model.System{}
 	}
-	serial := strings.TrimSpace(y.Serial)
-	if junkSerial.MatchString(serial) {
-		serial = ""
-	}
+	ident := Identify(s.in.Snap)
+	serial := ident.Serial
 	name := s.in.Snap.Hostname
 	if genericHost(name) {
 		name = "" // the live ISO is "tyr-live" on every machine
 	}
-	if (s.cfg.Name == "serial" || name == "") && serial != "" {
-		name = serial
-	}
-	if serial == "" && name == "" {
-		return fmt.Errorf("no usable serial number (%q) and no host name of its own (%q): cannot tell this machine apart in NetBox", y.Serial, s.in.Snap.Hostname)
-	}
 	var dev obj
-	var err error
 	if serial != "" {
 		page, e := s.c.Get(s.ctx, "/api/dcim/devices/", q("serial", serial, "limit", "2"))
 		if e != nil {
-			return fmt.Errorf("find device by serial %s: %w", serial, e)
+			return fmt.Errorf("find device by %s %s: %w", ident.Source, serial, e)
 		}
 		res := list(page["results"])
 		if len(res) > 1 {
@@ -264,20 +264,43 @@ func (s *syncer) device() error {
 		}
 		if len(res) == 1 {
 			dev = res[0]
-		}
-	} else {
-		s.log("  no usable serial number (%q): looking the device up by name %q", y.Serial, name)
-		if dev, err = s.c.First(s.ctx, "/api/dcim/devices/", q("name", name)); err != nil {
-			return fmt.Errorf("find device %s: %w", name, err)
+			s.found("serial "+serial+map[bool]string{true: "", false: " (" + ident.Source + ")"}[ident.Source == "serial"], dev)
 		}
 	}
-	if dev != nil {
-		s.dev, s.devID = dev, id(dev["id"])
-		s.log("device %s (id %d)", str(dev["name"]), s.devID)
-		s.change("device", str(dev["name"]), "unchanged", "found by "+map[bool]string{true: "serial " + serial, false: "name"}[serial != ""])
-	} else {
+	if dev == nil && len(ident.MACs) > 0 { // no serial, or a device recorded before it had one
+		d, err := s.deviceByMAC(ident.MACs)
+		if err != nil {
+			return err
+		}
+		if dev = d; dev != nil {
+			s.found("MAC address", dev)
+		}
+	}
+	if dev == nil && serial == "" && name != "" {
+		s.log("  no usable serial number (%q): looking the device up by name %q", y.Serial, name)
+		d, err := s.c.First(s.ctx, "/api/dcim/devices/", q("name", name))
+		if err != nil {
+			return fmt.Errorf("find device %s: %w", name, err)
+		}
+		if dev = d; dev != nil {
+			s.found("name", dev)
+		}
+	}
+	if dev == nil {
+		switch {
+		case s.cfg.Name == "serial" && serial != "", name == "" && serial != "":
+			name = serial
+		case name == "" && len(ident.MACs) > 0: // "FW4C-218527": the model and the end of a MAC
+			name = firstNonEmpty(strings.TrimSpace(y.Product), "device") + "-" + strings.ReplaceAll(ident.MACs[0], ":", "")[6:]
+		}
+		if name == "" {
+			return fmt.Errorf("no serial number, no MAC address and no host name of its own (%q): cannot tell this machine apart in NetBox", s.in.Snap.Hostname)
+		}
 		if s.cfg.Site == "" || s.cfg.Role == "" {
-			return fmt.Errorf("serial %s is not in NetBox, and site and role for a new device are not set", serial)
+			return fmt.Errorf("%s is not in NetBox, and site and role for a new device are not set", name)
+		}
+		if serial == "" {
+			s.log("  no serial number in the firmware: the device is found again by its MAC addresses")
 		}
 		if err := s.createDevice(name, serial, y); err != nil {
 			return err
@@ -289,6 +312,69 @@ func (s *syncer) device() error {
 		s.rep.DeviceURL = fmt.Sprintf("%s/dcim/devices/%d/", s.cfg.URL, s.devID)
 	}
 	return nil
+}
+
+func (s *syncer) found(how string, dev obj) {
+	s.dev, s.devID = dev, id(dev["id"])
+	s.log("device %s (id %d), found by %s", str(dev["name"]), s.devID, how)
+	s.change("device", str(dev["name"]), "unchanged", "found by "+how)
+}
+
+// deviceByMAC finds the device whose interfaces carry one of the MAC
+// addresses (NetBox 4.2+: MAC address objects; before: the interface
+// field). Two devices sharing them is an error.
+func (s *syncer) deviceByMAC(macs []string) (obj, error) {
+	devs := map[int]bool{}
+	var first int
+	for _, mac := range macs {
+		var ifaceDevs []int
+		if s.c.AtLeast(4, 2) {
+			ms, err := s.c.List(s.ctx, "/api/dcim/mac-addresses/", q("mac_address", mac))
+			if err != nil {
+				return nil, fmt.Errorf("find MAC %s: %w", mac, err)
+			}
+			for _, m := range ms {
+				if str(m["assigned_object_type"]) != "dcim.interface" || m["assigned_object_id"] == nil {
+					continue
+				}
+				iface, err := s.c.First(s.ctx, "/api/dcim/interfaces/", q("id", fmt.Sprint(id(m["assigned_object_id"]))))
+				if err != nil {
+					return nil, fmt.Errorf("find MAC %s: %w", mac, err)
+				}
+				if iface != nil {
+					ifaceDevs = append(ifaceDevs, id(iface["device"]))
+				}
+			}
+		} else {
+			ifs, err := s.c.List(s.ctx, "/api/dcim/interfaces/", q("mac_address", mac))
+			if err != nil {
+				return nil, fmt.Errorf("find MAC %s: %w", mac, err)
+			}
+			for _, i := range ifs {
+				ifaceDevs = append(ifaceDevs, id(i["device"]))
+			}
+		}
+		for _, d := range ifaceDevs {
+			if d != 0 && !devs[d] {
+				devs[d] = true
+				if first == 0 {
+					first = d
+				}
+			}
+		}
+	}
+	switch len(devs) {
+	case 0:
+		return nil, nil
+	case 1:
+		return s.c.First(s.ctx, "/api/dcim/devices/", q("id", fmt.Sprint(first)))
+	}
+	ids := make([]string, 0, len(devs))
+	for d := range devs {
+		ids = append(ids, fmt.Sprint(d))
+	}
+	sort.Strings(ids)
+	return nil, fmt.Errorf("this machine's MAC addresses are on %d devices in NetBox (ids %s): fix that first", len(devs), strings.Join(ids, ", "))
 }
 
 func (s *syncer) createDevice(name, serial string, y *model.System) error {
@@ -817,8 +903,8 @@ func itemInfo(c model.Component) string {
 	}
 	add("", Manufacturer(c.Vendor, c.Model))
 	add("", c.Model)
-	add("part ", c.PartNumber)
-	add("S/N ", c.Serial)
+	add("part ", clean(c.PartNumber))
+	add("S/N ", clean(c.Serial))
 	add("firmware ", c.Firmware)
 	add("", c.Detail)
 	if c.Status == model.StatusCrit {
@@ -870,6 +956,7 @@ func (s *syncer) inventory() error {
 			name = trunc(fmt.Sprintf("%s #%d", itemName(c), i), 64)
 		}
 		used[name] = true
+		c.PartNumber, c.Serial = clean(c.PartNumber), clean(c.Serial)
 		body := obj{"label": trunc(c.Location, 64), "part_id": trunc(firstNonEmpty(c.PartNumber, c.Model), 50),
 			"serial": trunc(c.Serial, 50), "description": describe(c), "discovered": true}
 		if v := Manufacturer(c.Vendor, c.Model); v != "" {
@@ -1189,4 +1276,44 @@ func (s *syncer) platform(body obj) {
 	} else {
 		s.change("platform", name, "unchanged", "")
 	}
+}
+
+// Identity is how a machine is found in NetBox: a serial number (the
+// system's, else the board's or the chassis', else a real SMBIOS UUID) and
+// the MAC addresses of its physical ports, for machines without one.
+type Identity struct {
+	Serial string
+	Source string // serial, board serial, chassis serial, uuid
+	MACs   []string
+}
+
+// placeholderUUID matches the UUIDs firmware ships unchanged on many
+// boards: all zero, all F, the AMI default 03000200-0400-0500-0006-000700080009.
+var placeholderUUID = regexp.MustCompile(`(?i)^(0{8}-0{4}-0{4}-0{4}-0{12}|f{8}-f{4}-f{4}-f{4}-f{12}|03000200-0400-0500-0006-000700080009|00020003-0004-0005-0006-000700080009)$`)
+
+// Identify picks the machine's identity from a snapshot.
+func Identify(sn *model.Snapshot) Identity {
+	var id Identity
+	if y := sn.System; y != nil {
+		for _, c := range []struct{ v, src string }{{y.Serial, "serial"}, {y.BoardSerial, "board serial"}, {y.ChassisSerial, "chassis serial"}} {
+			if v := strings.TrimSpace(c.v); v != "" && !junkSerial.MatchString(v) {
+				id.Serial, id.Source = v, c.src
+				break
+			}
+		}
+		if u := strings.TrimSpace(y.UUID); id.Serial == "" && u != "" && !placeholderUUID.MatchString(u) {
+			id.Serial, id.Source = strings.ToLower(u), "uuid"
+		}
+	}
+	if nw := sn.Network; nw != nil {
+		for _, x := range nw.Interfaces {
+			hw, err := net.ParseMAC(x.MAC)
+			if x.Kind != "physical" || err != nil || len(hw) != 6 || hw[0]&2 != 0 || hw.String() == "00:00:00:00:00:00" {
+				continue // locally administered (random, virtual) MACs do not identify a machine
+			}
+			id.MACs = append(id.MACs, strings.ToUpper(hw.String()))
+		}
+		sort.Strings(id.MACs)
+	}
+	return id
 }

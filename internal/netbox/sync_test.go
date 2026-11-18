@@ -3,6 +3,7 @@ package netbox
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -373,8 +374,9 @@ func TestSyncDryRunAndErrors(t *testing.T) {
 	ys := *snap.System
 	ys.Serial = "To Be Filled By O.E.M."
 	live.System, live.Hostname = &ys, "tyr-live"
-	if _, err := Sync(ctx, cfg, Tags{}, Input{Snap: &live}, true, nil); err == nil || !strings.Contains(err.Error(), "cannot tell this machine apart") {
-		t.Errorf("live ISO without serial: %v", err)
+	// (the board's serial number stands in)
+	if rep, err := Sync(ctx, cfg, Tags{}, Input{Snap: &live}, true, nil); err != nil || rep.Device != "OM21AS012345" {
+		t.Errorf("live ISO without system serial, identified by the board's: %v %v", rep.Device, err)
 	}
 	// wrong token
 	cfg.Token = "wrong"
@@ -548,5 +550,92 @@ func TestSyncPlatform(t *testing.T) {
 	f := ComputeFacts(snap, nil)
 	if f["os_id"].S != "ubuntu" || f["os_version"].S != "24.04" || f["kernel"].S != "6.8.0-49-generic" || f["live_system"].B {
 		t.Errorf("facts %v %v %v %v", f["os_id"], f["os_version"], f["kernel"], f["live_system"])
+	}
+}
+
+func TestIdentify(t *testing.T) {
+	sys := func(serial, board, chassis, uuid string) *model.Snapshot {
+		return &model.Snapshot{System: &model.System{Serial: serial, BoardSerial: board, ChassisSerial: chassis, UUID: uuid},
+			Network: &model.Network{Interfaces: []model.NIC{
+				{Name: "enp3s0", Kind: "physical", MAC: "64:62:66:21:85:29"},
+				{Name: "enp1s0", Kind: "physical", MAC: "64:62:66:21:85:27"},
+				{Name: "wg0", Kind: "vpn"},
+				{Name: "usb0", Kind: "physical", MAC: "02:00:00:00:00:01"}, // locally administered
+				{Name: "docker0", Kind: "bridge", MAC: "a2:4e:cd:dd:bb:67"},
+			}}}
+	}
+	for _, c := range []struct {
+		snap         *model.Snapshot
+		serial, from string
+	}{
+		{sys("CZ123", "B1", "", ""), "CZ123", "serial"},
+		{sys("To Be Filled By O.E.M.", "BRD-7", "", ""), "BRD-7", "board serial"},
+		{sys("", "Default string", "CH-9", ""), "CH-9", "chassis serial"},
+		{sys("", "", "", "4C4C4544-0042-3510-8051-B4C04F4B4E32"), "4c4c4544-0042-3510-8051-b4c04f4b4e32", "uuid"},
+		{sys("", "", "", "03000200-0400-0500-0006-000700080009"), "", ""}, // the AMI default: not unique
+	} {
+		id := Identify(c.snap)
+		if id.Serial != c.serial || id.Source != c.from {
+			t.Errorf("serial %q from %q, want %q from %q", id.Serial, id.Source, c.serial, c.from)
+		}
+		if strings.Join(id.MACs, ",") != "64:62:66:21:85:27,64:62:66:21:85:29" {
+			t.Errorf("MACs %v", id.MACs)
+		}
+	}
+}
+
+// A machine without any serial number (a Protectli FW4C) booted from the
+// ISO: created under its model and MAC, found again by MAC the next time.
+func TestSyncWithoutSerial(t *testing.T) {
+	base := fixtureSnap(t, "server-healthy")
+	snap := *base
+	ys := *base.System
+	ys.Serial, ys.BoardSerial, ys.ChassisSerial, ys.UUID, ys.LiveSystem = "", "", "", "03000200-0400-0500-0006-000700080009", true
+	snap.System, snap.Hostname = &ys, "tyr-live"
+	fake := newFake("4.4.0")
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+	cfg := Defaults()
+	cfg.URL, cfg.Token, cfg.Site, cfg.Role = srv.URL, "secret", "Lab", "Server"
+	ctx := context.Background()
+	rep, err := Sync(ctx, cfg, Tags{}, Input{Snap: &snap}, false, nil)
+	if err != nil || !rep.Created || !strings.HasPrefix(rep.Device, "SYS-120U-TNR-") {
+		t.Fatalf("first: %+v %v", rep, err)
+	}
+	var logs []string
+	rep, err = Sync(ctx, cfg, Tags{}, Input{Snap: &snap}, false, func(f string, a ...any) { logs = append(logs, fmt.Sprintf(f, a...)) })
+	if err != nil || rep.Created || len(fake.all("dcim/devices")) != 1 || !strings.Contains(strings.Join(logs, "\n"), "found by MAC address") {
+		t.Fatalf("second: %+v %v\n%s", rep, err, strings.Join(logs, "\n"))
+	}
+	// the MACs on two devices: refused
+	fake.mu.Lock()
+	fake.next++
+	fake.objs["dcim/devices"][fake.next] = obj{"id": float64(fake.next), "name": "other"}
+	other := fake.next
+	for _, i := range fake.objs["dcim/interfaces"] {
+		i["device"] = float64(other)
+		break
+	}
+	fake.mu.Unlock()
+	if _, err := Sync(ctx, cfg, Tags{}, Input{Snap: &snap}, true, nil); err == nil || !strings.Contains(err.Error(), "on 2 devices") {
+		t.Errorf("MACs on two devices: %v", err)
+	}
+	// nothing at all to go by
+	bare := snap
+	bare.Network = nil
+	if _, err := Sync(ctx, cfg, Tags{}, Input{Snap: &bare}, true, nil); err == nil || !strings.Contains(err.Error(), "cannot tell this machine apart") {
+		t.Errorf("no serial, no MAC: %v", err)
+	}
+}
+
+func TestUnreachable(t *testing.T) {
+	cfg := Defaults()
+	cfg.URL, cfg.Token = "http://127.0.0.1:1", "x"
+	_, err := Sync(context.Background(), cfg, Tags{}, Input{Snap: &model.Snapshot{}}, true, nil)
+	if err == nil || !Unreachable(err) {
+		t.Errorf("connection refused not unreachable: %v", err)
+	}
+	if Unreachable(errors.New("no serial number")) || Unreachable(&APIError{Code: 403}) {
+		t.Error("data or answer errors counted as unreachable")
 	}
 }

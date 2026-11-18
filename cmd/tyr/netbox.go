@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -232,9 +231,8 @@ func acceptNetBox(files netboxFiles, force, off bool, r *accept.Result, after *m
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		rep, err = netbox.Sync(ctx, cfg, tags, netbox.Input{Snap: after, Result: r, ResultDir: dir}, false, logf)
 		cancel()
-		var ae *netbox.APIError
-		if err == nil || errors.As(err, &ae) || attempt == 3 {
-			break
+		if err == nil || !netbox.Unreachable(err) || attempt == 3 {
+			break // only a NetBox that cannot be reached is worth trying again
 		}
 		logf("NetBox: %v - again in 30 s", err)
 		time.Sleep(30 * time.Second)

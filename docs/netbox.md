@@ -9,7 +9,7 @@ line (`tyr netbox`), after `tyr accept`, and by itself from the Tyr ISO.
 
 | NetBox | From Tyr | When |
 |---|---|---|
-| Device | found by the system serial number (by host name when the firmware reports a placeholder serial, never by a shared name like the ISO's `tyr-live`); created when missing, with manufacturer, device type, site, role (both created if missing), optional tenant and status | always |
+| Device | found by its serial number - the system's, else the board's or the chassis', else the SMBIOS UUID unless it is a firmware default - and, for machines without any (a Protectli, a whitebox), by the MAC addresses of its ports; by host name only when it is not a shared one like the ISO's `tyr-live`. Created when missing, with manufacturer, device type, site, role (both created if missing), optional tenant and status; a new device without a serial is named after its model and a MAC (`FW4C-218527`) | always |
 | Interfaces | every physical port: name, type from the speed and the port (`10gbase-x-sfpp`, `25gbase-x-sfp28` …), description, speed; the MAC address (NetBox 4.2+: a MAC address object, the interface's primary MAC) | `interfaces` |
 | VPN interfaces | WireGuard, OpenVPN, Tailscale … as interfaces of type `virtual` (description: the VPN type, MTU), their addresses as IP addresses assigned to them | `interfaces` |
 | BMC interface and IP | an interface for the management controller (`bmc`, or `iLO`/`iDRAC` if it exists) with its MAC; its IP address, assigned to that interface and set as the device's out-of-band IP | `interfaces` |
