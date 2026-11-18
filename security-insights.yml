@@ -1,0 +1,92 @@
+header:
+  schema-version: 2.2.0
+  last-updated: '2026-11-18'
+  last-reviewed: '2026-11-18'
+  url: https://raw.githubusercontent.com/noahzmr/tyr/main/security-insights.yml
+  comment: >
+    Security Insights for Tyr, read by OpenSSF Baseline tooling. The
+    control-by-control Baseline Level 1 evidence is in
+    docs/security/osps-baseline-level1.md.
+
+project:
+  name: Tyr
+  administrators:
+    - name: Noah Zeumer
+      social: https://github.com/noahzmr
+      primary: true
+  repositories:
+    - name: tyr
+      url: https://github.com/noahzmr/tyr
+      comment: The whole project - source, documentation, the live ISO and the issue tracker.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    policy: https://github.com/noahzmr/tyr/blob/main/SECURITY.md
+    contact:
+      name: Noah Zeumer
+      social: https://github.com/noahzmr
+      primary: true
+    comment: >
+      Report privately through a GitHub security advisory:
+      https://github.com/noahzmr/tyr/security/advisories/new
+  documentation:
+    quickstart-guide: https://github.com/noahzmr/tyr/blob/main/README.md#quick-start
+    detailed-guide: https://github.com/noahzmr/tyr/blob/main/docs/README.md
+
+repository:
+  url: https://github.com/noahzmr/tyr
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: false
+  core-team:
+    - name: Noah Zeumer
+      social: https://github.com/noahzmr
+      primary: true
+  documentation:
+    contributing-guide: https://github.com/noahzmr/tyr/blob/main/CONTRIBUTING.md
+    security-policy: https://github.com/noahzmr/tyr/blob/main/SECURITY.md
+  license:
+    url: https://github.com/noahzmr/tyr/blob/main/LICENSE
+    expression: MPL-2.0
+  release:
+    automated-pipeline: false
+    distribution-points:
+      - uri: https://github.com/noahzmr/tyr/releases
+        comment: Static Linux binaries for amd64 and arm64 in tar.gz archives, with SHA256SUMS.
+  security:
+    assessments:
+      self:
+        evidence: https://github.com/noahzmr/tyr/blob/main/docs/security/osps-baseline-level1.md
+        date: '2026-11-18'
+        comment: OpenSSF Security Baseline Level 1 self-assessment, with the scanner run recorded in it.
+    tools:
+      - name: gitleaks
+        type: other
+        rulesets:
+          - default
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results: {}
+        comment: Secret scanning of the staged changes (pre-commit hook) and the whole history (CI).
+      - name: staticcheck
+        type: SAST
+        rulesets:
+          - default
+        integration:
+          adhoc: true
+          ci: true
+          release: true
+        results: {}
+        comment: With gofmt and go vet, on every pull request and before every release.
+      - name: GitHub secret scanning
+        type: other
+        rulesets:
+          - default
+        integration:
+          adhoc: false
+          ci: true
+          release: false
+        results: {}
+        comment: Secret scanning with push protection on the repository.
