@@ -65,7 +65,7 @@ func runNotify(args []string, stdout, stderr io.Writer) int {
 		if len(w.Events) > 0 {
 			ev = fmt.Sprint(w.Events)
 		}
-		fmt.Fprintf(stdout, "%s: %s, %s, %s (%s)\n", w.Label(), w.URL, orNA(w.Format), ev, src)
+		fmt.Fprintf(stdout, "%s: %s, %s, %s (%s)\n", w.Label(), notify.Redact(w.URL), orNA(w.Format), ev, src)
 	}
 	if *validate || !*test {
 		return 0

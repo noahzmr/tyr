@@ -179,3 +179,24 @@ func TestDeliver(t *testing.T) {
 		t.Errorf("%d requests for a fail event", len(got))
 	}
 }
+
+func TestRedact(t *testing.T) {
+	for in, want := range map[string]string{
+		"https://hooks.slack.com/services/T0/B0/SECRET":      "https://hooks.slack.com/…",
+		"https://chat.example.net/hooks/abc/SECRET?x=1":      "https://chat.example.net/…",
+		"http://n8n.lab:5678":                                "http://n8n.lab:5678",
+		"https://prod.logic.azure.com:443/workflows/a?sig=S": "https://prod.logic.azure.com:443/…",
+		"not a url": "(webhook URL)",
+	} {
+		if got := Redact(in); got != want {
+			t.Errorf("Redact(%q) = %q, want %q", in, got, want)
+		}
+	}
+	// a delivery error names the host, never the secret path
+	n := NewNotifier(Config{Webhooks: []Webhook{{Name: "chat", URL: "http://127.0.0.1:1/hooks/abc/SECRETTOKEN"}}}, nil)
+	n.backoff = []time.Duration{0}
+	res := n.Deliver(context.Background(), New(EvTest, "acceptance", Machine{Host: "h"}))
+	if err := res["chat"]; err == nil || strings.Contains(err.Error(), "SECRETTOKEN") || !strings.Contains(err.Error(), "127.0.0.1:1/…") {
+		t.Errorf("error %v", err)
+	}
+}

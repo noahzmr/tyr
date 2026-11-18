@@ -7,9 +7,11 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -143,6 +145,10 @@ func (n *Notifier) post(ctx context.Context, w Webhook, event string, body []byt
 	}
 	resp, err := n.client(w.Insecure).Do(req)
 	if err != nil {
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			ue.URL = Redact(w.URL) // the path of a chat webhook is its secret
+		}
 		return true, err
 	}
 	defer resp.Body.Close()
@@ -152,6 +158,20 @@ func (n *Notifier) post(ctx context.Context, w Webhook, event string, body []byt
 	}
 	return resp.StatusCode >= 500 || resp.StatusCode == http.StatusTooManyRequests,
 		fmt.Errorf("HTTP %d %s", resp.StatusCode, bytes.TrimSpace(msg))
+}
+
+// Redact shortens a webhook URL to scheme and host for messages and logs:
+// Slack, Teams, Discord and Rocket.Chat put the secret into the path.
+func Redact(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return "(webhook URL)"
+	}
+	out := u.Scheme + "://" + u.Host
+	if u.Path != "" && u.Path != "/" || u.RawQuery != "" {
+		out += "/…"
+	}
+	return out
 }
 
 // Sign is the hex HMAC-SHA256 of the body with the secret: what a receiver
