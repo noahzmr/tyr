@@ -19,6 +19,9 @@ type Input struct {
 	Snap      *model.Snapshot
 	Result    *accept.Result // the acceptance test, nil without one
 	ResultDir string         // where its results are (named in the journal)
+	// OnChange, when set, is called for every object written or checked,
+	// with how many so far and about how many in all (a live view).
+	OnChange func(c Change, done, total int)
 }
 
 // Report says what a sync did.
@@ -78,6 +81,46 @@ type syncer struct {
 	roles   map[string]int
 	ctx     context.Context
 	devCrit bool
+	done    int // objects reported to OnChange
+	total   int // about how many there will be
+}
+
+// estimate is about how many objects a sync reports: the device, its
+// interfaces and their addresses, the inventory items, the tag rules,
+// the custom fields and the journal entry.
+func (s *syncer) estimate() int {
+	n := 1
+	if nw := s.in.Snap.Network; nw != nil && s.cfg.Interfaces {
+		for _, x := range nw.Interfaces {
+			switch x.Kind {
+			case "physical":
+				n++
+			case "vpn":
+				n += 1 + len(x.Addresses)
+			}
+		}
+		if b := nw.BMC; b != nil && (b.MAC != "" || validIP(b.IP)) {
+			n += 2
+		}
+	}
+	if s.cfg.Inventory {
+		cats := s.cfg.Categories
+		if len(cats) == 0 {
+			cats = DefaultCategories
+		}
+		var comps []model.Component
+		for _, c := range inventory(s.in.Snap) {
+			if slices.Contains(cats, c.Category) && c.Detail != "empty socket" {
+				comps = append(comps, c)
+			}
+		}
+		n += len(mergeCards(comps))
+	}
+	n += len(s.cfg.CustomFields)
+	if s.cfg.Journal {
+		n++
+	}
+	return n
 }
 
 // Sync writes the input to NetBox. The error is set when nothing could be
@@ -98,6 +141,7 @@ func Sync(ctx context.Context, cfg Config, tags Tags, in Input, dryRun bool, log
 	s := &syncer{c: c, cfg: cfg, tags: tags, in: in, log: log, ctx: ctx,
 		rep: &Report{DryRun: dryRun}, manuf: map[string]int{}, roles: map[string]int{}}
 	s.facts = ComputeFacts(in.Snap, in.Result)
+	s.total = s.estimate()
 	ver, err := c.Status(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("NetBox %s: %w", cfg.URL, err)
@@ -139,7 +183,13 @@ func (s *syncer) step(name string, f func() error) {
 // change records what is written; created and changed objects go to the
 // log with their values.
 func (s *syncer) change(object, name, action, detail string) {
-	s.rep.Changes = append(s.rep.Changes, Change{Object: object, Name: name, Action: action, Detail: detail})
+	c := Change{Object: object, Name: name, Action: action, Detail: detail}
+	s.rep.Changes = append(s.rep.Changes, c)
+	if s.in.OnChange != nil {
+		s.done++
+		s.total = max(s.total, s.done)
+		s.in.OnChange(c, s.done, s.total)
+	}
 	if action == "unchanged" {
 		return
 	}

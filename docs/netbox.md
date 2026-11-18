@@ -164,8 +164,10 @@ match; the TUI shows them under `f` and while editing a rule.
   types any value by hand. The inventory categories are a list with check
   boxes (`space`). The buttons:
   *Save*, *Test* (URL and token), *Dry run* (what would be written, nothing
-  written) and *Write to NetBox* (this machine, as collected now). The result
-  opens as a page with the log.
+  written) and *Write to NetBox* (this machine, as collected now). Both run
+  live: a progress bar over all objects, the time, the counts (new, changed,
+  unchanged, problems) and each object as it is written; `esc` cancels.
+  At the end `enter` opens every object as tables, with the log.
 - Tag rules: every rule shows whether it matches this machine now. `a` adds
   (with NetBox set it starts with NetBox's tags; a new name creates the tag),
   `enter` edits (tag, then condition: the match updates as you type; `ctrl+l`

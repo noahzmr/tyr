@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -280,5 +281,48 @@ func TestNetBoxPasteAndPickers(t *testing.T) {
 	m.Update(press("enter"))
 	if m.nb.picker != nil || !m.nb.editing {
 		t.Error("picker without a token")
+	}
+}
+
+func TestNetBoxSyncLive(t *testing.T) {
+	const w, h = 120, 50
+	m := newLoaded(t, "server-healthy", w, h)
+	dir := t.TempDir()
+	m.opts.NetBoxFile, m.opts.TagsFile = filepath.Join(dir, "netbox.json"), filepath.Join(dir, "tags.json")
+	m.Update(press("N"))
+	cancelled := false
+	st := &nbSync{dry: true, url: "https://nb.example.com", start: time.Now(), ch: make(chan tea.Msg, 8),
+		cancel: func() { cancelled = true }, counts: map[string]int{}, device: "srv-healthy-01"}
+	m.nb.sync = st
+	feed := []tea.Msg{
+		nbChangeMsg{c: netbox.Change{Object: "device", Name: "srv-healthy-01", Action: "create", Detail: "Supermicro SYS-120U-TNR"}, done: 1, total: 40},
+		nbChangeMsg{c: netbox.Change{Object: "interface", Name: "eno1", Action: "create", Detail: "1000base-t, MAC 3C:EC:EF:10:00:01"}, done: 2, total: 40},
+		nbChangeMsg{c: netbox.Change{Object: "inventory item", Name: "CPU1", Action: "unchanged"}, done: 3, total: 40},
+		nbChangeMsg{c: netbox.Change{Object: "inventory item", Name: "Memory P1-DIMMA1", Action: "update", Detail: `serial "3A5F0000"`}, done: 4, total: 40},
+		nbLogMsg("  ✖ inventory item GPU0: HTTP 400 {\"name\":[\"too long\"]}"),
+	}
+	for _, msg := range feed {
+		m.Update(msg)
+	}
+	s := screen(m)
+	checkFits(t, "sync live", s, w, h)
+	for _, want := range []string{"Dry run against https://nb.example.com", "10%", "4 of ~40", "2 would create", "1 would change",
+		"1 unchanged", "1 problems", "+ interface eno1", "~ inventory item Memory P1-DIMMA1", "✖ inventory item GPU0", "esc cancels"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("live view without %q:\n%s", want, s)
+		}
+	}
+	m.Update(press("esc"))
+	if !cancelled || m.nb.sync == nil {
+		t.Error("esc while running must cancel, not close")
+	}
+	m.Update(netboxDoneMsg{dry: true, rep: &netbox.Report{Device: "srv-healthy-01", Changes: []netbox.Change{{Object: "device", Name: "srv-healthy-01", Action: "create"}}}})
+	s = screen(m)
+	if !strings.Contains(s, "✔ would create 1") || !strings.Contains(s, "100%") || !strings.Contains(s, "enter: all objects") {
+		t.Errorf("finished view:\n%s", s)
+	}
+	m.Update(press("enter"))
+	if m.page == nil || m.nb != nil || !strings.Contains(screen(m), "Plan") {
+		t.Error("enter does not open the tables")
 	}
 }

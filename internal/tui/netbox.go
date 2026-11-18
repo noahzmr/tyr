@@ -35,6 +35,7 @@ type netboxDialog struct {
 	factsTop  int
 
 	picker *nbPicker // a list to choose from (sites, roles, tags …)
+	sync   *nbSync   // a write or dry run, live and finished
 
 	dirty   bool
 	confirm bool // esc once with unsaved changes
@@ -225,6 +226,9 @@ func (m *Model) updateNetBox(msg tea.KeyPressMsg) tea.Cmd {
 			m.nb = nil // the request finishes in the background
 		}
 		return nil
+	}
+	if d.sync != nil {
+		return m.updateSync(msg)
 	}
 	if d.picker != nil {
 		return m.updatePicker(msg)
@@ -451,12 +455,12 @@ func (m *Model) netboxAction() tea.Cmd {
 		}
 		cfg := d.cfg
 		d.busy = "testing " + cfg.URL + " …"
-		return func() tea.Msg {
+		return tea.Batch(m.spin.Tick, func() tea.Msg {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			v, err := netbox.NewClient(cfg, nil).Status(ctx)
 			return netboxDoneMsg{test: true, version: v, err: err}
-		}
+		})
 	}
 	if m.snap == nil {
 		d.err = "no snapshot yet"
@@ -470,17 +474,7 @@ func (m *Model) netboxAction() tea.Cmd {
 		d.err = err.Error()
 		return nil
 	}
-	cfg, tags, snap, dry := d.cfg, d.tags, m.snap, d.action == 2
-	d.busy = map[bool]string{true: "dry run against ", false: "writing to "}[dry] + cfg.URL + " …"
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
-		var log []string
-		rep, err := netbox.Sync(ctx, cfg, tags, netbox.Input{Snap: snap}, dry, func(f string, a ...any) {
-			log = append(log, fmt.Sprintf(f, a...))
-		})
-		return netboxDoneMsg{dry: dry, log: log, rep: rep, err: err}
-	}
+	return m.startSync(d.cfg, d.tags, m.snap, d.action == 2)
 }
 
 // netboxDone shows the result: a test in the dialog, a sync as a page.
@@ -488,6 +482,10 @@ func (m *Model) netboxDone(msg netboxDoneMsg) {
 	d := m.nb
 	if d != nil {
 		d.busy = ""
+	}
+	if !msg.test && d != nil && d.sync != nil && d.sync.result == nil {
+		m.syncDone(msg) // the live view stays, with the summary
+		return
 	}
 	if msg.test {
 		if d == nil {
@@ -556,8 +554,13 @@ func (m *Model) netboxView(base string) string {
 		pills = append(pills, pill(t, p, i == d.page))
 	}
 	lines := []string{strings.Join(pills, "") + "  " + t.Sub.Render("tab to switch"), ""}
+	if d.sync != nil {
+		lines = nil // the sync has the whole dialog
+	}
 	inner := min(96, m.width-4) - 4
 	switch {
+	case d.sync != nil:
+		lines = append(lines, m.syncLines(inner)...)
 	case d.picker != nil:
 		lines = append(lines, m.pickerLines(inner)...)
 	case d.page == 0:

@@ -266,7 +266,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.collect()
 
 	case spinner.TickMsg:
-		if m.snap != nil && !m.collecting {
+		if m.snap != nil && !m.collecting && !m.syncing() {
 			return m, nil
 		}
 		var cmd tea.Cmd
@@ -296,6 +296,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case netboxDoneMsg:
 		m.netboxDone(msg)
 		return m, nil
+
+	case nbChangeMsg, nbLogMsg:
+		return m, m.syncMsg(msg)
 
 	case netboxChoicesMsg:
 		m.netboxChoices(msg)
