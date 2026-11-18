@@ -7,8 +7,8 @@ maintainers or users".
 
 ## Statement
 
-As of 2026-11-18, Tyr does **not yet** meet Level 1: 15 requirements are
-met and 9 are open (2 of them close with the next release). Most open items come from two causes:
+As of 2026-11-18, Tyr does **not yet** meet Level 1: 16 requirements are
+met and 8 are open (2 of them close with the next release). Most open items come from two causes:
 
 1. **The repository is private.** GitHub answers `404 Not Found` to
    unauthenticated requests for `noahzmr/tyr`, its branches and its releases.
@@ -16,8 +16,7 @@ met and 9 are open (2 of them close with the next release). Most open items come
    discussion (GV-02), and in practice private vulnerability reporting and
    free secret scanning (VM-02, BR-07), which GitHub offers for public
    repositories.
-2. **`main` is not protected yet**, and there is no security contact
-   (`SECURITY.md`).
+2. **`main` is not protected yet.**
 
 The build pipeline is in good shape: CI runs on `pull_request` only, with
 read-only permissions and no secrets, and passes untrusted pull request text
@@ -53,7 +52,7 @@ read from outside; check it and record the date).
 | OSPS-QA-04.01 | Multi-repository projects list their codebases | Met | Tyr is a single repository; the README's directory structure covers it |
 | OSPS-QA-05.01 | No generated executable artifacts in version control | Met | The committed `tyr-linux-amd64` is removed (2026-11-18) and `/tyr-linux-*` ignored; `scripts/check-binaries.sh` fails on executables and packaged binaries in the pre-commit hook and in CI. The old file remains in the Git history |
 | OSPS-QA-05.02 | No unreviewable binary artifacts in version control | Met | Apart from the binary above, the only non-text files are about 120 tiny sysfs fixture files (`uevent`, `vpd`, `cmdline`, about 1 KB in all), generated from source by `tools/genfixture`, and the documentation's screenshots and diagrams (`docs/images/`) |
-| OSPS-VM-02.01 | Security contacts in the documentation | Gap | No `SECURITY.md`. Add one (how to report privately, what to include, response time, supported versions) and enable GitHub private vulnerability reporting, which requires a public repository |
+| OSPS-VM-02.01 | Security contacts in the documentation | Met | `SECURITY.md`: the maintainer as security contact, reporting through a private GitHub security advisory, what to include, supported versions, scope. The advisory form works once the repository is public and private vulnerability reporting is enabled (*Settings → Advanced Security*); no email address is needed - the Baseline accepts the forge's own reporting tool |
 
 ## Plan to reach Level 1
 
@@ -68,10 +67,9 @@ In this order; each step names the requirements it closes.
 3. ~~Remove the committed binary~~ (QA-05.01): done 2026-11-18, with a
    check in the hook and CI. The file stays in the history; removing it
    from there means rewriting history and force-pushing, which is optional.
-4. **Add the project documents** (VM-02.01): `SECURITY.md` with a private
-   reporting route (GitHub private vulnerability reporting, or a dedicated
-   security address - not a personal one). ~~`CONTRIBUTING.md` and the bug
-   report template~~ (GV-03.01, DO-02.01): done 2026-11-18.
+4. ~~Add the project documents~~ (VM-02.01, GV-03.01, DO-02.01): done
+   2026-11-18 - `SECURITY.md` (private GitHub security advisories),
+   `CONTRIBUTING.md`, the bug report template.
 5. **Make the repository public** (QA-01.01, QA-01.02, GV-02.01) with Issues
    on. Before that: review the history for anything not meant to be public
    (hosts, addresses, customer names in fixtures or documentation examples,
