@@ -1,0 +1,1 @@
+BOOT_IMAGE=/vmlinuz-6.8.0-49-generic root=/dev/md0 ro quiet

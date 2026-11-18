@@ -365,7 +365,7 @@ func storageSection(m *md, x *model.Storage) {
 	var rows, vols [][]string
 	for _, d := range x.Disks {
 		if r := d.Remote; r != nil {
-			vols = append(vols, []string{d.Name, strings.ToUpper(r.Transport), strings.TrimSpace(d.Vendor + " " + d.Model), bytesSI(d.SizeBytes),
+			vols = append(vols, []string{d.Name, transportName(r.Transport), strings.TrimSpace(d.Vendor + " " + d.Model), bytesSI(d.SizeBytes),
 				r.Target, r.Portal, r.State, fmt.Sprint(d.KernelErrors), status(d.Status)})
 			continue
 		}
@@ -396,6 +396,7 @@ func storageSection(m *md, x *model.Storage) {
 		m.table([]string{"Device", "Transport", "Volume", ">Size", "Target", "Portal", "State", ">Kernel I/O", "Status"}, vols)
 		m.p("_Volumes of a storage system: their disks are checked there. Kernel I/O errors here mean the path to the storage system failed._")
 	}
+	remoteSection(m, x)
 	if len(x.MDArrays) > 0 {
 		m.h(3, "Software RAID")
 		var rows [][]string

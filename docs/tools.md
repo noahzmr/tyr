@@ -21,7 +21,7 @@ Tyr looks for tools in `PATH` and in `/usr/local/sbin`, `/usr/local/bin`,
 | `ipmitool` / `ipmiutil` | the BMC through `/dev/ipmi0`: sensors, event log, FRU, LAN | a fallback when the device cannot be used |
 | `nvme` (nvme-cli) | the NVMe health log through an ioctl | a fallback for SMART on NVMe drives |
 | `df` | `statfs` | used only in fixtures |
-| `journalctl` | `/dev/kmsg` for this boot | part of systemd; Tyr uses it for earlier boots and the boot history |
+| `journalctl` | `/dev/kmsg` for this boot | part of systemd; Tyr uses it for earlier boots and the boot history, and on hosts with network storage or Kubernetes for iscsid's, multipathd's and the kubelet's (k3s, rke2) volume messages of the last 24 hours |
 
 `tyr check-native` (as root) compares the native readers with these tools on
 a host and lists every difference.
@@ -34,6 +34,7 @@ a host and lists every difference.
 | `ras-mc-ctl` | `rasdaemon` (enable the service) | machine checks rasdaemon kept across boots | the history comes from the journal and pstore only |
 | `lldpctl` | `lldpd` (enable the service) | the switch and port each NIC is connected to | no LLDP neighbours |
 | `docker`, `go` | Docker, Go | building the Tyr ISO (`make iso`, `I` in the TUI) | no ISO; everything else works |
+| `ip` | `iproute2` | which interface carries an iSCSI / NVMe-oF session (`ip route get <portal>`) | sessions without their interface |
 | `wg` | `wireguard-tools` | WireGuard peers: endpoint, last handshake, traffic (as root; keys other than public ones are never kept) | WireGuard interfaces without peer status |
 | `ipmitool` | `ipmitool` | BMC fallback, and `tyr check-native` | nothing while `/dev/ipmi0` works |
 | `wl-copy` / `xclip` / `xsel` | `wl-clipboard` / `xclip` / `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) on a desktop | copy works only through OSC 52 |
@@ -139,4 +140,7 @@ run them.
 |---|---|---|
 | `ssacli` | HPE Smart Array configuration: empty bays, disabled drives, cache | [HPE Software Delivery Repository](https://downloads.linux.hpe.com/SDR/), project "mcp" |
 | `ilorest` | HPE iLO from the OS: IML, AHS log | [github.com/HewlettPackard/python-redfish-utility](https://github.com/HewlettPackard/python-redfish-utility) |
-| `iscsiadm` | iSCSI sessions | package `open-iscsi` (Debian, Ubuntu, SUSE) / `iscsi-initiator-utils` (RHEL) |
+| `iscsiadm` | iSCSI sessions: log out an orphaned session, show its settings (Tyr reads the sessions from sysfs and only checks that it is installed) | package `open-iscsi` (Debian, Ubuntu, SUSE) / `iscsi-initiator-utils` (RHEL) |
+| `multipath` | which device multipathd holds; its blacklist (`multipath -t`) | package `multipath-tools` / `device-mapper-multipath` |
+| `nvme` | NVMe-oF subsystems and paths (`nvme list-subsys`) | package `nvme-cli` |
+| `longhornctl` | Longhorn's own node preflight (`longhornctl check preflight`) with the cluster | [github.com/longhorn/cli](https://github.com/longhorn/cli) |

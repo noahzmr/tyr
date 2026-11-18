@@ -382,6 +382,42 @@
       ],
       "exit": 0,
       "stdout": "cmd/journalctl_vpn_wg0.txt"
+    },
+    {
+      "argv": [
+        "journalctl",
+        "-o",
+        "json",
+        "--no-pager",
+        "-q",
+        "--since=-24h",
+        "-n",
+        "5000",
+        "-g",
+        "iscsi|longhorn|multipath|mountvolume|mountdevice|attachvolume|unmountvolume|unmountdevice|mapvolume|connection[0-9]+:[0-9]+|nvme|already mounted|mount point busy|error|fail",
+        "SYSLOG_IDENTIFIER=iscsid",
+        "+",
+        "SYSLOG_IDENTIFIER=multipathd",
+        "+",
+        "SYSLOG_IDENTIFIER=kubelet",
+        "+",
+        "SYSLOG_IDENTIFIER=k3s",
+        "+",
+        "SYSLOG_IDENTIFIER=rke2"
+      ],
+      "stdout": "cmd/journalctl_node.txt",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "ip",
+        "-j",
+        "route",
+        "get",
+        "10.16.40.20"
+      ],
+      "stdout": "cmd/ip_-j_route_get_10.16.40.20.txt",
+      "exit": 0
     }
   ],
   "description": "synthetic: same host as server-healthy with faults: cpu7 offline, hot socket 1, throttling, corrected MCEs on cpu12, simulated core-test failure on cpu21",
@@ -409,7 +445,8 @@
     "nvidia-smi": "/usr/bin/nvidia-smi",
     "smartctl": "/usr/sbin/smartctl",
     "storcli64": "/opt/MegaRAID/storcli/storcli64",
-    "wg": "/usr/bin/wg"
+    "wg": "/usr/bin/wg",
+    "iscsiadm": "/usr/sbin/iscsiadm"
   },
   "virtualization": "none"
 }

@@ -147,7 +147,10 @@ func (s *storageTab) Strip(t *Theme, w int) string {
 	}
 	rest = append(rest, countLabel(len(x.Filesystems), "filesystem", "filesystems"))
 	l := s.lists[s.view]
-	right := rightPart(t, l.prefs, len(l.shown), len(l.all), []string{"Disks", "RAID", "Filesystems"}, s.view)
+	if lh := x.Longhorn; lh != nil {
+		rest = append(rest[:min(1, len(rest))], append([]string{fmt.Sprintf("Longhorn (%s)", countLabel(len(lh.Volumes), "volume", "volumes"))}, rest[min(1, len(rest)):]...)...)
+	}
+	right := rightPart(t, l.prefs, len(l.shown), len(l.all), s.storageViews(), s.view)
 	return statusStrip(t, x.Status, bold, strings.Join(rest, " · "), right, w)
 }
 

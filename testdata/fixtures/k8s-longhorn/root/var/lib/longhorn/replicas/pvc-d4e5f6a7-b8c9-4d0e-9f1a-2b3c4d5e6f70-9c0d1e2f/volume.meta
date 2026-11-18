@@ -1,0 +1,1 @@
+{"Size": 10737418240, "Head": "volume-head-003.img", "Dirty": true, "Rebuilding": false, "Error": "failed to write volume-head-003.img: input/output error", "Parent": "volume-snap-c0ffee.img", "SectorSize": 512, "BackingFilePath": ""}

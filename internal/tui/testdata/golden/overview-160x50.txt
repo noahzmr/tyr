@@ -1,9 +1,9 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 27 warn   ✖ CRIT
- 1 Overview ✖52   2 CPU ✖8   3 Memory ✖9   4 Storage ✖12   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  26 crit 27 warn   ✖ CRIT
+ 1 Overview ✖53   2 CPU ✖8   3 Memory ✖9   4 Storage ✖13   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
  ✖ CRIT  Needs attention  CPU · Memory · Storage · Power · Network · GPU/NPU · Events  System
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮ ╭─────────────────────────────────────╮
-┃ ✖ CPU                      CRIT · 8 ┃ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 12 │ │ ✖ Power                    CRIT · 2 │
+┃ ✖ CPU                      CRIT · 8 ┃ │ ✖ Memory                   CRIT · 9 │ │ ✖ Storage                 CRIT · 13 │ │ ✖ Power                    CRIT · 2 │
 ┃ 63/64 online · max 96°C             ┃ │ 512 GB · 16/32 slots                │ │ 8 disks · md1 degraded              │ │ 1/2 PSUs OK · 412 W of 2400 W       │
 ┃ ▸ 1 core offline (cpu7); taken      ┃ │ ▸ 1 memory event in BMC SEL, latest │ │ ▸ sdd: 2 I/O errors in kernel log,  │ │ ▸ PSU2: S/N P1K22CL21123452 ·       │
 ┃   offline at runtime - back online… ┃ │   2026-11-14 09:00: Uncorrectable … │ │   last: 2026-11-15 12:00:00 I/O er… │ │   Critical · input 0 V (no AC inpu… │
@@ -17,7 +17,7 @@
 │                                     │ │ util                                │ │                                     │ │ Supermicro X12DPU-6                 │
 ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯ ╰─────────────────────────────────────╯
 
-Findings 25 ✖ · 27 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── worst first · 1–28 of 52
+Findings 26 ✖ · 27 ▲ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── worst first · 1–28 of 53
  ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot                                            10:00        ┃
  ✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - still runs work: the core is not isolated     10:00        ┃
  ✖ CPU      cpu39         4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (cpu39), in 4 different programs: the core… 10:00        ┃
@@ -32,8 +32,9 @@ Findings 25 ✖ · 27 ▲ ──────────────────
  ✖ Storage  md1           md1 (raid5) degraded: 3/4 devices, failed sdd1                                                                          10:00        ┃
  ✖ Storage  0/0           RAID virtual drive 0/0 (RAID5 archive) state Dgrd                                                                       10:00        ┃
  ✖ Storage  252:2         RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed                                                            10:00        ┃
- ✖ Storage  /data         /data (xfs) is mounted read-only                                                                                        10:00        ┃
+ ✖ Storage  /data         /data (xfs) is mounted read-only                                                                                        10:00        │
  ✖ Storage  /data         /data 96% full                                                                                                          10:00        │
+ ✖ Storage  session1      session1 to iqn.2024-01.net.example:backup.vol2 at 10.16.40.20:3260 via bond0.100: the path stayed down past the recov… 10:00        │
  ✖ Power    PSU2          PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no AC input: cable, PDU or breaker) · output 0 W                      10:00        │
  ✖ Power    PSU Redundan… PSU Redundancy (N+m): Critical - one more failure and the server loses power                                            10:00        │
  ✖ Network  bond0         bond0 degraded: ens1f1 down (1/2 members up)                                                                            10:00        │
@@ -45,6 +46,5 @@ Findings 25 ✖ · 27 ▲ ──────────────────
  ✖ Events   System Event… System Event Log 2026-11-15 10:00: PS2 Status: Power Supply AC lost                                                     10:00        │
  ▲ System   boots         1 of 2 boots in the last 30 days ended without a clean shutdown (crash, hard reset or power loss): 2026-11-07 09:48 af… 10:00        │
  ▲ CPU      cpu12         2 machine check errors on cpu12 (corrected)                                                                             10:00        │
- ▲ CPU      CPU1 Package  CPU1 Package at 93°C (warn 90°C)                                                                                        10:00        │
 
 ←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help

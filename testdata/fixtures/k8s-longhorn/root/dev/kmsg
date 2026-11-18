@@ -1,0 +1,25 @@
+6,1000,5000000,-;Linux version 6.8.0-49-generic (buildd@lcy02-amd64-028) #49-Ubuntu SMP
+6,1001,9000000,-;EDAC MC0: Giving out device to module i10nm_edac controller Intel_10nm Socket#0 IMC#0: DEV 0000:7e:0c.0 (INTERRUPT)
+6,1002,11000000,-;ice 0000:4b:00.0 ens1f0: NIC Link is up 25 Gbps Full Duplex, Requested FEC: RS-FEC, Negotiated FEC: RS-FEC, Autoneg Advertised: On, Autoneg Negotiated: False, Flow Control: None
+6,1003,12000000,-;wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+6,1004,600000000,-;scsi host9: iSCSI Initiator over TCP/IP
+5,1005,601000000,-;sd 9:0:0:1: [sdf] Attached SCSI disk
+5,1006,86400000000,-;sd 9:0:0:1: [sdf] Synchronizing SCSI cache
+6,1007,669600000000,-;scsi host10: iSCSI Initiator over TCP/IP
+5,1008,669601000000,-;sd 10:0:0:1: [sdg] Attached SCSI disk
+6,1009,669660000000,-;scsi host11: iSCSI Initiator over TCP/IP
+5,1010,669661000000,-;sd 11:0:0:1: [sdh] Attached SCSI disk
+6,1011,673200000000,-;scsi host12: iSCSI Initiator over TCP/IP
+3,1012,705600000000,-; connection2:0: ping timeout of 5 secs expired, recv timeout 5, last rx 4339172480, last ping 4339173760, now 4339175040
+3,1013,705600002000,-; connection2:0: detected conn error (1022)
+3,1014,738000000000,-; connection2:0: ping timeout of 5 secs expired, recv timeout 5, last rx 4339172480, last ping 4339173760, now 4339175040
+3,1015,738000002000,-; connection2:0: detected conn error (1022)
+3,1016,770400000000,-; connection2:0: ping timeout of 5 secs expired, recv timeout 5, last rx 4339172480, last ping 4339173760, now 4339175040
+3,1017,770400002000,-; connection2:0: detected conn error (1022)
+3,1018,756000000000,-; connection3:0: detected conn error (1020)
+3,1019,756120000000,-; session3: session recovery timed out after 120 secs
+3,1020,756121000000,-;sd 11:0:0:1: rejecting I/O to offline device
+3,1021,756121005000,-;I/O error, dev sdh, sector 2048 op 0x1:(WRITE) flags 0x800 phys_seg 1 prio class 0
+2,1022,756122000000,-;EXT4-fs error (device sdh): ext4_journal_check_start:83: comm kworker/u64:2: Detected aborted journal
+2,1023,756122001000,-;EXT4-fs (sdh): Remounting filesystem read-only
+3,1024,766800000000,-; connection4:0: detected conn error (1020)

@@ -1,6 +1,6 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 27 warn   ✖ CRIT
- 1 Overview ✖52   2 CPU ✖8   3 Memory ✖9   4 Storage ✖12   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
- ✖ CRIT  7 disks · 26 TB · 1 network volume (1 session down) · md1 degraded · 1 RAID controller · 4 filesystems                     v Disks · RAID · Filesystems
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  26 crit 27 warn   ✖ CRIT
+ 1 Overview ✖53   2 CPU ✖8   3 Memory ✖9   4 Storage ✖13   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
+ ✖ CRIT  7 disks · 26 TB · 1 network volume (1 session down) · md1 degraded · 1 RAID controller · 4 filesystems           v Disks · RAID · Filesystems · Network
 
    Disk     Type  Model                  Serial            Size  °C  Wear SMART  Errors Why
 ▌✖ sdd      HDD   ST4000NM000A-2HZ100    WJG0A004          4 TB  36     – PASSED  2 I/O 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev s…
@@ -10,32 +10,32 @@
  ● nvme0n1  NVMe  SAMSUNG MZQL21T9HCJR-… S64GNE0R100001  1.9 TB  39   3 % PASSED      0 –
  ● sda      HDD   ST4000NM000A-2HZ100    WJG0A001          4 TB  33     – PASSED      0 –
  ● sdb      HDD   ST4000NM000A-2HZ100    WJG0A002          4 TB  34     – PASSED      0 –
- ● sde      HDD   AVAGO MR9361-8i        –                 6 TB   –     – –           0 –
-                                ╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮
-sdd ────────────────────────────│ Navigation                    Health                        Data · stress                    │1 member · enter full SMART page
-Model     ST4000NM000A-2HZ100   │ 1–0        switch tab         n          next problem       r          refresh now           │
-Serial    WJG0A004              │ tab ⇧tab   next / prev tab    i          explain alert      p          pause / resume        │31 since boot
-Firmware  SN04                  │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │
-Path      /dev/sdd · sata       │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
-                                │ pgup pgdn  page               v          switch view        R          reports               │(2.3 y)
-                                │ g G        top / end          /          search             N W        NetBox · webhooks     │
-Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   A          alert reference       │lags 0x80700 phys_seg 1 prio
-                class 0         │                               h          virtual NICs       s S F      stress tests          │
- ✖ sdf          sdf (iSCSI 10.16│                                                             q ctrl+c   quit · stop all       │he session, the network path
-                and the target, │                                                                                              │prio class 0
- ✖ sdf          sdf: iSCSI sessi│ This tab · Storage                                                                           │
- ✖ md1          md1 (raid5) degr│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
- ✖ 0/0          RAID virtual dri│ counters and / search · c copies the serial                                                  │
+ ● sde      HDD   AVAGO MR9361-8╭─ Keys ──────────────────────────────────────────────────────────────── tyr dev · ? to close ─╮
+                                │ Navigation                    Health                        Data · stress                    │
+sdd ────────────────────────────│ 1–0        switch tab         n          next problem       r          refresh now           │1 member · enter full SMART page
+Model     ST4000NM000A-2HZ100   │ tab ⇧tab   next / prev tab    i          explain alert      p          pause / resume        │
+Serial    WJG0A004              │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │31 since boot
+Firmware  SN04                  │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
+Path      /dev/sdd · sata       │ pgup pgdn  page               v          switch view        R          reports               │
+                                │ g G        top / end          /          search             N W        NetBox · webhooks     │(2.3 y)
+                                │ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │
+Findings · Storage 9 ✖ · 4 ▲ ───│ esc        back · close       a          empty DIMM slots   A          alert reference       │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│                               h          virtual NICs       s S F      stress tests          │lags 0x80700 phys_seg 1 prio
+                class 0         │                                                             q ctrl+c   quit · stop all       │
+ ✖ sdf          sdf (iSCSI 10.16│                                                                                              │he session, the network path
+                and the target, │ This tab · Storage                                                                           │prio class 0
+ ✖ sdf          sdf: iSCSI sessi│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n │
+ ✖ md1          md1 (raid5) degr│ next problem · enter opens the page with SMART attributes, counters and / search · c copies  │
+ ✖ 0/0          RAID virtual dri│ the serial                                                                                   │
  ✖ 252:2        RAID physical dr│ ↑↓ move  enter open  v view  n next problem                                                  │
  ✖ /data        /data (xfs) is m│                                                                                              │
  ✖ /data        /data 96% full  │ Status                                                                                       │
- ▲ nvme1n1      nvme1n1: 93% of │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ▲ nvme1n1      nvme1n1: 3 media│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ▲ sdc          sdc: 8 pending s│                                                                                              │
- ▲ sdc          sdc: 24 realloca│ Any key closes this window.                                                                  │
-                                ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
-
+ ✖ session1     session1 to iqn.│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │ recovery timeout 1× since boot
+                (last 2026-11-15│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ▲ nvme1n1      nvme1n1: 93% of │                                                                                              │
+ ▲ nvme1n1      nvme1n1: 3 media│ Any key closes this window.                                                                  │
+ ▲ sdc          sdc: 8 pending s╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+ ▲ sdc          sdc: 24 reallocated sectors
 
 
 

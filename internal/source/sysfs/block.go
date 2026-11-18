@@ -142,8 +142,19 @@ func ReadBlockDevs(f hostfs.FS) []BlockDev {
 			b.Model = hostfs.StringOr(f, dev+"/model", "")
 			b.Serial = hostfs.StringOr(f, dev+"/serial", "")
 			b.Firmware = hostfs.StringOr(f, dev+"/firmware_rev", "")
-			if t := hostfs.StringOr(f, dev+"/transport", "pcie"); t != "pcie" {
+			ctrl := "/sys/class/nvme/" + b.NVMeCtrl
+			if strings.HasPrefix(b.NVMeCtrl, "nvme-subsys") { // native multipath: the subsystem, its controllers are the paths
+				if cs, _ := f.Glob(b.SysPath + "/nvme[0-9]*"); len(cs) > 0 {
+					sort.Strings(cs)
+					ctrl = "/sys/class/nvme/" + path.Base(cs[0])
+					b.NVMeCtrl = path.Base(cs[0])
+				}
+			}
+			if t := hostfs.StringOr(f, ctrl+"/transport", hostfs.StringOr(f, dev+"/transport", "pcie")); t != "pcie" {
 				b.Interface = "nvme-" + t
+				if t != "loop" {
+					b.Remote = nvmeLink(f, ctrl, t)
+				}
 			}
 		case strings.HasPrefix(name, "vd"):
 			b.Interface = "virtio"
@@ -258,7 +269,8 @@ type Mount struct {
 	FSType     string
 	Root       string
 	MajMin     string
-	ReadOnly   bool
+	ReadOnly   bool // the mount is read-only
+	SuperRO    bool // the filesystem is read-only (ext4 errors=remount-ro after an error)
 }
 
 // ParseMountinfo parses /proc/self/mountinfo.
@@ -280,6 +292,13 @@ func ParseMountinfo(data []byte) []Mount {
 		for _, o := range strings.Split(f[5], ",") {
 			if o == "ro" {
 				m.ReadOnly = true
+			}
+		}
+		if sep+3 < len(f) {
+			for _, o := range strings.Split(f[sep+3], ",") {
+				if o == "ro" {
+					m.SuperRO = true
+				}
 			}
 		}
 		out = append(out, m)

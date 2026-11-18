@@ -14,6 +14,12 @@ type Storage struct {
 	MDArrays    []MDArray        `json:"md_arrays"`
 	Controllers []RAIDController `json:"raid_controllers"`
 	Filesystems []Filesystem     `json:"filesystems"`
+	// Remote is the initiator side of network block storage: every iSCSI
+	// session and NVMe-over-Fabrics controller, what the kernel and iscsid
+	// logged about them, and the node checks for Longhorn / Kubernetes.
+	Remote *RemoteStorage `json:"remote_storage,omitempty"`
+	// Longhorn is set on a Longhorn node: its data disks, replicas and logs.
+	Longhorn *Longhorn `json:"longhorn,omitempty"`
 }
 
 // Disk is one physical (or virtual, in VMs) block device.
@@ -191,11 +197,137 @@ type Filesystem struct {
 
 // RemoteDisk is the path to a network block device.
 type RemoteDisk struct {
-	Transport string `json:"transport"`         // iscsi, fc
-	Target    string `json:"target,omitempty"`  // iSCSI IQN, FC WWPN
-	Portal    string `json:"portal,omitempty"`  // iSCSI address:port
-	Session   string `json:"session,omitempty"` // session3, rport-2:0-1
-	State     string `json:"state,omitempty"`   // LOGGED_IN / FAILED (iSCSI), Online / Blocked (FC)
+	Transport string `json:"transport"`                 // iscsi, fc
+	Target    string `json:"target,omitempty"`          // iSCSI IQN, FC WWPN
+	Portal    string `json:"portal,omitempty"`          // iSCSI address:port
+	Session   string `json:"session,omitempty"`         // session3, rport-2:0-1, nvme2
+	State     string `json:"state,omitempty"`           // LOGGED_IN / FAILED (iSCSI), Online / Blocked (FC), live / connecting (NVMe-oF)
+	Longhorn  string `json:"longhorn_volume,omitempty"` // the Longhorn volume (pvc-…) this LUN is
+}
+
+// RemoteStorage is this host as an initiator of network block storage.
+type RemoteStorage struct {
+	Initiator string          `json:"iscsi_initiator,omitempty"` // InitiatorName from /etc/iscsi/initiatorname.iscsi
+	HostNQN   string          `json:"nvme_hostnqn,omitempty"`    // /etc/nvme/hostnqn
+	Sessions  []RemoteSession `json:"sessions"`
+	// Events is the timeline of the current boot: logins, connection
+	// errors, recoveries, offline devices, filesystems gone read-only.
+	Events []RemoteEvent `json:"events,omitempty"`
+	// Checks are the node checks (open-iscsi, iscsid, multipathd, Longhorn's
+	// prerequisites) - run on hosts with sessions or Longhorn / Kubernetes.
+	Checks []NodeCheck `json:"checks,omitempty"`
+	// Logs are the errors of the last 24 hours that the kubelet (k3s,
+	// rke2), the CSI plugin, Longhorn, iscsid and multipathd logged about
+	// volumes, folded with their repeats.
+	Logs []NodeLogEntry `json:"logs,omitempty"`
+}
+
+// RemoteSession is one iSCSI session or NVMe-oF controller.
+type RemoteSession struct {
+	Transport string   `json:"transport"`            // iscsi, nvme-tcp, nvme-rdma, nvme-fc
+	ID        string   `json:"id"`                   // session3, nvme2
+	Target    string   `json:"target,omitempty"`     // IQN / subsystem NQN
+	Portal    string   `json:"portal,omitempty"`     // address:port
+	Local     string   `json:"local_addr,omitempty"` // the initiator's address
+	Interface string   `json:"interface,omitempty"`  // the network interface the portal is reached through
+	State     string   `json:"state,omitempty"`      // LOGGED_IN / FAILED / FREE; live / connecting / resetting
+	ConnState string   `json:"conn_state,omitempty"` // iSCSI connection: up / down / failed
+	Disks     []string `json:"disks,omitempty"`      // sdc, nvme2n1
+	// RecoveryTimeout is how long the kernel holds I/O while the path is
+	// down before it fails it (iSCSI replacement_timeout, NVMe ctrl_loss_tmo).
+	RecoveryTimeout *int   `json:"recovery_timeout_s,omitempty"`
+	HeaderDigest    string `json:"header_digest,omitempty"`
+	DataDigest      string `json:"data_digest,omitempty"`
+	Longhorn        string `json:"longhorn_volume,omitempty"` // a Longhorn volume's engine, not a storage system
+	// from the kernel log and iscsid since boot
+	ConnErrors       int       `json:"conn_errors"`
+	Recoveries       int       `json:"recoveries"`        // the connection came back
+	RecoveryTimeouts int       `json:"recovery_timeouts"` // the kernel gave up and failed the I/O
+	DigestErrors     int       `json:"digest_errors"`
+	LastError        string    `json:"last_error,omitempty"`
+	LastErrorAt      time.Time `json:"last_error_at,omitzero"`
+	Status           Status    `json:"status"`
+}
+
+// Gone reports a session that is in the log but no longer in sysfs.
+func (s RemoteSession) Gone() bool { return s.State == "gone" }
+
+// RemoteEvent is one line of the network storage timeline.
+type RemoteEvent struct {
+	Time     time.Time `json:"time,omitzero"`
+	Session  string    `json:"session,omitempty"` // session3, nvme2
+	Disk     string    `json:"disk,omitempty"`
+	Kind     string    `json:"kind"` // login, logout, conn_error, ping_timeout, recovered, recovery_timeout, offline_io, io_error, fs_error, fs_readonly, reconnect, digest_error
+	Source   string    `json:"source"`
+	Severity Status    `json:"severity"`
+	Message  string    `json:"message"`
+}
+
+// NodeCheck is one prerequisite of iSCSI / Longhorn on this node.
+type NodeCheck struct {
+	ID     string `json:"id"`    // iscsid, iscsi_tcp, initiator_name, multipathd, nfs_client, dm_crypt, nvme_tcp, hugepages, …
+	Scope  string `json:"scope"` // iscsi, longhorn, longhorn-v2
+	Name   string `json:"name"`
+	OK     bool   `json:"ok"`
+	Status Status `json:"status"` // OK, or how bad the missing piece is here
+	Detail string `json:"detail,omitempty"`
+	Fix    string `json:"fix,omitempty"`
+}
+
+// Longhorn is what a Longhorn node shows locally, without the Kubernetes
+// API: its data disks, the replicas on them, the volumes attached here and
+// the errors Longhorn, the CSI plugin and the kubelet logged.
+type Longhorn struct {
+	Kubernetes string      `json:"kubernetes,omitempty"` // k3s, rke2, kubelet
+	Evidence   []string    `json:"evidence"`             // why Tyr thinks this is a Longhorn node
+	Engine     string      `json:"engine,omitempty"`     // v1, v2, v1+v2: the data engines seen in use
+	Volumes    []LHVolume  `json:"volumes,omitempty"`
+	Disks      []LHDisk    `json:"disks,omitempty"`
+	Replicas   []LHReplica `json:"replicas,omitempty"`
+}
+
+// LHVolume is a Longhorn volume attached to this node.
+type LHVolume struct {
+	Name     string   `json:"name"`             // pvc-…
+	Device   string   `json:"device,omitempty"` // sdc, nvme3n1
+	Session  string   `json:"session,omitempty"`
+	Mounts   []string `json:"mountpoints,omitempty"`
+	ReadOnly bool     `json:"read_only"` // mounted read-only (after a filesystem error)
+	Status   Status   `json:"status"`
+}
+
+// LHDisk is a Longhorn data path (a directory with longhorn-disk.cfg).
+type LHDisk struct {
+	Path        string   `json:"path"`
+	UUID        string   `json:"uuid,omitempty"`
+	Device      string   `json:"device,omitempty"` // the filesystem's source
+	Disks       []string `json:"disks,omitempty"`  // the physical disks under it
+	FSType      string   `json:"fstype,omitempty"`
+	SizeBytes   uint64   `json:"size_bytes"`
+	UsedPercent *float64 `json:"used_percent"`
+	Replicas    int      `json:"replicas"`
+	Status      Status   `json:"status"`
+}
+
+// LHReplica is a replica directory on one of the data disks.
+type LHReplica struct {
+	Dir        string `json:"dir"`
+	Volume     string `json:"volume"`
+	Disk       string `json:"disk"` // data path
+	SizeBytes  uint64 `json:"size_bytes"`
+	Rebuilding bool   `json:"rebuilding"`
+	Error      string `json:"error,omitempty"`
+}
+
+// NodeLogEntry is a log line of Longhorn, the CSI plugin, the kubelet,
+// iscsid or multipathd, folded with its repeats.
+type NodeLogEntry struct {
+	Time    time.Time `json:"time,omitzero"` // the latest
+	Source  string    `json:"source"`        // kubelet, longhorn-manager, instance-manager, longhorn-csi-plugin, iscsid, multipathd
+	Level   string    `json:"level"`         // error, warning
+	Message string    `json:"message"`
+	Count   int       `json:"count"`
+	Volume  string    `json:"volume,omitempty"`
 }
 
 // Local reports a disk in this host (not an iSCSI or FC volume).

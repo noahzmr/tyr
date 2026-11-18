@@ -143,9 +143,11 @@ match; the TUI shows them under `f` and while editing a rule.
 | `memory_gb` | number | installed memory in GiB (DIMMs; else what the OS sees) |
 | `dimms`, `dimm_slots` | number | populated and total DIMM slots |
 | `ecc` | true/false | ECC memory |
-| `disks`, `disk_tb` | number | physical disks (not USB, not virtual) and their capacity in TB |
+| `disks`, `disk_tb` | number | physical disks (not USB, not virtual, not iSCSI / FC / NVMe-oF volumes) and their capacity in TB |
 | `ssds`, `nvme`, `hdds` | number | by kind |
 | `raid_controllers` | number | hardware RAID controllers |
+| `iscsi_sessions` | number | iSCSI sessions and NVMe-oF controllers now |
+| `longhorn` | true/false | a Longhorn node (`longhorn` → tag `longhorn-node`) |
 | `nics`, `nics_10g` | number | physical ports, ports of 10 Gbit/s or more |
 | `nic_speed_max` | number | fastest port in Mbit/s (link speed, else supported) |
 | `nic_models`, `gpu_model` | text | models, comma-separated |

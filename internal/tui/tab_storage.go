@@ -17,15 +17,15 @@ import (
 type storageTab struct {
 	st      *model.Storage
 	w, h    int
-	view    int // 0 disks, 1 RAID, 2 filesystems
-	lists   [3]*listView
+	view    int // 0 disks, 1 RAID, 2 filesystems, 3 network storage
+	lists   [4]*listView
 	keys    keyMap
 	switchV key.Binding
 }
 
 func newStorageTab(p *prefs) *storageTab {
 	return &storageTab{keys: newKeyMap(), switchV: key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "view")),
-		lists: [3]*listView{newListView(p), newListView(p), newListView(p)}}
+		lists: [4]*listView{newListView(p), newListView(p), newListView(p), newListView(p)}}
 }
 
 func (s *storageTab) Title() string             { return "Storage" }
@@ -96,6 +96,10 @@ func (s *storageTab) arrange() {
 		fs = append(fs, listItem{key: f.Mountpoint, alt: []string{f.Source}, status: f.Status})
 	}
 	s.lists[2].arrange(fs)
+	s.lists[3].arrange(s.remoteItems())
+	if s.view >= len(s.storageViews()) {
+		s.view = 0
+	}
 }
 
 func (s *storageTab) Focus(subject string) bool {
@@ -111,7 +115,7 @@ func (s *storageTab) Focus(subject string) bool {
 
 func (s *storageTab) Update(msg tea.KeyPressMsg) tea.Cmd {
 	if key.Matches(msg, s.switchV) {
-		s.view = (s.view + 1) % 3
+		s.view = (s.view + 1) % len(s.storageViews())
 		return nil
 	}
 	s.lists[s.view].handle(msg, s.keys, max(1, s.h/2))
@@ -130,6 +134,8 @@ func (s *storageTab) View(t *Theme) string {
 		detail = s.diskDetail(t)
 	case 1:
 		detail = s.raidDetail(t)
+	case 3:
+		detail = s.remoteDetail(t)
 	}
 	avail := s.h - lipgloss.Height(detail) - 1
 	if detail == "" {
@@ -142,6 +148,8 @@ func (s *storageTab) View(t *Theme) string {
 	case 1:
 		need := lipgloss.Height(s.raid(t, 1000))
 		list = s.raid(t, listHeight(avail, need-1, countNonOK(x.Findings))-2)
+	case 3:
+		list = s.remote(t, rows)
 	default:
 		list = s.filesystems(t, rows)
 	}
@@ -592,6 +600,8 @@ func (s *storageTab) Detail(t *Theme, w int) (string, string) {
 		return "Disk " + d.Name, s.diskPage(doc, d)
 	case 1:
 		return it.key, s.raidPage(doc, s.raidItems()[it.key], it.key)
+	case 3:
+		return s.remotePage(doc, it.key)
 	}
 	for _, f := range s.st.Filesystems {
 		if f.Mountpoint != it.key {

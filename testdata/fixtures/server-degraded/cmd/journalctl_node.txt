@@ -1,0 +1,4 @@
+{"__REALTIME_TIMESTAMP": "1794749400000000", "SYSLOG_IDENTIFIER": "iscsid", "PRIORITY": "3", "MESSAGE": "Kernel reported iSCSI connection 1:0 error (1020 - ISCSI_ERR_TCP_CONN_CLOSE: TCP connection closed) state (3)", "_SYSTEMD_UNIT": "iscsid.service"}
+{"__REALTIME_TIMESTAMP": "1794749430000000", "SYSLOG_IDENTIFIER": "iscsid", "PRIORITY": "3", "MESSAGE": "connect to 10.16.40.20:3260 failed (No route to host)", "_SYSTEMD_UNIT": "iscsid.service"}
+{"__REALTIME_TIMESTAMP": "1794760200000000", "SYSLOG_IDENTIFIER": "iscsid", "PRIORITY": "3", "MESSAGE": "connect to 10.16.40.20:3260 failed (No route to host)", "_SYSTEMD_UNIT": "iscsid.service"}
+{"__REALTIME_TIMESTAMP": "1794819300000000", "SYSLOG_IDENTIFIER": "iscsid", "PRIORITY": "3", "MESSAGE": "connect to 10.16.40.20:3260 failed (No route to host)", "_SYSTEMD_UNIT": "iscsid.service"}

@@ -1,5 +1,5 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 27 warn   ✖ CRIT
- 1 Overview ✖52   2 CPU ✖8   3 Memory ✖9   4 Storage ✖12   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  26 crit 27 warn   ✖ CRIT
+ 1 Overview ✖53   2 CPU ✖8   3 Memory ✖9   4 Storage ✖13   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
  ✖ CRIT  48 components · 15 with problems · serials visible                                                                                        v List · Tree
 
 Search ╭─ sdd─────────────────╮  Category  all  system chassis board BMC CPU DIMM disk volume RAID RAID PD NIC xcvr GPU PSU FRU

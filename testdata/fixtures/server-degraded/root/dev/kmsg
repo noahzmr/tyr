@@ -20,3 +20,8 @@
 3,1019,712800000000,-;NVRM: Xid (PCI:0000:ca:00): 48, pid=48211, name=python3, An uncorrectable double bit error (DBE) has been detected on GPU in the framebuffer at partition 6, subpartition 0.
 6,1020,712801000000,-;wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
 6,1021,712802000000,-;wireguard: wg0: Handshake for peer 4 (203.0.113.10:51820) did not complete after 5 seconds, retrying (try 2)
+6,1022,41000000,-;scsi host9: iSCSI Initiator over TCP/IP
+5,1023,42000000,-;sd 9:0:0:1: [sdf] Attached SCSI disk
+3,1024,707394000000,-; connection1:0: ping timeout of 5 secs expired, recv timeout 5, last rx 4339172480, last ping 4339173760, now 4339175040
+3,1025,707520000000,-; session1: session recovery timed out after 120 secs
+3,1026,707521000000,-;sd 9:0:0:1: rejecting I/O to offline device

@@ -215,7 +215,46 @@ battery. A controller whose drives the host sees itself (HBA mode, direct
 NVMe) is not listed again. iSCSI and Fibre Channel LUNs are
 listed as **network volumes**, not disks: their session or remote port, target,
 portal and state, and the kernel I/O errors on the path to the storage system.
-Their SMART belongs to the storage system and is not queried.
+Their SMART belongs to the storage system and is not queried. NVMe over TCP,
+RDMA and FC namespaces are network volumes too.
+
+#### Network storage: iSCSI, NVMe-oF, Longhorn
+
+Beyond the volumes, Tyr looks at every **session** (`/sys/class/iscsi_session`,
+NVMe-oF controllers in `/sys/class/nvme`), also one that has no disk any more:
+target, portal, the local address and the interface the portal is reached
+through (`ip route get`), state, recovery timeout (`replacement_timeout`,
+`ctrl_loss_tmo`) and digests. From the kernel log and iscsid's journal it builds
+a **timeline of the boot**: logins, connection errors with their code decoded
+(`1020` the target closed the connection, `1022` no answer to the NOP ping,
+`1014/1015` digest mismatch …), recoveries, recovery timeouts, I/O rejected to
+offline devices, I/O errors and filesystems that went read-only. iscsid's
+retries are folded ("cannot connect … (9× since 06:10)"), a session the log
+knows but sysfs no longer has is listed as *gone*.
+
+On a **Longhorn** node (found by its data paths with `longhorn-disk.cfg`, the
+engine and replica processes, sessions to `iqn.2019-10.io.longhorn:<volume>`,
+`/dev/longhorn` or the pods' logs in `/var/log/pods`) Tyr adds, without the
+Kubernetes API:
+
+- the **volumes attached here**: device, session, mounts, read-only after a
+  filesystem error;
+- the **data paths**: the filesystem and the physical disks under it (through
+  partitions, md and dm), size, use and the replicas on it, with the disks'
+  own health;
+- the **replicas** on this node from their `volume.meta`: rebuilding, failed;
+- **node checks** like `longhornctl check preflight`, offline: open-iscsi,
+  iscsid, `iscsi_tcp`, the initiator name, multipathd without a blacklist for
+  Longhorn's devices, the NFS client, cryptsetup, and for the v2 data engine
+  `nvme_tcp`, `vfio_pci`/`uio_pci_generic` and 1024 huge pages (findings only
+  where v2 is in use). The iSCSI checks also run on hosts with iSCSI sessions
+  but without Longhorn;
+- the **errors of the last 24 hours** that the kubelet (k3s, rke2), the CSI
+  plugin, `longhorn-manager`, `instance-manager`, iscsid and multipathd logged
+  about volumes, repeats folded.
+
+The TUI shows all of it in the Storage tab's **Network** view; the report has
+the same sections.
 
 SMART is read when Tyr starts and then every 5 minutes (`--smart-interval`);
 `r` in the TUI and the snapshots before and after a stress test always read it
@@ -226,7 +265,20 @@ fresh, and the storage stress test reads it every 30 s.
 | SMART failed, `kernel_io_errors` | ✖ | the drive reports failure, I/O errors in the kernel log (with the last line) |
 | `io_errors` | ▲ | SCSI command errors that are new since Tyr started and not caused by its own SMART queries |
 | `remote_io_errors` | ✖ | kernel I/O errors on an iSCSI / FC volume: the path to the storage system failed |
-| `iscsi_session`, `fc_port` | ✖ | the iSCSI session is not `LOGGED_IN`, the FC remote port not `Online` |
+| `iscsi_session`, `fc_port`, `nvmeof_state` | ✖ | the iSCSI session is not `LOGGED_IN`, the FC remote port not `Online`, the NVMe-oF controller not `live` |
+| `iscsi_conn_errors`, `nvmeof_conn_errors` | ▲ | a live session lost its connection since boot (with the decoded error and how often it came back) |
+| `iscsi_recovery_timeout` | ✖ (▲ gone a day) | the path stayed down past the recovery timeout: the kernel failed the I/O |
+| `iscsi_digest` | ✖ | digest errors: data changed between the target and this host |
+| `iscsi_orphan` | ▲ | a session to a Longhorn volume without disk, left over after an engine or instance-manager restart |
+| `remote_fs_error` | ✖ / ▲ | a filesystem on a network volume failed or went read-only (▲ when the volume is gone) |
+| `longhorn_volume_readonly` | ✖ | a Longhorn volume's filesystem went read-only |
+| `longhorn_disk_full` | ▲ | a Longhorn data path above 75 %: Longhorn schedules no new replicas there |
+| `longhorn_disk_health` | ▲ | replicas on a disk that has findings |
+| `longhorn_replica_error` | ▲ | a replica on this node is marked failed |
+| `volume_mount_failed` | ▲ | the kubelet failed to attach, mount or unmount a volume in the last 24 h |
+| `node_iscsid`, `node_open_iscsi`, `node_iscsi_tcp`, `node_initiator_name` | ✖ / ▲ | iSCSI prerequisites missing (✖ on a Longhorn node, iscsid also with live sessions) |
+| `node_multipathd` | ▲ / ✖ | multipathd without a blacklist for Longhorn's devices; ✖ when it has claimed one |
+| `node_nfs_client`, `node_nvme_tcp`, `node_vfio_pci`, `node_hugepages` | ▲ / ✖ | NFS client (RWX volumes, backups); the v2 data engine's prerequisites where it is in use |
 | reallocated / pending sectors, media errors | ▲ | growing defect counters |
 | `wear`, `spare_low` | ▲ / ✖ | endurance used up, spare below threshold |
 | `md_degraded`, `md_inactive`, `md_member_failed` | ✖ | software RAID lost redundancy |
@@ -266,7 +318,14 @@ d=sda; b=$(printf '%d' "$(cat /sys/block/$d/device/ioerr_cnt)"); smartctl -x /de
 echo $(( $(printf '%d' "$(cat /sys/block/$d/device/ioerr_cnt)") - b ))
 # iSCSI path
 iscsiadm -m session -P 3 | grep -E 'Target:|Current Portal|Session State|Attached scsi disk'
-journalctl -k -b | grep -iE 'iscsi|connection[0-9]+:' | tail
+journalctl -k -b | grep -iE 'iscsi|connection[0-9]+:|session[0-9]+:' | tail
+journalctl -u iscsid -b | tail
+# NVMe over Fabrics
+nvme list-subsys; cat /sys/class/nvme/nvme*/state
+# Longhorn on this node
+multipath -t | grep -A5 blacklist                      # Longhorn's sdX must be blacklisted
+ls /var/lib/longhorn/replicas; cat /var/lib/longhorn/replicas/*/volume.meta
+journalctl -u k3s --since -1h | grep -iE 'MountVolume|AttachVolume'   # kubelet, rke2-agent, k3s
 ```
 
 - **Kernel I/O errors on a local disk**: look at pending and reallocated
@@ -276,6 +335,16 @@ journalctl -k -b | grep -iE 'iscsi|connection[0-9]+:' | tail
   reseat; if they grow, reseat the disk, then check the slot and cable.
 - **Kernel I/O errors on a network volume**: the session dropped or timed out;
   check the session state, the network to the portal and the target's logs.
+  The session's timeline shows what happened in order: connection error,
+  recovery timeout, offline device, I/O errors, read-only filesystem.
+- **A Longhorn volume**: its target is the volume's engine in the
+  instance-manager pod, not a storage system - a drop means the engine
+  restarted or lost its replicas. A session that is `FAILED` without a disk is
+  a leftover (`iscsi_orphan`): log it out once the volume is not attached here
+  (see `i` on the finding). `MountVolume … already mounted or mount point busy`
+  is almost always multipathd holding the device.
+- **Interface errors**: a session names the interface it runs over; that
+  interface's drops, CRC errors and link flaps are in the Network tab.
 - **Empty slots and disks hidden by the controller or the BMC** are not visible
   to Linux; only the controller's tool or the BMC shows them.
 - **Where is it?** The disk page shows the controller, port and bay, and the

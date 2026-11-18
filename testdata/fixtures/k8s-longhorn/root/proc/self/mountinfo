@@ -1,0 +1,13 @@
+22 1 9:0 / / rw,relatime shared:1 - ext4 /dev/md0 rw,errors=remount-ro
+23 22 259:1 / /boot/efi rw,relatime shared:2 - vfat /dev/nvme0n1p1 rw,fmask=0077,dmask=0077
+24 22 9:1 / /data rw,noatime shared:3 - xfs /dev/md1 rw,attr2,inode64
+25 22 0:5 / /dev rw,nosuid shared:4 - devtmpfs udev rw,size=263852012k
+26 22 0:22 / /sys rw,nosuid,nodev,noexec,relatime shared:5 - sysfs sysfs rw
+27 22 0:23 / /proc rw,nosuid,nodev,noexec,relatime shared:6 - proc proc rw
+28 22 0:24 / /run rw,nosuid,nodev,noexec,relatime shared:7 - tmpfs tmpfs rw,size=52770404k,mode=755
+29 22 7:0 / /snap/core22/1663 ro,nodev,relatime shared:8 - squashfs /dev/loop0 ro
+30 22 9:0 /var/lib/docker /var/lib/docker rw,relatime shared:1 - ext4 /dev/md0 rw
+60 22 8:96 / /var/lib/kubelet/plugins/kubernetes.io/csi/driver.longhorn.io/5d1e0c2b3a49f8e7d6c5b4a3928170615f4e3d2c1b0a99887766554433221100/globalmount rw,relatime shared:40 - ext4 /dev/longhorn/pvc-3f8e2a10-6c1d-4b8e-9f3a-1c2d3e4f5a6b rw
+61 22 8:96 / /var/lib/kubelet/pods/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/volumes/kubernetes.io~csi/pvc-3f8e2a10-6c1d-4b8e-9f3a-1c2d3e4f5a6b/mount rw,relatime shared:40 - ext4 /dev/longhorn/pvc-3f8e2a10-6c1d-4b8e-9f3a-1c2d3e4f5a6b rw
+62 22 8:112 / /var/lib/kubelet/plugins/kubernetes.io/csi/driver.longhorn.io/8f7e6d5c4b3a29180716253443526170819fa0b1c2d3e4f5061728394a5b6c7d/globalmount rw,relatime shared:41 - ext4 /dev/longhorn/pvc-7b2c9d4e-1a3f-4c5e-8d7b-2e3f4a5b6c7d ro,relatime
+63 22 8:112 / /var/lib/kubelet/pods/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/volumes/kubernetes.io~csi/pvc-7b2c9d4e-1a3f-4c5e-8d7b-2e3f4a5b6c7d/mount rw,relatime shared:41 - ext4 /dev/longhorn/pvc-7b2c9d4e-1a3f-4c5e-8d7b-2e3f4a5b6c7d ro,relatime

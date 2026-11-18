@@ -44,12 +44,14 @@ var FactDefs = []FactDef{
 	{"dimms", kNum, "populated DIMM slots"},
 	{"dimm_slots", kNum, "DIMM slots"},
 	{"ecc", kBool, "ECC memory"},
-	{"disks", kNum, "physical disks (not USB, not virtual)"},
+	{"disks", kNum, "physical disks (not USB, not virtual, not iSCSI / FC / NVMe-oF volumes)"},
 	{"disk_tb", kNum, "capacity of those disks, TB"},
 	{"ssds", kNum, "SSDs (SATA/SAS)"},
 	{"nvme", kNum, "NVMe drives"},
 	{"hdds", kNum, "hard disks"},
 	{"raid_controllers", kNum, "hardware RAID controllers"},
+	{"iscsi_sessions", kNum, "iSCSI sessions and NVMe-oF controllers now"},
+	{"longhorn", kBool, "a Longhorn node (data path, volumes or Longhorn processes)"},
 	{"nics", kNum, "physical network ports"},
 	{"nic_speed_max", kNum, "fastest port, Mbit/s (10 GbE = 10000)"},
 	{"nics_10g", kNum, "ports of 10 Gbit/s or more"},
@@ -144,7 +146,7 @@ func ComputeFacts(s *model.Snapshot, r *accept.Result) Facts {
 		var n, ssd, nvme, hdd int
 		var bytes uint64
 		for _, d := range st.Disks {
-			if d.Kind == "virtual" || d.Kind == "usb" || d.Interface == "usb" {
+			if d.Kind == "virtual" || d.Kind == "usb" || d.Interface == "usb" || !d.Local() {
 				continue
 			}
 			n++
@@ -162,6 +164,16 @@ func ComputeFacts(s *model.Snapshot, r *accept.Result) Facts {
 		f["disk_tb"] = Num(math.Round(float64(bytes)/1e12*100) / 100)
 		f["ssds"], f["nvme"], f["hdds"] = Num(float64(ssd)), Num(float64(nvme)), Num(float64(hdd))
 		f["raid_controllers"] = Num(float64(len(st.Controllers)))
+		sessions := 0
+		if st.Remote != nil {
+			for _, x := range st.Remote.Sessions {
+				if !x.Gone() {
+					sessions++
+				}
+			}
+		}
+		f["iscsi_sessions"] = Num(float64(sessions))
+		f["longhorn"] = Bool(st.Longhorn != nil)
 	}
 	if nw := s.Network; nw != nil {
 		var n, ten, maxS int

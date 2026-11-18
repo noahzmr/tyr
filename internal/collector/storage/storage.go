@@ -41,6 +41,8 @@ type Collector struct {
 	mu    sync.Mutex
 	smart map[string]smartCache
 	ioerr map[string]*ioState
+	// journal: the node's iscsid / kubelet journal lines, cached
+	journal journalCache
 }
 
 // smartCache is one disk's last SMART read (also a failed one).
@@ -113,7 +115,8 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 		}
 		d.Kind = diskKind(b)
 		if r := b.Remote; r != nil {
-			d.Remote = &model.RemoteDisk{Transport: r.Transport, Target: r.Target, Portal: r.Portal, Session: r.Session, State: r.State}
+			d.Remote = &model.RemoteDisk{Transport: r.Transport, Target: r.Target, Portal: r.Portal, Session: r.Session, State: r.State,
+				Longhorn: LonghornVolume(r.Target)}
 		}
 		d.Location = b.Location.String()
 		d.KernelLines = kernelLines(klog, b)
@@ -175,6 +178,8 @@ func (c *Collector) Collect(ctx context.Context, env *collector.Env, prevSec mod
 			h.Find(st, "fs_inodes", fs.Mountpoint, "statfs", fmt.Sprintf("%s inodes %.0f%% used", fs.Mountpoint, *fs.InodesUsedPercent))
 		}
 	}
+
+	c.remoteStorage(ctx, env, out, h, klog, mounts)
 
 	h.Summary = summary(out)
 	h.Rollup()
@@ -548,22 +553,30 @@ func diskFindings(h *model.Header, d *model.Disk, def check.Defaults) {
 		st = model.Worst(st, model.StatusCrit)
 	}
 	if r := d.Remote; r != nil {
-		where := strings.ToUpper(r.Transport)
-		if r.Transport == "iscsi" {
-			where = "iSCSI"
-		}
-		if r.Portal != "" {
+		where := TransportName(r.Transport)
+		if r.Portal != "" && r.Longhorn == "" {
 			where += " " + r.Portal
+		}
+		advice := "reads or writes to the storage system failed; check the session, the network path and the target"
+		if r.Longhorn != "" {
+			where = "Longhorn volume " + r.Longhorn
+			advice = "reads or writes to the volume's Longhorn engine failed; check the instance-manager pod and the volume's replicas"
 		}
 		if d.KernelErrors > 0 {
 			h.Find(model.StatusCrit, "remote_io_errors", d.Name, "kernel_log", fmt.Sprintf(
-				"%s (%s): %d I/O errors in kernel log - reads or writes to the storage system failed; check the session, the network path and the target%s",
-				d.Name, where, d.KernelErrors, last))
+				"%s (%s): %d I/O errors in kernel log - %s%s", d.Name, where, d.KernelErrors, advice, last))
 			st = model.Worst(st, model.StatusCrit)
 		}
 		switch {
 		case r.Transport == "iscsi" && r.State != "" && r.State != "LOGGED_IN":
-			h.Find(model.StatusCrit, "iscsi_session", d.Name, "sysfs", fmt.Sprintf("%s: iSCSI %s to %s is %s", d.Name, orStr(r.Session, "session"), orStr(r.Target, "the target"), r.State))
+			to := orStr(r.Target, "the target")
+			if r.Longhorn != "" {
+				to = "Longhorn volume " + r.Longhorn
+			}
+			h.Find(model.StatusCrit, "iscsi_session", d.Name, "sysfs", fmt.Sprintf("%s: iSCSI %s to %s is %s", d.Name, orStr(r.Session, "session"), to, r.State))
+			st = model.Worst(st, model.StatusCrit)
+		case strings.HasPrefix(r.Transport, "nvme-") && r.State != "" && r.State != "live":
+			h.Find(model.StatusCrit, "nvmeof_state", d.Name, "sysfs", fmt.Sprintf("%s: NVMe-oF controller %s to %s is %s", d.Name, r.Session, orStr(r.Target, "the target"), r.State))
 			st = model.Worst(st, model.StatusCrit)
 		case r.Transport == "fc" && r.State != "" && r.State != "Online":
 			h.Find(model.StatusCrit, "fc_port", d.Name, "sysfs", fmt.Sprintf("%s: Fibre Channel port %s is %s", d.Name, orStr(r.Target, r.Session), r.State))

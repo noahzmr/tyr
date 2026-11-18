@@ -1,0 +1,39 @@
+ipmiutil sensor version 3.18
+-- BMC version 1.40, IPMI version 2.0 
+ID   | SDRType | Type            |SNum| Name             |Status| Reading
+0010 | Full    | Temperature     | 30 | CPU1 Temp        | OK   | 52.00 C
+0011 | Full    | Temperature     | 31 | CPU2 Temp        | OK   | 55.00 C
+0012 | Full    | Temperature     | 32 | PCH Temp         | OK   | 48.00 C
+0013 | Full    | Temperature     | 33 | System Temp      | OK   | 31.00 C
+0014 | Full    | Temperature     | 34 | Inlet Temp       | OK   | 24.00 C
+0015 | Full    | Temperature     | 35 | P1-DIMMA1 Temp   | OK   | 34.00 C
+0016 | Full    | Temperature     | 36 | P1-DIMMB1 Temp   | OK   | 36.00 C
+0017 | Full    | Temperature     | 37 | P1-DIMMC1 Temp   | OK   | 38.00 C
+0018 | Full    | Temperature     | 38 | P1-DIMMD1 Temp   | OK   | 35.00 C
+0019 | Full    | Temperature     | 39 | P1-DIMME1 Temp   | OK   | 37.00 C
+001a | Full    | Temperature     | 3a | P1-DIMMF1 Temp   | OK   | 34.00 C
+001b | Full    | Temperature     | 3b | P1-DIMMG1 Temp   | OK   | 36.00 C
+001c | Full    | Temperature     | 3c | P1-DIMMH1 Temp   | OK   | 38.00 C
+001d | Full    | Temperature     | 3d | P2-DIMMA1 Temp   | OK   | 35.00 C
+001e | Full    | Temperature     | 3e | P2-DIMMB1 Temp   | OK   | 37.00 C
+001f | Full    | Temperature     | 3f | P2-DIMMC1 Temp   | OK   | 34.00 C
+0020 | Full    | Temperature     | 40 | P2-DIMMD1 Temp   | OK   | 36.00 C
+0021 | Full    | Temperature     | 41 | P2-DIMME1 Temp   | OK   | 38.00 C
+0022 | Full    | Temperature     | 42 | P2-DIMMF1 Temp   | OK   | 35.00 C
+0023 | Full    | Temperature     | 43 | P2-DIMMG1 Temp   | OK   | 37.00 C
+0024 | Full    | Temperature     | 44 | P2-DIMMH1 Temp   | OK   | 34.00 C
+0025 | Full    | Fan             | 45 | FAN1             | OK   | 6340.00 RPM
+0026 | Full    | Fan             | 46 | FAN2             | OK   | 6480.00 RPM
+0027 | Full    | Fan             | 47 | FAN3             | OK   | 6620.00 RPM
+0028 | Full    | Fan             | 48 | FAN4             | OK   | 6760.00 RPM
+0029 | Full    | Fan             | 49 | FAN5             | OK   | 6900.00 RPM
+002a | Full    | Fan             | 4a | FAN6             | OK   | 7040.00 RPM
+002b | Full    | Fan             | 4b | FANA             | Absent| na
+002c | Full    | Voltage         | 4c | 12V              | OK   | 12.19 V
+002d | Full    | Voltage         | 4d | 5VCC             | OK   | 5.03 V
+002e | Full    | Voltage         | 4e | 3.3VCC           | OK   | 3.37 V
+002f | Full    | Voltage         | 4f | VBAT             | OK   | 3.10 V
+0030 | Full    | Voltage         | 50 | Vcpu1            | OK   | 1.82 V
+0060 | Compact | Power Supply    | c8 | PS1 Status       | OK   | Presence detected
+0061 | Compact | Power Supply    | c9 | PS2 Status       | OK   | Presence detected
+ipmiutil sensor, completed successfully

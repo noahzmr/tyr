@@ -159,6 +159,7 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 | Acceptance | `internal/accept` | profiles, limits files (merging, unknown fields rejected), the verdict rules, the report; a whole run without hardware: `tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with `{"durations":{"cpu":"3s","memory":"3s","storage":"3s"}}` in `short.json` |
 | ISO dialog | `internal/isobuild`, `internal/tui/isodialog_test.go` | USB disks from a fake sysfs (a stick, a USB system disk, a SATA disk), writing to a file and reading it back, cancel, settings permissions, build phases; the dialog with fake disks: system disk refused, root required, y/n, the run view |
 | Webhooks | `internal/notify` | the settings (environment, unknown fields), every format's body, retry on 5xx but not 4xx, token, headers and signature against a local receiver; the TUI dialog in `internal/tui/webhooks_test.go`. By hand: `TYR_WEBHOOK_URL=http://127.0.0.1:8080 tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with any HTTP receiver |
+| Network storage | `internal/collector/storage` (`remote_test.go`) | sessions from sysfs (also NVMe/TCP), the timeline with decoded errors, iscsid's logins and retries folded, gone sessions, the findings; Longhorn on `k8s-longhorn`: volumes, data paths through md, replicas, node checks, multipath blacklists, kubelet / logrus / JSON log lines and the 24 h window; the TUI view in `internal/tui/storage_remote_test.go` |
 | NetBox | `internal/netbox` | the rule language, facts from the fixtures, the files; the sync against an in-memory fake NetBox (`sync_test.go`: new device, second run writes only the journal, failed → active, tag rules next to foreign tags, dry run, wrong token, NetBox before 4.2); the TUI dialog in `internal/tui/netbox_test.go` |
 | GPU tools | `internal/source/gpu/testdata` | `nvidia-smi -q -x` of a DGX Spark (GB10: C2C, no own memory, T.Limit, processes) |
 | Live collectors | `make live` | `TYR_LIVE=1`, read-only, this host |
@@ -178,8 +179,18 @@ The synthetic fixtures come from `tools/genfixture` (`make fixtures`); edit the
 scenarios there, never the generated files. `server-degraded` carries the
 faults the checks are tested against, among them an offline CPU with its
 machine check history in the journal and a pstore crash record, program
-crashes clustered on one core, an unclean boot, iSCSI path errors, and a
-Redfish tree with event logs and a power supply without AC input.
+crashes clustered on one core, an unclean boot, an iSCSI session that timed
+out over a degraded bond, and a Redfish tree with event logs and a power supply
+without AC input. `k8s-longhorn` is `server-healthy` as a k3s node with Longhorn:
+a flapping volume session, a volume whose filesystem went read-only after a
+recovery timeout, an orphaned session, multipathd without a blacklist, a failed
+replica, the kubelet failing to mount a volume, and the pods' logs.
+
+Not everything is generated yet: the VPN interfaces, `/etc/os-release`, the
+iSCSI details of `server-degraded` and the whole `k8s-longhorn` fixture were
+added to the generated trees afterwards (`tools/fixture-iscsi.py` for the
+iSCSI and Longhorn parts). `make fixtures` drops them; after it, restore them
+with `git checkout` or run the script again.
 
 ```bash
 sudo scripts/capture-fixtures.sh --redact /tmp/myhost "1U server, 2× Xeon"

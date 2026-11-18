@@ -1,0 +1,2 @@
+2026-11-16T05:00:00.123456789Z stderr F time="2026-11-16T05:00:00Z" level=warning msg="Volume is degraded" volume=pvc-7b2c9d4e-1a3f-4c5e-8d7b-2e3f4a5b6c7d
+2026-11-16T05:01:00.123456789Z stderr F time="2026-11-16T05:00:00Z" level=error msg="Failed to sync Longhorn volume longhorn-system/pvc-d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70" controller=longhorn-volume error="replica pvc-d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70-r-0c1d2e3f is in error state"

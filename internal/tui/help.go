@@ -92,7 +92,7 @@ func (m *memoryTab) HelpText() string {
 }
 
 func (s *storageTab) HelpText() string {
-	return "v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes, counters and / search · c copies the serial"
+	return "v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n next problem · enter opens the page with SMART attributes, counters and / search · c copies the serial"
 }
 
 func (p *powerTab) HelpText() string {

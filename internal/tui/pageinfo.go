@@ -59,7 +59,13 @@ func (s *storageTab) PageInfo() (pageInfo, bool) {
 	if !ok {
 		return pageInfo{}, false
 	}
-	view := []string{"Disks", "RAID", "Filesystems"}[s.view]
+	view := s.storageViews()[s.view]
+	if s.view == 3 {
+		if x, ok := s.session(it.key); ok {
+			return pageInfo{path: []string{view, x.ID}, status: x.Status, facts: nonEmpty(transportLabel(x.Transport), sessionTarget(x))}, true
+		}
+		return pageInfo{path: []string{view, "node"}, status: it.status}, true
+	}
 	if s.view == 0 {
 		d, _ := s.disk(it.key)
 		return pageInfo{path: []string{view, d.Name}, status: d.Status,

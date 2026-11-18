@@ -1,6 +1,6 @@
- TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
+ TYR  srv-degraded-01                              fixture  now  26/27   ✖ CRIT
 1✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮lp
- ✖│ Navigation              Health                  Data · stress            │ms
+ ✖│ Navigation              Health                  Data · stress            │rk
   │ 1–0       switch tab    n         next problem  r         refresh now    │
   │ tab ⇧tab  next / prev … i         explain alert p         pause / resu…  │
 ▌✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
@@ -12,13 +12,13 @@
  ●│                         h         virtual NICs  s S F     stress tests   │
  ●│                                                 q ctrl+c  quit · stop …  │
   │ This tab · Storage                                                       │
-sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
-Mo│ with SMART attributes, counters and / search · c copies the serial       │
-SM│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
-Te│ applicable                                                               │
-  │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │
-Fi│ this session                                                             │en
- ✖│ Any key closes this window.                                              │
+sd│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions,        │ge
+Mo│ Longhorn, node checks) · n next problem · enter opens the page with      │
+SM│ SMART attributes, counters and / search · c copies the serial            │
+Te│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not │
+  │ applicable                                                               │
+Fi│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away  │en
+ ✖│ this session                                                             │
+  │ Any key closes this window.                                              │
   ╰──────────────────────────────────────────────────────────────────────────╯
-   … 11 more · enter on a row opens its page
 ↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help

@@ -1,0 +1,6 @@
+{"__REALTIME_TIMESTAMP": "1794798000000000", "SYSLOG_IDENTIFIER": "systemd", "PRIORITY": "6", "MESSAGE": "Starting wg-quick@wg0.service - WireGuard via wg-quick(8) for wg0...", "UNIT": "wg-quick@wg0.service"}
+{"__REALTIME_TIMESTAMP": "1794798001000000", "SYSLOG_IDENTIFIER": "wg-quick", "PRIORITY": "6", "MESSAGE": "[#] ip link add wg0 type wireguard"}
+{"__REALTIME_TIMESTAMP": "1794798001000000", "SYSLOG_IDENTIFIER": "wg-quick", "PRIORITY": "6", "MESSAGE": "[#] wg setconf wg0 /dev/fd/63"}
+{"__REALTIME_TIMESTAMP": "1794798001000000", "SYSLOG_IDENTIFIER": "wg-quick", "PRIORITY": "6", "MESSAGE": "[#] ip -4 address add 10.99.0.1/24 dev wg0"}
+{"__REALTIME_TIMESTAMP": "1794798002000000", "SYSLOG_IDENTIFIER": "systemd", "PRIORITY": "6", "MESSAGE": "Finished wg-quick@wg0.service - WireGuard via wg-quick(8) for wg0.", "UNIT": "wg-quick@wg0.service"}
+{"__REALTIME_TIMESTAMP": "1794798003000000", "SYSLOG_IDENTIFIER": "NetworkManager", "PRIORITY": "6", "MESSAGE": "<info>  [1794812400.1234] manager: (veth1a2b3c): new Veth device"}

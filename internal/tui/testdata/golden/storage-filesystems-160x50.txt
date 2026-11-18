@@ -1,6 +1,6 @@
- TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  25 crit 27 warn   ✖ CRIT
- 1 Overview ✖52   2 CPU ✖8   3 Memory ✖9   4 Storage ✖12   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
- ✖ CRIT  7 disks · 26 TB · 1 network volume (1 session down) · md1 degraded · 1 RAID controller · 4 filesystems                     v Disks · RAID · Filesystems
+ TYR  srv-degraded-01  Supermicro SYS-120U-TNR · S/N S412345X3A01234 · up 9d 0h                                  fixture  updated now  26 crit 27 warn   ✖ CRIT
+ 1 Overview ✖53   2 CPU ✖8   3 Memory ✖9   4 Storage ✖13   5 Power ✖2   6 Network ✖9   7 GPU/NPU ✖6   8 Events ✖5   9 Stress   0 Inventory                ? help
+ ✖ CRIT  7 disks · 26 TB · 1 network volume (1 session down) · md1 degraded · 1 RAID controller · 4 filesystems           v Disks · RAID · Filesystems · Network
 
    Mountpoint                                                                                                    Type   Size     Used                 Inodes
 ▌✖ /data                                                                                                         xfs    10.9 TB  ███████████░  96%    1%     ro
@@ -8,7 +8,7 @@
  ● /boot/efi                                                                                                     vfat   1.0 GB   ░░░░░░░░░░░░   1%    –
  ● /archive                                                                                                      ext4   5.5 TB   ██░░░░░░░░░░  20%    0%
 
-Findings · Storage 8 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── n next · enter open
+Findings · Storage 9 ✖ · 4 ▲ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── n next · enter open
  ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd, sector 1953525160 op 0x0:(READ) flags 0x80700 phys_seg 1 prio
                 class 0
  ✖ sdf          sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to the storage system failed; check the session, the network path
@@ -19,12 +19,12 @@ Findings · Storage 8 ✖ · 4 ▲ ───────────────
  ✖ 252:2        RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed
  ✖ /data        /data (xfs) is mounted read-only
  ✖ /data        /data 96% full
+ ✖ session1     session1 to iqn.2024-01.net.example:backup.vol2 at 10.16.40.20:3260 via bond0.100: the path stayed down past the recovery timeout 1× since boot
+                (last 2026-11-15 13:32) - the kernel failed the I/O, applications saw errors
  ▲ nvme1n1      nvme1n1: 93% of rated endurance used
  ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
  ▲ sdc          sdc: 8 pending sectors
  ▲ sdc          sdc: 24 reallocated sectors
-
-
 
 
 

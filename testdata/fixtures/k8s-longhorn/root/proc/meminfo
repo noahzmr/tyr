@@ -1,0 +1,18 @@
+MemTotal:       527433728 kB
+MemFree:        263716864 kB
+MemAvailable:   369203609 kB
+Buffers:          812344 kB
+Cached:         105486745 kB
+SwapCached:            0 kB
+Active:         131858432 kB
+SwapTotal:       8388604 kB
+SwapFree:        8388604 kB
+Dirty:               228 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:   2048000 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
