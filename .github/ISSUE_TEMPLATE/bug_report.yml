@@ -1,0 +1,53 @@
+name: Bug report
+description: Tyr shows something wrong, misses hardware, crashes or a command fails.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Security problems do not belong here: contact the maintainer privately.
+        Remove serial numbers, host names and addresses you do not want public from anything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: Tyr version
+      description: The output of `tyr version`.
+      placeholder: tyr v1.0.0 (commit badd869, built 2026-11-18T13:58:12Z)
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Distribution and kernel (`uname -r`), the server or machine model.
+      placeholder: Ubuntu 24.04, 6.8.0-49-generic, HPE ProLiant DL360 Gen10
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: What you ran, and whether as root.
+      placeholder: sudo tyr  (Storage tab, disk sdb)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: The error, a description of the screen, or the wrong value and the right one.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: |
+        The error or log lines. For wrong or missing hardware data: `sudo tyr report --format json`
+        (or only its section, e.g. `--section storage`), and for a disk `sudo smartctl -x /dev/sdX`.
+      render: text
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Since when it happens, whether an earlier version worked, screenshots.

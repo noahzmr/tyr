@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/noahzmr/tyr/tree/main/docs
+    about: How Tyr reads the hardware, every alert explained, the TUI, stress tests and the ISO.
