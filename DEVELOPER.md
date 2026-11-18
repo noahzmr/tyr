@@ -38,7 +38,7 @@ CGO_ENABLED=0 go build -o tyr ./cmd/tyr     # static binary in the repo root
 | `make golden` | regenerate the workload golden table (only after changing a kernel) |
 | `make ll-table` | regenerate the torture test's residues (only after changing its cases; about a minute) |
 | `make diagrams` | re-render the archify diagrams and export their SVGs |
-| `make release-notes`, `make release-snapshot`, `make publish`, `make publish-retry`, `make release-notes-update` | releases: see [Releasing](#9-releasing) |
+| `make release-notes`, `make release-snapshot`, `make release-prepare`, `make publish`, `make publish-retry`, `make release-notes-update` | releases: see [Releasing](#9-releasing) |
 
 `CGO_ENABLED=0` is exported by the Makefile; a plain `go build` links against
 the build host's C library because the `net` package then uses cgo.
@@ -267,9 +267,15 @@ TUI screenshots in `docs/images/tui/` come from the golden fixture at 120×40.
 
 1. no tool attribution in commit messages, the pull request, or tracked files
    (`scripts/check-attribution.sh`)
-2. gofmt, `go vet`, staticcheck
-3. `go test ./...`
-4. `make cross` (static amd64 and arm64)
+2. no executables or packaged binaries in the tree (`scripts/check-binaries.sh`)
+3. no secrets anywhere in the history (gitleaks, pinned)
+4. gofmt, `go vet`, staticcheck
+5. `go test ./...`
+6. `make cross` (static amd64 and arm64)
+
+`main` changes only through pull requests, and the `test` job must pass
+before one is merged (see [the assessment](docs/security/osps-baseline-level1.md)
+for the branch ruleset).
 
 ---
 
@@ -280,7 +286,10 @@ git config core.hooksPath scripts/hooks
 ```
 
 - `commit-msg` rejects messages with tool attribution.
-- `pre-commit` rejects added lines and new file names with it, and unformatted Go.
+- `pre-commit` rejects added lines and new file names with it, unformatted
+  Go, staged executables and packaged binaries, and staged secrets (gitleaks:
+  an installed one, else the pinned version through `go run`; a false
+  positive goes into `.gitleaksignore` with its fingerprint).
 
 Messages: a short subject (`area: what changed`), then why and how in plain
 sentences.
@@ -302,33 +311,52 @@ highlights written by hand in `CHANGELOG.md` plus the commits since the last
 release, grouped by their area (`storage: …` → Storage, `tui: …` → TUI;
 `tools/relnotes` holds the mapping).
 
+`main` is protected, so a release goes through a pull request like any
+other change; publishing only pushes a tag.
+
 1. Write the highlights - what changed for users, upgrade notes - under
-   `## Unreleased` in `CHANGELOG.md`, and commit them.
+   `## Unreleased` in `CHANGELOG.md`, and get them onto `main`.
 2. Preview: `make release-notes BUMP=minor`.
 3. Build the archives without publishing (optional): `make release-snapshot`
    → `dist/release/`.
-4. Publish:
+4. Prepare:
 
    ```bash
-   export GITHUB_TOKEN=…        # fine-grained token: Contents read/write on noahzmr/tyr
-   make publish BUMP=minor      # or BUMP=patch|major, or RELEASE=v1.4.0
+   make release-prepare BUMP=minor   # or BUMP=patch|major, or RELEASE=v1.4.0
    ```
 
-   `make publish` stops at the first problem, before anything is pushed: not
-   on `main`, uncommitted or untracked files, behind `origin/main`, the tag
-   exists, no highlights, gofmt / vet / staticcheck / the attribution check /
-   the tests fail, the archives do not build. Then it moves the highlights
-   into a `## [X.Y.Z] - date` section with the generated list, shows the
-   notes and asks you to type the version; only then it commits
-   `release: vX.Y.Z`, tags, pushes `main` and the tag together and publishes
-   the release with GoReleaser. Answering anything else puts `CHANGELOG.md`
-   back. `YES=1` skips the question.
-5. If the upload fails after the push: fix the cause and `make publish-retry`
-   (publishes the tag at `HEAD` again).
-6. To change the text of a published release - a typo, a forgotten upgrade
-   note - edit its section in `CHANGELOG.md` and run
-   `make release-notes-update RELEASE=vX.Y.Z` (default: the latest tag). It
-   only replaces the text; the archives and checksums stay as published.
+   It stops at the first problem, before anything is pushed: not on `main`,
+   uncommitted or untracked files, `main` differs from `origin/main`, the
+   tag or the `release/vX.Y.Z` branch exists, no highlights, gofmt / vet /
+   staticcheck / the attribution check / the tests fail, the archives do not
+   build. Then it moves the highlights into a `## [X.Y.Z] - date` section
+   with the generated list, shows the notes and asks you to type the
+   version; only then it commits `release: vX.Y.Z` on the branch
+   `release/vX.Y.Z`, pushes the branch and prints the link for the pull
+   request. Answering anything else puts `CHANGELOG.md` back. `YES=1` skips
+   the question.
+5. Open the pull request, let CI pass and merge it (a merge or a squash;
+   keep the title `release: vX.Y.Z`).
+6. Publish:
+
+   ```bash
+   git pull
+   export GITHUB_TOKEN=…        # fine-grained token: Contents read/write on noahzmr/tyr
+   make publish
+   ```
+
+   It takes the newest `CHANGELOG.md` section that has no tag, checks that
+   `main` is up to date and contains the release commit, lists commits that
+   landed on `main` after the release was prepared (and asks before leaving
+   them out of the notes - otherwise prepare again), builds the archives,
+   shows the notes and asks for the version. Then it tags the merged commit,
+   pushes only the tag and publishes the release with GoReleaser.
+7. If the upload fails after the tag is pushed: fix the cause and `make
+   publish-retry` (publishes the tag at `HEAD` again).
+8. To change the text of a published release - a typo, a forgotten upgrade
+   note - edit its section in `CHANGELOG.md` (through a pull request) and
+   run `make release-notes-update RELEASE=vX.Y.Z` (default: the latest tag).
+   It only replaces the text; the archives and checksums stay as published.
 
 `CHANGELOG.md` is wrapped for reading in an editor. The release text joins
 the wrapped lines of paragraphs and list items (headings, tables and code
