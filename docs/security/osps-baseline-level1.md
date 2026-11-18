@@ -21,19 +21,26 @@ through environment variables instead of into the script.
 
 2026-11-18, against `main`: **pvtr v0.24.1** with **pvtr-github-repo-scanner
 v0.33.2**, catalog `osps-baseline` (2026-08), applicability `maturity-1`,
-with the owner's fine-grained token.
+with the owner's fine-grained token. Run twice: before and after
+`security-insights.yml` was merged.
 
-| Result | Requirements |
-|---|---|
-| Passed (21) | AC-01.01, AC-02.01, AC-03.02, BR-01.01, BR-01.03, BR-03.01, BR-03.02, BR-07.01, DO-02.01, GV-02.01, GV-03.01, LE-02.01, LE-02.02, LE-03.01, LE-03.02, QA-01.01, QA-01.02, QA-02.01, QA-05.01, QA-05.02, VM-02.01 |
-| Failed (2) | AC-03.01, DO-01.01 - see below |
-| Not applicable (1) | QA-04.01 (a single repository) |
-| Not run (1) | BR-01.02, retired in this catalog and only listed |
+| Result | First run (16:41 UTC) | Second run (16:48 UTC) |
+|---|---|---|
+| Passed | 21 | **23** |
+| Failed | AC-03.01, DO-01.01 | AC-03.01 |
+| Not applicable | QA-04.01 | - |
+| Not run | BR-01.02 (retired, only listed) | BR-01.02 |
 
-- **DO-01.01** failed because the scanner reads the user guide from a
-  Security Insights file, which did not exist yet. `security-insights.yml`
-  now declares the quick start (README) and the detailed guide
-  (`docs/README.md`); the guides themselves were there all along.
+Passed in the second run: AC-01.01, AC-02.01, AC-03.02, BR-01.01, BR-01.03,
+BR-03.01, BR-03.02, BR-07.01, DO-01.01, DO-02.01, GV-02.01, GV-03.01,
+LE-02.01, LE-02.02, LE-03.01, LE-03.02, QA-01.01, QA-01.02, QA-02.01,
+QA-04.01, QA-05.01, QA-05.02, VM-02.01.
+
+- **DO-01.01** failed in the first run because the scanner reads the user
+  guide from a Security Insights file, which did not exist yet; with
+  `security-insights.yml` declaring the quick start (README) and the
+  detailed guide (`docs/README.md`) it passes. QA-04.01 now passes too: the
+  file lists Tyr's single repository.
 - **AC-03.01** is a limit of the scanner, not of the protection: it counts
   a ruleset as protecting the default branch only when it has *Restrict
   updates* or requires at least one approving review
@@ -41,7 +48,10 @@ with the owner's fine-grained token.
   main* requires a pull request (with no approval, since a sole maintainer
   cannot approve their own pull request), which blocks every direct push -
   the requirement's "an enforcement mechanism MUST prevent the change". The
-  scanner itself rates this result at medium confidence.
+  scanner itself rates this result at medium confidence. Making it pass
+  would take a bypass (one approval with the owner exempt, or *Restrict
+  updates* with an admin bypass for pull requests), which weakens the
+  protection; the ruleset stays as it is.
 
 ## Per-control status
 
