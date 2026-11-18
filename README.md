@@ -615,6 +615,7 @@ git config core.hooksPath scripts/hooks
 |---|---|---|
 | [DEVELOPER.md](DEVELOPER.md) | contributors | build, test, fixtures, goldens, diagrams, hooks, releasing |
 | [CHANGELOG.md](CHANGELOG.md) | everyone | what changed in each version |
+| [docs/security/osps-baseline-level1.md](docs/security/osps-baseline-level1.md) | maintainers | OpenSSF Security Baseline Level 1: status per control and the plan to meet it |
 | [docs/README.md](docs/README.md) | everyone | index of the deep dives |
 | [docs/architecture.md](docs/architecture.md) | engineers | packages, data flow, refresh loop |
 | [docs/health-checks.md](docs/health-checks.md) | operators | modules, sources, limits, findings |
