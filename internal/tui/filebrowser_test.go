@@ -30,13 +30,18 @@ func TestFileBrowser(t *testing.T) {
 		os.WriteFile(filepath.Join(root, p), make([]byte, n), 0o644)
 	}
 	for _, sz := range [][2]int{{80, 24}, {160, 50}} {
+		fileScan = fsbrowse.NewScanner() // counted afresh: the end of the count is reported
 		m := newLoaded(t, "server-healthy", sz[0], sz[1])
 		m.openFiles(root)
 		waitScan(t, root)
 		m.Update(filesTickMsg{})
 		s := screen(m)
-		if m.files == nil || !strings.Contains(s, "B Files") || !strings.Contains(s, "big/") || !strings.Contains(s, "4.2 MB") {
+		if m.files == nil || !strings.Contains(s, "B Files") || !strings.Contains(s, "big/") || !strings.Contains(s, "4.2 MB") ||
+			!strings.Contains(s, " counted · r counts again") || !strings.Contains(s, "1/3") {
 			t.Fatalf("%v:\n%s", sz, s)
+		}
+		if !strings.Contains(m.message, "counted "+root) || !strings.Contains(m.message, "4 files") {
+			t.Errorf("end of the count: %q", m.message)
 		}
 		checkFits(t, "files", s, sz[0], sz[1])
 		// largest first: big/ is selected; enter opens it, ← returns to it
@@ -58,9 +63,26 @@ func TestFileBrowser(t *testing.T) {
 		if len(m.files.shown) != 1 {
 			t.Fatalf("filter: %d shown", len(m.files.shown))
 		}
+		if !strings.Contains(m.message, "1 of 3 entries match") {
+			t.Errorf("filter feedback %q", m.message)
+		}
+		m.Update(press("enter")) // zz.log is a file
+		if !strings.Contains(m.message, "zz.log is a file") {
+			t.Errorf("enter on a file: %q", m.message)
+		}
+		m.Update(press("/"))
+		typeText(m, "nothing")
+		m.Update(press("enter"))
+		if s := screen(m); !strings.Contains(s, `no entry matches "zznothing"`) {
+			t.Errorf("no match:\n%s", s)
+		}
+		m.Update(press("esc"))
+		if m.files == nil || m.files.filter.Value() != "" {
+			t.Fatal("the first esc clears the filter")
+		}
 		m.Update(press("esc"))
 		if m.files != nil {
-			t.Fatal("esc closes the browser")
+			t.Fatal("the second esc closes the browser")
 		}
 	}
 }

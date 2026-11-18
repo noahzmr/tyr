@@ -95,6 +95,15 @@ directory's fscrypt encryption and mount points of other filesystems.
 `/` filters, `r` counts again, `c` copies the path, `K` checks the filesystem.
 Nothing can be changed or deleted.
 
+While it counts, a progress line shows how far it is - on a mountpoint as a
+bar of the filesystem's space in use - with the files read, the time and the
+directory being read; rows say `counting`, `queued` or `≥ size` (counted so
+far), and a message sums the count up when it ends (with how many entries
+were unreadable without root). The header shows the position (`12/340`) and
+a filter's matches. Keys that cannot act say why: `enter` on a file, a
+symlink or an unreadable directory, `←` at `/`; `esc` clears a filter before
+it closes the browser.
+
 `K` lists every filesystem Tyr can check (ext2/3/4, xfs, btrfs, vfat, exfat):
 device, type, size, where it is mounted, the superblock's state and error
 count (ext, as root), Longhorn volumes and iSCSI LUNs. `c` shows the plan of

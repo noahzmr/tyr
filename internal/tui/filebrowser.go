@@ -12,6 +12,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/noahzmr/tyr/internal/fsbrowse"
 	"github.com/noahzmr/tyr/internal/fsck"
 	"github.com/noahzmr/tyr/internal/hostfs"
@@ -32,6 +34,10 @@ type fileBrowser struct {
 	filtering bool
 	moved     bool // the user moved the selection: keep it on its entry while sizes come in
 	err       string
+	scanStart time.Time // when counting this directory started (zero: it was counted before)
+	announced bool      // the end of the count was reported
+	fsUsed    int64     // bytes in use on the filesystem, when dir is its mountpoint (for the progress bar)
+	root      bool
 	remember  map[string]string // the entry selected in each directory
 	users     map[uint32]string
 	groups    map[uint32]string
@@ -56,9 +62,13 @@ func (m *Model) openFiles(start string) tea.Cmd {
 	}
 	b := &fileBrowser{sortBy: "size", filter: lineInput{limit: 200}, remember: map[string]string{},
 		users: idNames("/etc/passwd"), groups: idNames("/etc/group"), mounts: fsck.ReadMounts(hostfs.Host())}
+	b.root = os.Geteuid() == 0
 	m.files = b
 	b.open(start, "")
-	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return filesTickMsg{} })
+	if b.err == "" {
+		m.flash("browsing " + b.dir + ": sizes are counted in the background · enter opens · esc closes")
+	}
+	return tea.Tick(filesTickEvery, func(time.Time) tea.Msg { return filesTickMsg{} })
 }
 
 // filesSubject: where B starts - the selected filesystem, or a mountpoint
@@ -91,15 +101,25 @@ func (b *fileBrowser) open(dir, selName string) {
 	self, ents, err := fsbrowse.List(dir)
 	b.err = ""
 	if err != nil {
-		b.err = err.Error()
+		b.err = "cannot read " + dir + ": " + err.Error()
 		if os.IsPermission(err) || strings.Contains(err.Error(), "permission denied") {
-			b.err = "permission denied: run Tyr as root to look inside " + dir
+			b.err = "no access to " + dir + ": run Tyr as root (sudo tyr) to look inside"
 		}
 	}
 	b.dir, b.self, b.ents, b.sel, b.shown = dir, self, ents, 0, nil
 	b.moved = selName != "" || b.remember[dir] != ""
 	b.filter.SetValue("")
 	b.filtering = false
+	b.scanStart, b.announced, b.fsUsed = time.Time{}, false, 0
+	if st, ok := fileScan.Get(dir); !ok || !st.Done {
+		b.scanStart = time.Now()
+	}
+	if mt, ok := b.mountOf(dir); ok && mt.Point == dir {
+		var sf unix.Statfs_t
+		if unix.Statfs(dir, &sf) == nil {
+			b.fsUsed = int64(sf.Blocks-sf.Bfree) * int64(sf.Bsize)
+		}
+	}
 	fileScan.Scan(dir)
 	b.resort(firstNonEmptyStr(selName, b.remember[dir]))
 }
@@ -139,12 +159,46 @@ func (b *fileBrowser) current() (fsbrowse.Entry, bool) {
 	return fsbrowse.Entry{}, false
 }
 
+// filesTickEvery redraws the browser while sizes come in (and animates
+// its spinner).
+const filesTickEvery = 200 * time.Millisecond
+
 func (m *Model) filesTick() tea.Cmd {
-	if m.files == nil {
+	b := m.files
+	if b == nil {
 		return nil
 	}
-	m.files.resort("")
-	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return filesTickMsg{} })
+	b.resort("")
+	if !b.scanStart.IsZero() && !b.announced {
+		if st, ok := fileScan.Get(b.dir); ok && st.Done {
+			b.announced = true
+			msg := fmt.Sprintf("counted %s: %s on disk in %s files (%s)", b.dir, sizeH(st.Alloc), grouped(uint64(st.Files)),
+				time.Since(b.scanStart).Round(100*time.Millisecond))
+			if st.Errors > 0 {
+				msg += fmt.Sprintf(" · %d entries unreadable", st.Errors)
+				if !b.root {
+					msg += " (run as root to count them)"
+				}
+			}
+			m.flash(msg)
+		}
+	}
+	return tea.Tick(filesTickEvery, func(time.Time) tea.Msg { return filesTickMsg{} })
+}
+
+// filesScanning: the browser is counting the directory it shows.
+func (m *Model) filesScanning() bool {
+	if m.files == nil {
+		return false
+	}
+	_, _, _, running := fileScan.Progress()
+	return running
+}
+
+// spinFrame is a spinner driven by the clock (the browser redraws itself).
+func spinFrame() string {
+	f := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	return f[time.Now().UnixMilli()/100%int64(len(f))]
 }
 
 func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
@@ -161,6 +215,9 @@ func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
 			b.filter.Update(msg)
 		}
 		b.resort("")
+		if k == "enter" && b.filter.Value() != "" {
+			m.flash(fmt.Sprintf("%d of %d entries match %q · / changes the filter, esc in it clears it", len(b.shown), len(b.ents), b.filter.Value()))
+		}
 		return nil
 	}
 	page := max(1, m.contentHeight()-8)
@@ -170,6 +227,15 @@ func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
 	}
 	switch k {
 	case "esc", "q":
+		if b.filter.Value() != "" && k == "esc" {
+			b.filter.SetValue("")
+			b.resort("")
+			m.flash("filter cleared · esc again closes the browser")
+			return nil
+		}
+		if _, _, _, running := fileScan.Progress(); running {
+			m.flash("browser closed: counting stopped; the sizes counted so far are kept for this session")
+		}
 		fileScan.Stop()
 		m.files = nil
 	case "up", "k":
@@ -185,11 +251,30 @@ func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
 	case "end", "G":
 		b.sel = max(0, len(b.shown)-1)
 	case "enter", "right", "l":
-		if e, ok := b.current(); ok && e.IsDir() {
+		e, ok := b.current()
+		switch {
+		case !ok:
+			m.flash("nothing to open here · ← goes up")
+		case e.Err != "":
+			m.flash(e.Name + ": " + e.Err)
+		case e.IsDir():
 			b.open(e.Path, "")
+			switch {
+			case b.err != "":
+				m.flash(b.err)
+			case e.OtherFS:
+				mt, _ := b.mountOf(e.Path)
+				m.flash(fmt.Sprintf("%s is another filesystem (%s on %s): counted on its own", e.Path, mt.FSType, mt.Source))
+			}
+		case e.Mode&fs.ModeSymlink != 0:
+			m.flash(e.Name + " is a symlink to " + e.LinkTarget + " · the browser does not follow links")
+		default:
+			m.flash(e.Name + " is a file: its details are below · c copies the path")
 		}
 	case "left", "h", "backspace":
-		if b.dir != "/" {
+		if b.dir == "/" {
+			m.flash("already at /")
+		} else {
 			b.open(filepath.Dir(b.dir), filepath.Base(b.dir))
 		}
 	case "s":
@@ -200,10 +285,12 @@ func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
 			}
 		}
 		b.resort("")
-		m.flash("sorted by " + b.sortBy)
+		m.flash(map[string]string{"size": "sorted by size on disk, largest first", "name": "sorted by name",
+			"mtime": "sorted by modification time, newest first", "count": "sorted by number of files, most first"}[b.sortBy] + " · s changes")
 	case "/":
 		b.filtering = true
 		b.filter.Focus()
+		m.flash("type to filter by name · enter keeps the filter · esc clears it")
 	case "r":
 		fileScan.Forget(b.dir)
 		b.open(b.dir, "")
@@ -219,6 +306,13 @@ func (m *Model) updateFiles(msg tea.KeyPressMsg) tea.Cmd {
 	case "K", "shift+k":
 		mp, _ := b.mountOf(b.dir)
 		m.openFsck(mp.Source)
+		if m.fsck != nil && len(m.fsck.targets) == 0 && m.fsck.msg == "" {
+			m.fsck.msg = mp.Source + " (" + mp.FSType + ") is not a filesystem Tyr can check"
+		}
+	case "?":
+		m.showHelp = true
+	default:
+		m.flash("keys: ↑↓ move · enter open · ← up · s sort · / filter · r count again · c copy path · K check · esc close")
 	}
 	return nil
 }
@@ -239,8 +333,11 @@ func (m *Model) filesView(w, h int) string {
 	t, b := m.theme, m.files
 	var lines []string
 	right := "sort " + b.sortBy
+	if len(b.shown) > 0 {
+		right = fmt.Sprintf("%d/%d · ", b.sel+1, len(b.shown)) + right
+	}
 	if b.filter.Value() != "" || b.filtering {
-		right = "filter " + b.filter.Value() + " · " + right
+		right = fmt.Sprintf("filter %q: %d of %d · ", b.filter.Value(), len(b.shown), len(b.ents)) + right
 	}
 	crumb := lipgloss.NewStyle().Foreground(t.Accent).Bold(true).Render("B Files") + t.Dim.Render(" › ") + t.Bold.Render(b.dir)
 	lines = append(lines, padCell(crumb, w-lipgloss.Width(right)-1, false)+" "+t.Dim.Render(right))
@@ -277,13 +374,35 @@ func (m *Model) filesView(w, h int) string {
 		total = fmt.Sprintf("%s%s on disk · %s apparent · %s files · %s directories", pre, sizeH(st.Alloc), sizeH(st.Apparent),
 			grouped(uint64(st.Files)), grouped(uint64(st.Dirs)))
 		if st.Errors > 0 {
-			total += t.StatusText(model.StatusWarn, fmt.Sprintf(" · %d unreadable", st.Errors))
+			hint := ""
+			if !b.root {
+				hint = " (run as root)"
+			}
+			total += t.StatusText(model.StatusWarn, fmt.Sprintf(" · %d unreadable%s", st.Errors, hint))
 		}
 	}
-	if files, _, cur, running := fileScan.Progress(); running {
-		total += t.Dim.Render(fmt.Sprintf("  %s counting… %s files · %s", m.spin.View(), grouped(uint64(files)), truncate(cur, max(10, w/3))))
+	lines = append(lines, truncate(total, w))
+	// while counting: what, how far, how long
+	prog := ""
+	if files, _, cur, running := fileScan.Progress(); running && !b.scanStart.IsZero() {
+		var counted int64
+		if st, ok := fileScan.Get(b.dir); ok {
+			counted = st.Alloc
+		}
+		took := time.Since(b.scanStart).Round(time.Second)
+		prog = lipgloss.NewStyle().Foreground(t.Accent).Render(spinFrame()) + " counting"
+		if b.fsUsed > 0 {
+			pct := min(100, float64(counted)/float64(b.fsUsed)*100)
+			n := int(pct / 100 * 16)
+			prog += " " + lipgloss.NewStyle().Foreground(t.Accent).Render(strings.Repeat("█", n)) + t.Dim.Render(strings.Repeat("░", 16-n)) +
+				fmt.Sprintf(" %.0f%% of the %s in use", pct, sizeH(b.fsUsed))
+		}
+		prog += t.Dim.Render(fmt.Sprintf(" · %s files read · %s · now in %s", grouped(uint64(files)), took,
+			strings.TrimPrefix(strings.TrimPrefix(cur, b.dir), "/")))
+	} else if st, ok := fileScan.Get(b.dir); ok && st.Done && b.err == "" {
+		prog = t.StatusText(model.StatusOK, "✓") + t.Dim.Render(" counted · r counts again")
 	}
-	lines = append(lines, truncate(total, w), "")
+	lines = append(lines, truncate(prog, w), "")
 
 	if b.err != "" {
 		lines = append(lines, t.StatusText(model.StatusWarn, b.err))
@@ -311,8 +430,11 @@ func (m *Model) filesView(w, h int) string {
 		e := b.ents[b.shown[i]]
 		lines = append(lines, b.row(t, e, i == b.sel, nameW, parent, wide, w))
 	}
-	if len(b.shown) == 0 && b.err == "" {
-		lines = append(lines, t.Sub.Render("  (empty)"))
+	switch {
+	case len(b.shown) == 0 && b.filter.Value() != "":
+		lines = append(lines, t.Sub.Render(fmt.Sprintf("  no entry matches %q · esc clears the filter", b.filter.Value())))
+	case len(b.shown) == 0 && b.err == "":
+		lines = append(lines, t.Sub.Render("  (empty directory) · ← goes up"))
 	}
 	for len(lines) < h-detailH {
 		lines = append(lines, "")
@@ -330,7 +452,7 @@ func (b *fileBrowser) row(t *Theme, e fsbrowse.Entry, cur bool, nameW int, paren
 	var alloc int64 = -1
 	switch {
 	case e.Err != "":
-		size = t.StatusText(model.StatusWarn, "?")
+		size = t.StatusText(model.StatusWarn, "no access")
 	case e.IsDir() && e.OtherFS:
 		name += "/"
 		size = t.Dim.Render("other fs")
@@ -343,8 +465,16 @@ func (b *fileBrowser) row(t *Theme, e fsbrowse.Entry, cur bool, nameW int, paren
 			}
 			size, app, files = pre+sizeH(st.Alloc), sizeH(st.Apparent), grouped(uint64(st.Files))
 			alloc = st.Alloc
+			if !st.Done && b.counting(e.Path) {
+				size = lipgloss.NewStyle().Foreground(t.Accent).Render(spinFrame()) + " " + size
+			}
+		} else if _, _, _, running := fileScan.Progress(); running {
+			size = t.Dim.Render("queued")
+			if b.counting(e.Path) {
+				size = lipgloss.NewStyle().Foreground(t.Accent).Render(spinFrame() + " counting")
+			}
 		} else {
-			size = t.Dim.Render("…")
+			size = t.Dim.Render("–")
 		}
 	default:
 		size, app, alloc = sizeH(e.Alloc), sizeH(e.Size), e.Alloc
@@ -469,4 +599,10 @@ func sizeH(b int64) string {
 		return fmt.Sprintf("%.1f %s", f, u)
 	}
 	return fmt.Sprintf("%.0f %s", f, u)
+}
+
+// counting reports whether the scanner is inside dir right now.
+func (b *fileBrowser) counting(dir string) bool {
+	_, _, cur, running := fileScan.Progress()
+	return running && (cur == dir || strings.HasPrefix(cur, dir+"/"))
 }

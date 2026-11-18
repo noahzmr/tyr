@@ -269,7 +269,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.collect()
 
 	case spinner.TickMsg:
-		if m.snap != nil && !m.collecting && !m.syncing() && !m.isoRunning() {
+		if m.snap != nil && !m.collecting && !m.syncing() && !m.isoRunning() && !m.fsckRunning() {
 			return m, nil
 		}
 		var cmd tea.Cmd
