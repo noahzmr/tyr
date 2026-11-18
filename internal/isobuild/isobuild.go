@@ -16,8 +16,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -123,14 +125,14 @@ var doneRE = regexp.MustCompile(`^== (/src/)?(dist/tyr-live-\S+\.iso)`)
 
 // Build runs iso/build.sh in src for arch with the settings in cfgDir;
 // every output line goes to line. It returns the ISO's path.
-func Build(ctx context.Context, src, arch, cfgDir string, line func(string)) (string, error) {
+func Build(ctx context.Context, src, arch, cfgDir, goBin string, line func(string)) (string, error) {
 	src, err := filepath.Abs(src)
 	if err != nil {
 		return "", err
 	}
 	name := fmt.Sprintf("tyr-iso-%s-%d", arch, os.Getpid())
 	env := []string{"TYR_ISO_CONFIG=" + cfgDir, "TYR_ISO_NAME=" + name}
-	cmd := BuildCommand(src, arch, env)
+	cmd := BuildCommand(src, arch, goBin, env)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	pr, pw := io.Pipe()
 	cmd.Stdout, cmd.Stderr = pw, pw
@@ -146,7 +148,7 @@ func Build(ctx context.Context, src, arch, cfgDir string, line func(string)) (st
 		case <-stop:
 		}
 	}()
-	iso := ""
+	iso, lastLine := "", ""
 	scanDone := make(chan struct{})
 	go func() {
 		defer close(scanDone)
@@ -156,6 +158,9 @@ func Build(ctx context.Context, src, arch, cfgDir string, line func(string)) (st
 			l := strings.TrimRight(sc.Text(), "\r")
 			if m := doneRE.FindStringSubmatch(l); m != nil {
 				iso = filepath.Join(src, m[2])
+			}
+			if strings.TrimSpace(l) != "" {
+				lastLine = strings.TrimSpace(l)
 			}
 			line(l)
 		}
@@ -169,6 +174,9 @@ func Build(ctx context.Context, src, arch, cfgDir string, line func(string)) (st
 		return "", ctx.Err()
 	}
 	if err != nil {
+		if lastLine != "" {
+			return "", fmt.Errorf("iso/build.sh: %w: %s", err, lastLine)
+		}
 		return "", fmt.Errorf("iso/build.sh: %w", err)
 	}
 	if iso == "" {
@@ -180,8 +188,11 @@ func Build(ctx context.Context, src, arch, cfgDir string, line func(string)) (st
 // BuildCommand is how iso/build.sh is started: as the user behind sudo,
 // with that user's login environment (Go in PATH, Docker group), so the
 // image is built as on the command line; directly otherwise.
-func BuildCommand(src, arch string, env []string) *exec.Cmd {
+func BuildCommand(src, arch, goBin string, env []string) *exec.Cmd {
 	script := "cd " + shq(src) + " && exec env " + strings.Join(quoteAll(env), " ") + " iso/build.sh " + shq(arch)
+	if goBin != "" { // Go's directory first: login shells often lack it (PATH set in ~/.bashrc only)
+		script = "export PATH=" + shq(filepath.Dir(goBin)) + `:"$PATH"; ` + script
+	}
 	if u := os.Getenv("SUDO_USER"); u != "" && u != "root" && os.Geteuid() == 0 {
 		return exec.Command("runuser", "-l", u, "-c", script)
 	}
@@ -220,6 +231,41 @@ func Docker(ctx context.Context) string {
 			msg = msg[:i]
 		}
 		return "docker does not answer: " + msg
+	}
+	return ""
+}
+
+// FindGo finds the Go toolchain the build needs: in PATH, in the login
+// shell of the user behind sudo, and where Go is usually installed
+// (/usr/local/go, ~/sdk/go*, ~/.local/go, /usr/lib/go, /snap/bin). Empty
+// when there is none.
+func FindGo() string {
+	if p, err := exec.LookPath("go"); err == nil {
+		return p
+	}
+	home, _ := os.UserHomeDir()
+	if u := os.Getenv("SUDO_USER"); u != "" && u != "root" && os.Geteuid() == 0 {
+		if out, err := exec.Command("runuser", "-l", u, "-c", "command -v go").Output(); err == nil {
+			if p := strings.TrimSpace(string(out)); p != "" {
+				return p
+			}
+		}
+		if uu, err := user.Lookup(u); err == nil {
+			home = uu.HomeDir
+		}
+	}
+	cands := []string{"/usr/local/go/bin/go"}
+	if home != "" {
+		sdks, _ := filepath.Glob(filepath.Join(home, "sdk", "go*", "bin", "go"))
+		sort.Sort(sort.Reverse(sort.StringSlice(sdks))) // the newest first
+		cands = append(cands, sdks...)
+		cands = append(cands, filepath.Join(home, ".local", "go", "bin", "go"), filepath.Join(home, "go", "bin", "go"))
+	}
+	cands = append(cands, "/usr/lib/go/bin/go", "/usr/bin/go", "/snap/bin/go")
+	for _, c := range cands {
+		if fi, err := os.Stat(c); err == nil && !fi.IsDir() && fi.Mode()&0o111 != 0 {
+			return c
+		}
 	}
 	return ""
 }

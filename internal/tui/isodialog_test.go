@@ -25,6 +25,7 @@ func TestISODialog(t *testing.T) {
 	}
 	isoDocker = func() string { return "" }
 	isoRoot = func() bool { return root }
+	isoGo = func() string { return "/usr/local/go/bin/go" }
 	m := newLoaded(t, "server-healthy", w, h)
 	dir := t.TempDir()
 	m.opts.NetBoxFile, m.opts.TagsFile, m.opts.WebhooksFile = filepath.Join(dir, "n.json"), filepath.Join(dir, "t.json"), filepath.Join(dir, "w.json")

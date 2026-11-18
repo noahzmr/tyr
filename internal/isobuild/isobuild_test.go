@@ -124,9 +124,12 @@ func TestSettingsAndPhases(t *testing.T) {
 		t.Errorf("done line: %v", m)
 	}
 	t.Setenv("SUDO_USER", "")
-	cmd := BuildCommand("/src/tyr", "amd64", []string{"TYR_ISO_CONFIG=/tmp/x y"})
-	if s := strings.Join(cmd.Args, " "); !strings.Contains(s, "cd '/src/tyr' && exec env 'TYR_ISO_CONFIG=/tmp/x y' iso/build.sh 'amd64'") {
+	cmd := BuildCommand("/src/tyr", "amd64", "/usr/local/go/bin/go", []string{"TYR_ISO_CONFIG=/tmp/x y"})
+	if s := strings.Join(cmd.Args, " "); !strings.Contains(s, `export PATH='/usr/local/go/bin':"$PATH"; cd '/src/tyr' && exec env 'TYR_ISO_CONFIG=/tmp/x y' iso/build.sh 'amd64'`) {
 		t.Errorf("command %s", s)
+	}
+	if FindGo() == "" {
+		t.Error("no Go found (the tests run with it)")
 	}
 	if !IsSource("../..") || IsSource(t.TempDir()) {
 		t.Error("IsSource")

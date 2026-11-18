@@ -32,6 +32,7 @@ type isoDialog struct {
 	target   int // 0: only the ISO file, i: disks[i-1]
 	field    int
 	docker   string // why Docker cannot be used, "" ok, "…" while checking
+	goBin    string // the Go toolchain, "" not found
 	confirm  bool
 	run      *isoRun
 	err, msg string
@@ -71,12 +72,14 @@ var (
 	isoDisks  = func() ([]isobuild.Disk, error) { return isobuild.USBDisks("/") }
 	isoDocker = func() string { return isobuild.Docker(context.Background()) }
 	isoRoot   = func() bool { return os.Geteuid() == 0 }
+	isoGo     = isobuild.FindGo
 )
 var isoFields = []string{"source", "arch", "netbox", "webhooks", "target", "build"}
 
 func (m *Model) openISO() tea.Cmd {
 	d := &isoDialog{input: lineInput{limit: 1024}, docker: "…"}
 	d.src = isobuild.FindSource()
+	d.goBin = isoGo()
 	np, tp := netbox.Paths("")
 	if m.opts.NetBoxFile != "" {
 		np = m.opts.NetBoxFile
@@ -127,6 +130,8 @@ func (d *isoDialog) problem() string {
 	switch {
 	case d.src == "" || !isobuild.IsSource(d.src):
 		return "no Tyr source tree (iso/build.sh): enter its path, or set TYR_SOURCE"
+	case d.goBin == "":
+		return "Go not found (needed to build Tyr for the image): install it, or put it in /usr/local/go"
 	case d.docker == "…":
 		return "checking Docker …"
 	case d.docker != "":
@@ -253,7 +258,7 @@ func (m *Model) startISO() tea.Cmd {
 	if d.webhooks {
 		set.Webhooks = d.whCfg
 	}
-	src := d.src
+	src, goBin := d.src, d.goBin
 	go func() {
 		defer cancel()
 		defer close(r.ch)
@@ -262,7 +267,7 @@ func (m *Model) startISO() tea.Cmd {
 			r.ch <- isoFinishMsg{err: err}
 			return
 		}
-		iso, err := isobuild.Build(ctx, src, r.arch, dir, func(l string) { r.ch <- isoLineMsg(l) })
+		iso, err := isobuild.Build(ctx, src, r.arch, dir, goBin, func(l string) { r.ch <- isoLineMsg(l) })
 		os.RemoveAll(dir)
 		if err != nil {
 			r.ch <- isoFinishMsg{err: err}
@@ -369,8 +374,10 @@ func (m *Model) isoFormLines(inner int) []string {
 	lines = append(lines, row(0, "Source", src))
 	note := "Docker: checking …"
 	switch {
+	case d.docker == "" && d.goBin != "":
+		note = "Docker ready · Go " + d.goBin + " · iso/build.sh needs internet, 5-10 min"
 	case d.docker == "":
-		note = "Docker ready · the build runs iso/build.sh (Go, Docker, internet; 5-10 min)"
+		note = "Docker ready · Go not found"
 	case d.docker != "…":
 		note = "Docker: " + d.docker
 	}
