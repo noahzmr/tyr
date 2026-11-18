@@ -1,15 +1,15 @@
- TYR  srv-degraded-01                              fixture  now  26/27   ✖ CRIT
-1✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮lp
- ✖│ Navigation              Health                  Data · stress            │rk
-  │ 1–0       switch tab    n         next problem  r         refresh now    │
+ T╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮T
+1✖│ Navigation              Health                  Data · stress            │lp
+ ✖│ 1–0       switch tab    n         next problem  r         refresh now    │rk
   │ tab ⇧tab  next / prev … i         explain alert p         pause / resu…  │
-▌✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
- ✖│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
- ▲│ pgup pgdn page          v         switch view   R         reports        │
+  │ ↑↓ jk     move          !         problems only e         export JSON …  │
+▌✖│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
+ ✖│ pgup pgdn page          v         switch view   R         reports        │
  ▲│ g G       top / end     /         search        N W       NetBox · web…  │
- ●│ enter     open / action t         CPU load ↔ t… I         ISO / USB st…  │
- ●│ esc       back · close  a         empty DIMM s… A         alert refere…  │
- ●│                         h         virtual NICs  s S F     stress tests   │
+ ▲│ enter     open / action t         CPU load ↔ t… I         ISO / USB st…  │
+ ●│ esc       back · close  a         empty DIMM s… B K       browse files…  │
+ ●│                         h         virtual NICs  A         alert refere…  │
+ ●│                                                 s S F     stress tests   │
  ●│                                                 q ctrl+c  quit · stop …  │
   │ This tab · Storage                                                       │
 sd│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions,        │ge
@@ -21,4 +21,4 @@ Fi│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went awa
  ✖│ this session                                                             │
   │ Any key closes this window.                                              │
   ╰──────────────────────────────────────────────────────────────────────────╯
-↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help
+↑↓ move  enter open  v view  n next problem  B browse files  ? help

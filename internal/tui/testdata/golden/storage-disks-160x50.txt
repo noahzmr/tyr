@@ -47,4 +47,4 @@ Findings · Storage 9 ✖ · 4 ▲ ───────────────
 
 
 
-↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  B browse files  K check filesystem  S stress this  ! problems  q quit  ? help

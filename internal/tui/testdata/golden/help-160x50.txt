@@ -19,23 +19,23 @@ Firmware  SN04                  │ ←→ hl      move / regions     o         
 Path      /dev/sdd · sata       │ pgup pgdn  page               v          switch view        R          reports               │
                                 │ g G        top / end          /          search             N W        NetBox · webhooks     │(2.3 y)
                                 │ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │
-Findings · Storage 9 ✖ · 4 ▲ ───│ esc        back · close       a          empty DIMM slots   A          alert reference       │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│                               h          virtual NICs       s S F      stress tests          │lags 0x80700 phys_seg 1 prio
-                class 0         │                                                             q ctrl+c   quit · stop all       │
- ✖ sdf          sdf (iSCSI 10.16│                                                                                              │he session, the network path
-                and the target, │ This tab · Storage                                                                           │prio class 0
- ✖ sdf          sdf: iSCSI sessi│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n │
- ✖ md1          md1 (raid5) degr│ next problem · enter opens the page with SMART attributes, counters and / search · c copies  │
- ✖ 0/0          RAID virtual dri│ the serial                                                                                   │
- ✖ 252:2        RAID physical dr│ ↑↓ move  enter open  v view  n next problem                                                  │
- ✖ /data        /data (xfs) is m│                                                                                              │
- ✖ /data        /data 96% full  │ Status                                                                                       │
- ✖ session1     session1 to iqn.│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │ recovery timeout 1× since boot
-                (last 2026-11-15│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ▲ nvme1n1      nvme1n1: 93% of │                                                                                              │
- ▲ nvme1n1      nvme1n1: 3 media│ Any key closes this window.                                                                  │
- ▲ sdc          sdc: 8 pending s╰──────────────────────────────────────────────────────────────────────────────────────────────╯
- ▲ sdc          sdc: 24 reallocated sectors
+Findings · Storage 9 ✖ · 4 ▲ ───│ esc        back · close       a          empty DIMM slots   B K        browse files · ch…    │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│                               h          virtual NICs       A          alert reference       │lags 0x80700 phys_seg 1 prio
+                class 0         │                                                             s S F      stress tests          │
+ ✖ sdf          sdf (iSCSI 10.16│                                                             q ctrl+c   quit · stop all       │he session, the network path
+                and the target, │                                                                                              │prio class 0
+ ✖ sdf          sdf: iSCSI sessi│ This tab · Storage                                                                           │
+ ✖ md1          md1 (raid5) degr│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n │
+ ✖ 0/0          RAID virtual dri│ next problem · enter opens the page with SMART attributes, counters and / search · c copies  │
+ ✖ 252:2        RAID physical dr│ the serial                                                                                   │
+ ✖ /data        /data (xfs) is m│ ↑↓ move  enter open  v view  n next problem  B browse files  K check filesystem              │
+ ✖ /data        /data 96% full  │                                                                                              │
+ ✖ session1     session1 to iqn.│ Status                                                                                       │ recovery timeout 1× since boot
+                (last 2026-11-15│ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ▲ nvme1n1      nvme1n1: 93% of │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ▲ nvme1n1      nvme1n1: 3 media│                                                                                              │
+ ▲ sdc          sdc: 8 pending s│ Any key closes this window.                                                                  │
+ ▲ sdc          sdc: 24 realloca╰──────────────────────────────────────────────────────────────────────────────────────────────╯
 
 
 
@@ -47,4 +47,4 @@ Findings · Storage 9 ✖ · 4 ▲ ───│ esc        back · close       a
 
 
 
-↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  B browse files  K check filesystem  S stress this  ! problems  q quit  ? help

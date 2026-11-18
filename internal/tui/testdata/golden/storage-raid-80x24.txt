@@ -21,4 +21,4 @@ Sync    none
 
 Findings · Storage 9 ✖ · 4 ▲ ─────────────────────────────── n next · enter open
  ✖ sdd          sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O
-↑↓ move  enter open  v view  n next problem  S stress this  ! problems  ? help
+↑↓ move  enter open  v view  n next problem  B browse files  ? help

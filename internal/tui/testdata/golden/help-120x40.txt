@@ -14,27 +14,27 @@
             │ pgup pgdn  page               v          switch view        R          reports               │
 sdd ────────│ g G        top / end          /          search             N W        NetBox · webhooks     │l SMART page
 Model     ST│ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │
-Serial    WJ│ esc        back · close       a          empty DIMM slots   A          alert reference       │ce boot
-Firmware  SN│                               h          virtual NICs       s S F      stress tests          │
-Path      /d│                                                             q ctrl+c   quit · stop all       │
-            │                                                                                              │)
-            │ This tab · Storage                                                                           │
-Findings · S│ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n │· enter open
- ✖ sdd      │ next problem · enter opens the page with SMART attributes, counters and / search · c copies  │5160 op
-            │ the serial                                                                                   │
- ✖ sdf      │ ↑↓ move  enter open  v view  n next problem                                                  │stem
-            │                                                                                              │ror, dev
-            │ Status                                                                                       │
- ✖ sdf      │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ✖ md1      │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ✖ 0/0      │                                                                                              │
- ✖ 252:2    │ Any key closes this window.                                                                  │
+Serial    WJ│ esc        back · close       a          empty DIMM slots   B K        browse files · ch…    │ce boot
+Firmware  SN│                               h          virtual NICs       A          alert reference       │
+Path      /d│                                                             s S F      stress tests          │
+            │                                                             q ctrl+c   quit · stop all       │)
+            │                                                                                              │
+Findings · S│ This tab · Storage                                                                           │· enter open
+ ✖ sdd      │ v Disks · RAID · Filesystems · Network (iSCSI / NVMe-oF sessions, Longhorn, node checks) · n │5160 op
+            │ next problem · enter opens the page with SMART attributes, counters and / search · c copies  │
+ ✖ sdf      │ the serial                                                                                   │stem
+            │ ↑↓ move  enter open  v view  n next problem  B browse files  K check filesystem              │ror, dev
+            │                                                                                              │
+ ✖ sdf      │ Status                                                                                       │
+ ✖ md1      │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ✖ 0/0      │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ✖ 252:2    │                                                                                              │
+ ✖ /data    │ Any key closes this window.                                                                  │
  ✖ /data    ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
- ✖ /data        /data 96% full
  ✖ session1     session1 to iqn.2024-01.net.example:backup.vol2 at 10.16.40.20:3260 via bond0.100: the path stayed down
                 past the recovery timeout 1× since boot (last 2026-11-15 13:32) - the kernel failed the I/O,
                 applications saw errors
  ▲ nvme1n1      nvme1n1: 93% of rated endurance used
  ▲ nvme1n1      nvme1n1: 3 media/data integrity errors
    … 2 more · enter on a row opens its page
-↑↓ move  enter open  v view  n next problem  S stress this  ! problems  q quit  ? help
+↑↓ move  enter open  v view  n next problem  B browse files  K check filesystem  S stress this  ! problems  ? help

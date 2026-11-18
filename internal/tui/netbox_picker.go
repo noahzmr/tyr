@@ -383,6 +383,8 @@ func (m *Model) editingValue() (string, bool) {
 		return m.iso.input.Value(), true
 	case m.fsck != nil && m.fsck.plan != nil && m.fsck.run == nil && m.fsck.input.Focused():
 		return m.fsck.input.Value(), true
+	case m.files != nil && m.files.filtering:
+		return m.files.filter.Value(), true
 	}
 	return "", false
 }

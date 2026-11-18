@@ -33,7 +33,7 @@ func (s *storageTab) Module() model.ModuleID    { return model.ModStorage }
 func (s *storageTab) SetData(x *model.Snapshot) { s.st = x.Storage; s.arrange() }
 func (s *storageTab) SetSize(w, h int)          { s.w, s.h = w, h }
 func (s *storageTab) Help() []key.Binding {
-	return []key.Binding{s.keys.Up, s.keys.Enter, s.switchV, keyNext}
+	return []key.Binding{s.keys.Up, s.keys.Enter, s.switchV, keyNext, keyFiles, keyFsck}
 }
 
 // raidItem is one row of the RAID view.

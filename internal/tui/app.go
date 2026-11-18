@@ -89,6 +89,7 @@ type Model struct {
 	wh       *webhookDialog // W: webhooks for test notifications, nil when closed
 	iso      *isoDialog     // I: build the ISO, write a USB stick, nil when closed
 	fsck     *fsckDialog    // K: check or repair a filesystem, nil when closed
+	files    *fileBrowser   // B: browse the files, nil when closed
 	blurred  bool           // terminal window not focused: refresh slower
 	lastAt   time.Time      // when the last snapshot arrived
 	tabXs    []int          // right edge of each rendered tab (mouse hit test)
@@ -316,6 +317,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fsckLineMsg, fsckDoneMsg:
 		return m, m.fsckMsg(msg)
 
+	case filesTickMsg:
+		return m, m.filesTick()
+
 	case tea.PasteMsg:
 		return m, m.paste(msg.Content)
 
@@ -407,6 +411,7 @@ var (
 	keyWebhooks = key.NewBinding(key.WithKeys("W", "shift+w"), key.WithHelp("W", "webhooks"))
 	keyISO      = key.NewBinding(key.WithKeys("I", "shift+i"), key.WithHelp("I", "ISO / USB stick"))
 	keyFsck     = key.NewBinding(key.WithKeys("K", "shift+k"), key.WithHelp("K", "check filesystem"))
+	keyFiles    = key.NewBinding(key.WithKeys("B", "shift+b"), key.WithHelp("B", "browse files"))
 	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
 
@@ -466,6 +471,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	if m.fsck != nil {
 		return m.updateFsck(msg)
 	}
+	if m.files != nil {
+		return m.updateFiles(msg)
+	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
 			return m.quit()
@@ -524,6 +532,8 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	case key.Matches(msg, keyFsck):
 		m.openFsck(m.fsckSubject())
 		return nil
+	case key.Matches(msg, keyFiles):
+		return m.openFiles(m.filesSubject())
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
 	case key.Matches(msg, keyFullTest):
@@ -716,6 +726,9 @@ func (m *Model) render() string {
 		b.WriteString(fit(m.tabBar(), m.width, 1) + "\n")
 		body = "\n  " + m.spin.View() + " collecting hardware data…"
 		ch += 2
+	case m.files != nil:
+		body = m.filesView(m.width, ch+3)
+		ch += 3
 	case m.page != nil:
 		// detail pages replace the tab bar with their breadcrumb
 		body = m.page.view(t, m.width)
@@ -1035,7 +1048,10 @@ func (m *Model) footer() string {
 			}
 		}
 	}
-	if m.page != nil {
+	if m.files != nil {
+		hints = [][2]string{{"↑↓", "move"}, {"enter →", "open"}, {"← ⌫", "up"}, {"s", "sort"}, {"/", "filter"}, {"r", "count again"},
+			{"c", "copy path"}, {"K", "check filesystem"}, {"esc", "close"}}
+	} else if m.page != nil {
 		hints = [][2]string{{"↑↓ pgup pgdn", "scroll"}, {"g G", "top/end"}, {"/", "search"}, {"n N", "next/prev match"}, {"esc", "back"}, {"q", "quit"}}
 		if m.page.copyText != "" {
 			hints = append(hints[:3], append([][2]string{{"c", "copy report"}}, hints[3:]...)...)
