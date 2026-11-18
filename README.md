@@ -198,7 +198,7 @@ guard that keeps it safe, and gives a verdict you can trust.
 | ![Overview](docs/images/tui/overview.png) | ![CPU grid](docs/images/tui/cpu-grid.png) |
 | **Overview**: module cards, findings worst first | **CPU**: every core by socket and thread |
 | ![Memory slot map](docs/images/tui/memory-slotmap.png) | ![Storage](docs/images/tui/storage.png) |
-| **Memory**: slot map per socket and channel | **Storage**: disks with SMART, RAID, filesystems |
+| **Memory**: slot map per socket and channel | **Storage**: disks with SMART, RAID, filesystems, network storage |
 | ![Network](docs/images/tui/network.png) | ![GPU/NPU](docs/images/tui/gpu-npu.png) |
 | **Network**: bonds, VLANs, transceivers, LLDP | **GPU/NPU**: load, memory, power, PCIe link |
 | ![Inventory tree](docs/images/tui/inventory-tree.png) | ![Disk page](docs/images/tui/disk-page.png) |
@@ -360,6 +360,17 @@ ssh admin@host sudo /tmp/tyr stress --component full --duration 10m --yes
 
 Without a terminal on stdout `tyr` prints the text report, so `ssh host tyr`
 and cron work unchanged.
+
+On a **Kubernetes node** without SSH, a node debug pod reaches the host
+(kubectl 1.27 or later; the pod sees the host under `/host`):
+
+```bash
+kubectl debug node/k8s-node-03 -it --profile=sysadmin --image=busybox   # prints the pod's name
+kubectl cp dist/tyr-linux-amd64 node-debugger-k8s-node-03-xxxxx:/host/tmp/tyr   # second terminal
+chroot /host /tmp/tyr                                                    # in the pod: TUI or report
+```
+
+Delete the pod afterwards (`kubectl delete pod node-debugger-…`).
 
 | What | Where on the remote host | Fetch |
 |---|---|---|
@@ -530,7 +541,7 @@ tyr/
 │   │   ├── system/          identity, BIOS, BMC, PSUs, fans, boot history
 │   │   ├── cpu/             sockets, cores, temperatures, MCE history, offline cores, AMD limits
 │   │   ├── memory/          DIMMs, EDAC, poisoned pages
-│   │   ├── storage/         disks, SMART, RAID, filesystems, disk location
+│   │   ├── storage/         disks, SMART, RAID, filesystems, disk location; iSCSI / NVMe-oF sessions, Longhorn, node checks
 │   │   ├── power/           power supplies, draw, redundancy (Redfish, SMBIOS)
 │   │   ├── network/         ports, bonds, counters, losses, transceivers, LLDP
 │   │   ├── accel/           GPUs and NPUs
@@ -552,7 +563,8 @@ tyr/
 │   ├── netpeer/, netproto/  network test peer and protocol
 │   └── execx/, hostfs/, …   safe tool execution, read-only host access
 ├── iso/                     the live ISO: build scripts, boot menu, overlay (tyr-live), vendor/ drop-in
-├── testdata/fixtures/       recorded hosts (server-degraded, server-healthy, …)
+├── testdata/fixtures/       recorded hosts (server-degraded, server-healthy, k8s-longhorn, …)
+├── tools/                   fixture generator (genfixture), fixture-iscsi.py
 ├── docs/                    architecture, health checks, stress, reports, TUI
 │   ├── diagrams/            archify sources (.json) and pages (.html)
 │   └── images/              diagram SVGs and TUI screens
@@ -613,3 +625,8 @@ git config core.hooksPath scripts/hooks
 | **PSI** | Linux pressure stall information; "full" memory stall means thrashing |
 | **OSC 52** | the terminal escape sequence that writes to the clipboard, also over SSH |
 | **Fixture** | a recorded host (sysfs/procfs files and tool output) for tests and demos |
+| **iSCSI session / IQN** | a connection to a storage target over TCP; targets and initiators are named by an IQN (`iqn.2019-10.io.longhorn:pvc-…`) |
+| **replacement_timeout** | how long the kernel holds I/O while an iSCSI path is down before it fails it (NVMe-oF: `ctrl_loss_tmo`) |
+| **NVMe-oF** | NVMe over a network (TCP, RDMA, FC); Longhorn's v2 data engine uses NVMe/TCP |
+| **Longhorn** | Kubernetes block storage: each volume is an iSCSI target (v1 engine) on the node using it, its replicas are files in the nodes' data paths (`/var/lib/longhorn`) |
+| **multipathd** | the daemon that joins several paths to one device; it must not claim Longhorn's devices |

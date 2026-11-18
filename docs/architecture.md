@@ -27,8 +27,8 @@ read that snapshot or its JSON.
 ```mermaid
 flowchart LR
     subgraph host["Host"]
-        sys["sysfs · hwmon · procfs · /dev/kmsg"]
-        tools["smartctl · storcli · nvidia-smi · lldpctl · journalctl · (fallbacks: dmidecode, ethtool, ipmitool)"]
+        sys["sysfs · hwmon · procfs · /dev/kmsg · /var/log/pods"]
+        tools["smartctl · storcli · nvidia-smi · lldpctl · journalctl · ip · (fallbacks: dmidecode, ethtool, ipmitool)"]
         bmc["BMC: IPMI and Redfish (read-only)"]
     end
     subgraph tyr["tyr"]
@@ -74,6 +74,7 @@ Some data is expensive and changes slowly, so it is read once or cached:
 | Receive ring and queue size of each NIC (`ethtool -g` / `-l`) | once per interface | configuration |
 | Redfish event logs / power | every 2 min / 15 s, in the background | a BMC answers slowly; a collection round never waits longer than its timeout, the data arrives with the next refresh |
 | Redfish storage (drives behind RAID controllers), device and firmware inventory | every 10 min, in the background | many requests (one per drive, device and firmware), and it changes only with a part or a firmware update |
+| iscsid, multipathd and kubelet journal lines (network storage) | every minute | `journalctl -g` over a day is not free; on a host without sessions, Kubernetes or Longhorn neither the journal nor the process list is read |
 
 The Redfish client is found once per process: the BMC's host interface
 (SMBIOS type 42) first, then a configured address.

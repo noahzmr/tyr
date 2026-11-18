@@ -82,6 +82,13 @@ The machine **fails** when
 
 Other warnings are **remarks**. Findings in `ignore` do not count.
 
+The acceptance test is meant for a machine before it goes into service. Run on
+one in use, such as a Kubernetes node, the state of its network storage counts
+like any other finding: a Longhorn volume gone read-only or an iSCSI session
+that timed out fails the test. To judge only the hardware there, ignore those
+codes, e.g. `"ignore": ["storage/iscsi_recovery_timeout", "storage/remote_io_errors",
+"storage/remote_fs_error", "storage/longhorn_volume_readonly", "storage/iscsi_session"]`.
+
 ## Limits file
 
 Every profile can be changed with a JSON file; fields in it replace the

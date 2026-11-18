@@ -33,6 +33,7 @@ flowchart LR
 | GPU / NPU temperature | the driver's slowdown / shutdown limits | 85 / 95 °C |
 | Inlet / exhaust | the BMC's thresholds | 40 / 45 °C |
 | Filesystem used, inodes used | - | 85 / 95 % |
+| Longhorn data path used | Longhorn's storage-minimal-available-percentage (25 % free) | 75 % (warning) |
 | SSD wear | - | 90 % / 100 % of rated endurance |
 | Transceiver optics, voltage, bias | the module's own alarm and warning limits | - |
 
@@ -491,4 +492,6 @@ Tyr runs, and every module lists what it skipped. Root adds: serials and DIMM
 slots (the SMBIOS table is root-only), PCI VPD, SMART on most drives, `/dev/kmsg`, IPMI (`/dev/ipmi0`), PPIN,
 crash records (pstore), the full journal of earlier boots (members of the
 `adm` or `systemd-journal` group can read it too), and the config file with
-the Redfish credentials. The offline-core test always needs root.
+the Redfish credentials. On a Longhorn node the replicas' metadata and the
+pods' logs in `/var/log/pods` are root-only; sessions, volumes and node checks
+work without. The offline-core test always needs root.

@@ -86,7 +86,7 @@ Unknown fields are rejected, so a typo cannot drop a setting silently.
 | `name` | name of a new device: `hostname` or `serial` (the serial is used when the host name is taken, and on the ISO, where every machine is `tyr-live`) |
 | `status` | status of a new device: `active`, `planned`, `staged`, `offline`, `inventory` |
 | `interfaces`, `inventory`, `mark_failed`, `journal`, `prune` | what to write (see above) |
-| `inventory_categories` | categories written as inventory items; empty: all (`board bmc cpu dimm disk raid_controller raid_drive nic transceiver gpu npu psu fru device`) |
+| `inventory_categories` | categories written as inventory items; empty: all (`board bmc cpu dimm disk raid_controller raid_drive nic transceiver gpu npu psu fru device`). iSCSI / FC / NVMe-oF volumes (`volume`) are not parts of the machine and are left out unless listed |
 | `platform` | the device's platform: a template over the facts, `{os}` by default (`Ubuntu 24.04.3 LTS`), `{os} · {kernel}` for one per kernel; `""` leaves it alone |
 | `custom_fields` | device custom fields; `{fact}` is replaced by the fact's value. The fields must exist in NetBox |
 | `after_accept` | write after every `tyr accept` (`--netbox` / `--no-netbox` override) |
