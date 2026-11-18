@@ -130,7 +130,7 @@ func TestDeliver(t *testing.T) {
 			http.Error(w, "no such hook", 404)
 		case fail > 0:
 			fail--
-			http.Error(w, "busy", 503)
+			http.Error(w, "busy", http.StatusServiceUnavailable)
 		}
 	}))
 	defer srv.Close()

@@ -44,7 +44,7 @@ func (f *fakeNetBox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if r.Header.Get("Authorization") != "Token "+f.token {
-		http.Error(w, `{"detail":"Invalid token"}`, 403)
+		http.Error(w, `{"detail":"Invalid token"}`, http.StatusForbidden)
 		return
 	}
 	p := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/"), "/")
@@ -287,7 +287,7 @@ func TestSync(t *testing.T) {
 	r := &accept.Result{Verdict: accept.Fail, Profile: accept.Profile{Name: "quick"}, Failures: []string{"DIMM P1-A1: uncorrectable error"},
 		StartedAt: time.Now().Add(-time.Hour), EndedAt: time.Now()}
 	fake.writes = nil
-	rep, err = Sync(ctx, cfg, tags, Input{Snap: snap, Result: r, ResultDir: "/mnt/results/tyr/x"}, false, logf)
+	_, err = Sync(ctx, cfg, tags, Input{Snap: snap, Result: r, ResultDir: "/mnt/results/tyr/x"}, false, logf)
 	if err != nil {
 		t.Fatal(err)
 	}

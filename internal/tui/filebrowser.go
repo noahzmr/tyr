@@ -186,15 +186,6 @@ func (m *Model) filesTick() tea.Cmd {
 	return tea.Tick(filesTickEvery, func(time.Time) tea.Msg { return filesTickMsg{} })
 }
 
-// filesScanning: the browser is counting the directory it shows.
-func (m *Model) filesScanning() bool {
-	if m.files == nil {
-		return false
-	}
-	_, _, _, running := fileScan.Progress()
-	return running
-}
-
 // spinFrame is a spinner driven by the clock (the browser redraws itself).
 func spinFrame() string {
 	f := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}

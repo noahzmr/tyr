@@ -151,7 +151,7 @@ func fakeChoices(t *testing.T) *httptest.Server {
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Token tok" {
-			http.Error(w, "{}", 403)
+			http.Error(w, "{}", http.StatusForbidden)
 			return
 		}
 		l, ok := lists[r.URL.Path]
