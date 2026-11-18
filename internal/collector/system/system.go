@@ -193,6 +193,7 @@ func (c *Collector) identity(ctx context.Context, env *collector.Env, out *model
 			}
 		}
 	}
+	readOS(f, out)
 	if v, err := hostfs.String(f, "/proc/sys/kernel/osrelease"); err == nil {
 		out.Kernel = v
 	} else if v, err := hostfs.String(f, "/proc/version"); err == nil {
@@ -231,4 +232,42 @@ func (c *Collector) bmcSensors(env *collector.Env, out *model.System, sens []ipm
 			out.Temps = append(out.Temps, m)
 		}
 	}
+}
+
+// readOS reads /etc/os-release (or /usr/lib/os-release) and whether the
+// system runs from a live medium.
+func readOS(f hostfs.FS, out *model.System) {
+	for _, p := range []string{"/etc/os-release", "/usr/lib/os-release"} {
+		b, err := f.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		kv := ParseOSRelease(b)
+		out.OS = kv["PRETTY_NAME"]
+		if out.OS == "" {
+			out.OS = strings.TrimSpace(kv["NAME"] + " " + kv["VERSION"])
+		}
+		out.OSID, out.OSVersion = kv["ID"], kv["VERSION_ID"]
+		break
+	}
+	cmdline, _ := hostfs.String(f, "/proc/cmdline")
+	out.LiveSystem = hostfs.Exists(f, "/run/live/medium") || strings.Contains(" "+cmdline+" ", " boot=live ")
+}
+
+// ParseOSRelease parses os-release: KEY=value, values optionally quoted.
+func ParseOSRelease(b []byte) map[string]string {
+	out := map[string]string{}
+	for _, line := range strings.Split(string(b), "\n") {
+		line = strings.TrimSpace(line)
+		k, v, ok := strings.Cut(line, "=")
+		if !ok || strings.HasPrefix(line, "#") {
+			continue
+		}
+		v = strings.TrimSpace(v)
+		if len(v) >= 2 && (v[0] == '"' || v[0] == '\'') && v[len(v)-1] == v[0] {
+			v = v[1 : len(v)-1]
+		}
+		out[strings.TrimSpace(k)] = strings.ReplaceAll(v, `\"`, `"`)
+	}
+	return out
 }

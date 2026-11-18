@@ -59,6 +59,7 @@ var nbFields = []nbField{
 	{"tenant", "Tenant", "for new devices; optional, must exist"},
 	{"name", "New name", "name of a new device"},
 	{"status", "New status", "status of a new device"},
+	{"platform", "Platform", "the device's platform: {os} (default), {os} · {kernel}; empty leaves it; not set from the ISO"},
 	{"interfaces", "Interfaces", "NICs with MAC addresses, the BMC interface and its IP (out-of-band)"},
 	{"inventory", "Inventory", "an inventory item per component: part number, serial, firmware"},
 	{"mark_failed", "Mark failed", "failed parts and a FAIL verdict set status failed (back to active when healthy)"},
@@ -130,6 +131,8 @@ func textOf(c *netbox.Config, id string) *string {
 		return &c.Role
 	case "tenant":
 		return &c.Tenant
+	case "platform":
+		return &c.Platform
 	}
 	return nil
 }

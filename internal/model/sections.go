@@ -33,12 +33,19 @@ type System struct {
 	FRUs          []FRU    `json:"frus"` // BMC FRU devices
 	// From the BMC over Redfish: the device inventory (cards, controllers,
 	// batteries with part and serial numbers) and every firmware it lists.
-	Devices       []Device       `json:"devices,omitempty"`
-	Firmware      []FirmwareItem `json:"firmware,omitempty"`
-	Kernel        string         `json:"kernel,omitempty"`
-	UptimeSeconds *float64       `json:"uptime_seconds"`
-	Fans          []Sensor       `json:"fans"`
-	Temps         []Sensor       `json:"temps"` // inlet/exhaust/ambient
+	Devices  []Device       `json:"devices,omitempty"`
+	Firmware []FirmwareItem `json:"firmware,omitempty"`
+	Kernel   string         `json:"kernel,omitempty"`
+	// The operating system (/etc/os-release): "Ubuntu 24.04.3 LTS", its ID
+	// and version. LiveSystem: booted from a live medium (the Tyr ISO), so
+	// OS is the live system's, not the one installed on the disks.
+	OS            string   `json:"os,omitempty"`
+	OSID          string   `json:"os_id,omitempty"`
+	OSVersion     string   `json:"os_version,omitempty"`
+	LiveSystem    bool     `json:"live_system,omitempty"`
+	UptimeSeconds *float64 `json:"uptime_seconds"`
+	Fans          []Sensor `json:"fans"`
+	Temps         []Sensor `json:"temps"` // inlet/exhaust/ambient
 	// Boots are the boots the journal knows, oldest first.
 	Boots []Boot `json:"boots,omitempty"`
 }

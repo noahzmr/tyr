@@ -440,6 +440,9 @@ func (o *overviewTab) cardSummary(mod model.ModuleID) string {
 	case model.ModSystem:
 		if sys := s.System; sys != nil {
 			var p []string
+			if sys.OS != "" {
+				p = append(p, sys.OS)
+			}
 			if sys.BIOSVersion != "" {
 				p = append(p, "BIOS "+sys.BIOSVersion)
 			}

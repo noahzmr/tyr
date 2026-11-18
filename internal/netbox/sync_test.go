@@ -488,3 +488,65 @@ func TestChoices(t *testing.T) {
 		t.Error("unknown kind accepted")
 	}
 }
+
+func TestSyncPlatform(t *testing.T) {
+	snap := fixtureSnap(t, "server-healthy")
+	if snap.System.OS != "Ubuntu 24.04.3 LTS" {
+		t.Fatalf("fixture OS %q", snap.System.OS)
+	}
+	fake := newFake("4.4.0")
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+	cfg := Defaults()
+	cfg.URL, cfg.Token, cfg.Site, cfg.Role = srv.URL, "secret", "Lab", "Server"
+	ctx := context.Background()
+	platform := func() string {
+		dev := fake.all("dcim/devices")[0]
+		if dev["platform"] == nil {
+			return ""
+		}
+		return str(fake.objs["dcim/platforms"][id(dev["platform"])]["name"])
+	}
+	if _, err := Sync(ctx, cfg, Tags{}, Input{Snap: snap}, false, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := platform(); got != "Ubuntu 24.04.3 LTS" {
+		t.Errorf("platform %q", got)
+	}
+	if n := len(fake.all("dcim/platforms")); n != 1 {
+		t.Errorf("%d platforms", n)
+	}
+	// with the kernel
+	cfg.Platform = "{os} · {kernel}"
+	Sync(ctx, cfg, Tags{}, Input{Snap: snap}, false, nil)
+	if got := platform(); got != "Ubuntu 24.04.3 LTS · 6.8.0-49-generic" {
+		t.Errorf("platform with kernel %q", got)
+	}
+	// from the live ISO: left as it is
+	live := *snap
+	ys := *snap.System
+	ys.OS, ys.LiveSystem = "Debian GNU/Linux 13 (trixie)", true
+	live.System = &ys
+	cfg.Platform = "{os}"
+	var logs []string
+	Sync(ctx, cfg, Tags{}, Input{Snap: &live}, false, func(f string, a ...any) { logs = append(logs, fmt.Sprintf(f, a...)) })
+	if got := platform(); got != "Ubuntu 24.04.3 LTS · 6.8.0-49-generic" {
+		t.Errorf("live system changed the platform to %q", got)
+	}
+	if !strings.Contains(strings.Join(logs, "\n"), "live system") {
+		t.Error("no note about the live system")
+	}
+	// off
+	cfg.Platform = ""
+	before := len(fake.writes)
+	Sync(ctx, cfg, Tags{}, Input{Snap: snap}, false, nil)
+	for _, w := range fake.writes[before:] {
+		if strings.Contains(w, "platform") {
+			t.Errorf("platform written with platform off: %s", w)
+		}
+	}
+	f := ComputeFacts(snap, nil)
+	if f["os_id"].S != "ubuntu" || f["os_version"].S != "24.04" || f["kernel"].S != "6.8.0-49-generic" || f["live_system"].B {
+		t.Errorf("facts %v %v %v %v", f["os_id"], f["os_version"], f["kernel"], f["live_system"])
+	}
+}

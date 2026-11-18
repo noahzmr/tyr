@@ -117,6 +117,9 @@ func (s *syncer) estimate() int {
 		n += len(mergeCards(comps))
 	}
 	n += len(s.cfg.CustomFields)
+	if s.cfg.Platform != "" {
+		n++
+	}
 	if s.cfg.Journal {
 		n++
 	}
@@ -1055,6 +1058,7 @@ func (s *syncer) deviceFields() error {
 	}
 	sort.Strings(tagNames)
 	s.rep.Tags = tagNames
+	s.platform(body)
 	if len(s.cfg.CustomFields) > 0 {
 		cf := obj{}
 		curCF, _ := s.dev["custom_fields"].(obj)
@@ -1155,4 +1159,34 @@ func JournalEntry(in Input) (kind, text string) {
 	}
 	kind = map[model.Status]string{model.StatusOK: "success", model.StatusWarn: "warning", model.StatusCrit: "danger"}[worst]
 	return firstNonEmpty(kind, "info"), b.String()
+}
+
+// platform sets the device's platform from the template: the operating
+// system by default, created in NetBox when missing. Never from a live
+// system: its OS is the Tyr ISO's, not the one on the disks.
+func (s *syncer) platform(body obj) {
+	if s.cfg.Platform == "" {
+		return
+	}
+	if s.facts["live_system"].B {
+		s.log("platform left as it is: Tyr runs from a live system, not the installed OS")
+		return
+	}
+	name := strings.TrimSpace(Expand(s.cfg.Platform, s.facts))
+	name = strings.Trim(name, " ·-()")
+	if name == "" || strings.Contains(name, "{") || s.facts["os"].S == "" && strings.Contains(s.cfg.Platform, "{os}") {
+		return // no OS known, or the template names an unknown fact
+	}
+	name = trunc(name, 100)
+	pid, err := s.getOrCreate("/api/dcim/platforms/", q("name", name), obj{"name": name, "slug": slugify(name)})
+	if err != nil {
+		s.problem("platform %s: %v", name, err)
+		return
+	}
+	if id(s.dev["platform"]) != pid {
+		body["platform"] = pid
+		s.change("platform", name, "set", "the device's platform")
+	} else {
+		s.change("platform", name, "unchanged", "")
+	}
 }

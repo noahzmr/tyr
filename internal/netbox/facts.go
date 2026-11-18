@@ -30,6 +30,11 @@ var FactDefs = []FactDef{
 	{"arch", kStr, "amd64, arm64 …"},
 	{"virtual", kBool, "a virtual machine"},
 	{"bios", kStr, "BIOS vendor and version"},
+	{"os", kStr, "operating system: \"Ubuntu 24.04.3 LTS\" (os-release)"},
+	{"os_id", kStr, "its ID: ubuntu, debian, rhel, rocky …"},
+	{"os_version", kStr, "its version: 24.04, 12, 9.4 …"},
+	{"kernel", kStr, "kernel release: 6.8.0-49-generic"},
+	{"live_system", kBool, "running from a live medium (the Tyr ISO): os is the live system's"},
 	{"cpu_model", kStr, "CPU model"},
 	{"cpu_vendor", kStr, "GenuineIntel, AuthenticAMD …"},
 	{"sockets", kNum, "CPU sockets"},
@@ -97,6 +102,8 @@ func ComputeFacts(s *model.Snapshot, r *accept.Result) Facts {
 		f["model"] = Str(y.Product)
 		f["serial"] = Str(y.Serial)
 		f["bios"] = Str(strings.TrimSpace(y.BIOSVendor + " " + y.BIOSVersion))
+		f["os"], f["os_id"], f["os_version"], f["kernel"] = Str(y.OS), Str(y.OSID), Str(y.OSVersion), Str(y.Kernel)
+		f["live_system"] = Bool(y.LiveSystem)
 		psus := 0
 		for _, p := range y.PSUs {
 			if p.Present {

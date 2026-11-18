@@ -10,7 +10,7 @@
 ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯
 ╭───────────────────────────╮ ╭───────────────────────────╮ ╭───────────────────────────╮ ╭───────────────────────────╮
 │ ✖ Network        CRIT · 9 │ │ ✖ GPU/NPU        CRIT · 6 │ │ ✖ Events         CRIT · 5 │ │ ▲ System         WARN · 1 │
-│ 2/4 up · bond0 1/2        │ │ 1/2 GPUs OK, max 92°C     │ │ System Event Log 6 · BMC… │ │ BIOS 1.4b · BMC 1.40      │
+│ 2/4 up · bond0 1/2        │ │ 1/2 GPUs OK, max 92°C     │ │ System Event Log 6 · BMC… │ │ Debian GNU/Linux 12 (boo… │
 │ ▸ bond0 degraded: ens1f1  │ │ ▸ GPU1 ca:00.0: 2         │ │ ▸ System Event Log        │ │ ▸ 1 of 2 boots in the     │
 │   down (1/2 members up)   │ │   uncorrectable ECC erro… │ │   2026-11-15 10:00: PS2 … │ │   last 30 days ended wit… │
 ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯

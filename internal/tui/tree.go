@@ -61,6 +61,13 @@ func buildTree(s *model.Snapshot) *hwNode {
 		if x.BMCVendor != "" || x.BMCFirmware != "" {
 			plat.add(&hwNode{label: "BMC", info: strings.TrimSpace(x.BMCVendor + " fw " + x.BMCFirmware)})
 		}
+		if x.OS != "" || x.Kernel != "" {
+			info := strings.TrimSpace(x.OS + " · kernel " + x.Kernel)
+			if x.LiveSystem {
+				info += " (live system)"
+			}
+			plat.add(&hwNode{label: "Operating system", info: strings.TrimPrefix(info, "· ")})
+		}
 		for _, p := range x.PSUs {
 			st := model.StatusOK
 			if !p.Present {

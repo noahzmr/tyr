@@ -203,7 +203,7 @@ func TestNetBoxPasteAndPickers(t *testing.T) {
 	m.Update(press("esc"))
 
 	// site: chosen from NetBox, filtered as you type
-	for m.nb.field != 3 {
+	for nbFields[m.nb.field].id != "site" {
 		m.Update(press("down"))
 	}
 	_, cmd := m.Update(press("enter"))
@@ -243,7 +243,7 @@ func TestNetBoxPasteAndPickers(t *testing.T) {
 	m.Update(press("esc"))
 
 	// categories: multi-select, all = empty
-	for m.nb.field != 14 {
+	for nbFields[m.nb.field].id != "categories" {
 		m.Update(press("down"))
 	}
 	m.Update(press("enter"))
@@ -275,7 +275,7 @@ func TestNetBoxPasteAndPickers(t *testing.T) {
 	m.Update(press("tab"))
 	m.nb.cfg.Token = ""
 	m.Update(press("up"))
-	for m.nb.field != 4 {
+	for nbFields[m.nb.field].id != "role" {
 		m.Update(press("up"))
 	}
 	m.Update(press("enter"))

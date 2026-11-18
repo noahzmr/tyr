@@ -114,7 +114,7 @@ func systemSection(m *md, x *model.System) {
 		[2]string{"Board", strings.TrimSpace(x.BoardVendor + " " + x.BoardProduct + " " + x.BoardSerial)},
 		[2]string{"BIOS", strings.TrimSpace(x.BIOSVendor + " " + x.BIOSVersion + " " + x.BIOSDate)},
 		[2]string{"BMC", strings.TrimSpace(x.BMCVendor + " " + x.BMCFirmware)}, [2]string{"Chassis", strings.TrimSpace(x.ChassisType + " " + x.ChassisSerial)},
-		[2]string{"Kernel", x.Kernel}, [2]string{"Uptime", up})
+		[2]string{"Operating system", osText(x)}, [2]string{"Kernel", x.Kernel}, [2]string{"Uptime", up})
 	if len(x.PSUs) > 0 {
 		var rows [][]string
 		for _, p := range x.PSUs {
@@ -704,4 +704,12 @@ func eventsSection(m *md, e *model.Events) {
 	}
 	m.p("Warnings and errors, newest first (at most 60):")
 	m.table([]string{"Time (UTC)", "Severity", "Log", "Component", "Message", "Repaired"}, rows)
+}
+
+// osText is the operating system, marked when it is a live system's.
+func osText(x *model.System) string {
+	if x.OS != "" && x.LiveSystem {
+		return x.OS + " (live system)"
+	}
+	return x.OS
 }

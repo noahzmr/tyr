@@ -16,6 +16,7 @@ line (`tyr netbox`), after `tyr accept`, and by itself from the Tyr ISO.
 | Inventory items | one per component: CPUs, DIMMs, disks, RAID controllers and their drives, NICs, transceivers, GPUs, NPUs, power supplies, BMC FRUs, cards from the BMC's device inventory. Name, label (slot, bay), manufacturer, part number, serial, a description (model, size, firmware); role per category (`CPU`, `Memory`, `Disk` …, created if missing); marked as discovered | `inventory` |
 | Status | `failed` when a component is critical or the acceptance test failed (the device and the inventory item); back to `active` when healthy again - only from `failed`, so `planned`, `staged` or `offline` stay | `mark_failed` |
 | Tags | the tags of the rules that match; a rule's tag comes off when it no longer matches. Tags without a rule (set by people or other tools) are never touched | rules in `tags.json` |
+| Platform | the operating system (`Ubuntu 24.04.3 LTS`), created if missing; a template, e.g. `{os} · {kernel}`. Not set from the Tyr ISO: its OS is the live system's, not the server's | `platform` |
 | Custom fields | values from templates with facts: `"memory": "{memory_gb} GB"` | `custom_fields` |
 | Journal entry | the acceptance test's summary (verdict, failures, remarks, steps, counters, limits) as success, warning or danger; without a test the health check's warnings and errors | `journal` |
 
@@ -70,6 +71,7 @@ Unknown fields are rejected, so a typo cannot drop a setting silently.
   "journal": true,
   "prune": false,
   "inventory_categories": [],
+  "platform": "{os}",
   "custom_fields": { "memory": "{memory_gb} GB" },
   "after_accept": false
 }
@@ -85,6 +87,7 @@ Unknown fields are rejected, so a typo cannot drop a setting silently.
 | `status` | status of a new device: `active`, `planned`, `staged`, `offline`, `inventory` |
 | `interfaces`, `inventory`, `mark_failed`, `journal`, `prune` | what to write (see above) |
 | `inventory_categories` | categories written as inventory items; empty: all (`board bmc cpu dimm disk raid_controller raid_drive nic transceiver gpu npu psu fru device`) |
+| `platform` | the device's platform: a template over the facts, `{os}` by default (`Ubuntu 24.04.3 LTS`), `{os} · {kernel}` for one per kernel; `""` leaves it alone |
 | `custom_fields` | device custom fields; `{fact}` is replaced by the fact's value. The fields must exist in NetBox |
 | `after_accept` | write after every `tyr accept` (`--netbox` / `--no-netbox` override) |
 
@@ -131,6 +134,8 @@ match; the TUI shows them under `f` and while editing a rule.
 | Fact | Type | Meaning |
 |---|---|---|
 | `vendor`, `model`, `serial`, `hostname`, `bios` | text | system identity (SMBIOS) |
+| `os`, `os_id`, `os_version`, `kernel` | text | operating system (`Ubuntu 24.04.3 LTS`, `ubuntu`, `24.04`) and kernel release |
+| `live_system` | true/false | Tyr runs from a live medium (the ISO): `os` is the live system's |
 | `arch` | text | `amd64`, `arm64` |
 | `virtual` | true/false | a virtual machine |
 | `cpu_model`, `cpu_vendor` | text | CPU model, `GenuineIntel` / `AuthenticAMD` |

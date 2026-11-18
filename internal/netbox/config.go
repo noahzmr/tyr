@@ -46,6 +46,10 @@ type Config struct {
 	Prune      bool `json:"prune"` // delete inventory items Tyr wrote that are gone
 	// Categories of the inventory written as inventory items.
 	Categories []string `json:"inventory_categories,omitempty"`
+	// Platform is the device's platform, a template over the facts:
+	// "{os}" (default), "{os} · {kernel}"; "" leaves the platform alone.
+	// It is not set from a live system (the Tyr ISO).
+	Platform string `json:"platform"`
 	// CustomFields sets device custom fields; values may name facts in
 	// braces: {"memory": "{memory_gb} GB"}.
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
@@ -63,7 +67,7 @@ var DefaultCategories = []string{"board", "bmc", "cpu", "dimm", "disk", "raid_co
 
 // Defaults is a config before the file is applied.
 func Defaults() Config {
-	return Config{Role: "Server", Name: "hostname", Status: "active",
+	return Config{Role: "Server", Name: "hostname", Status: "active", Platform: "{os}",
 		Interfaces: true, Inventory: true, MarkFailed: true, Journal: true}
 }
 

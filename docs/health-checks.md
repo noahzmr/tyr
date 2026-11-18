@@ -61,8 +61,9 @@ disk, its partitions, its ATA link or its iSCSI connection.
 
 ### System
 
-Vendor, product, serial, BIOS, board, chassis, BMC firmware, kernel and
-uptime; the PSU inventory (SMBIOS type 39); fans and inlet/exhaust
+Vendor, product, serial, BIOS, board, chassis, BMC firmware, the operating
+system (`/etc/os-release`; marked when Tyr runs from a live system such as the
+Tyr ISO), kernel and uptime; the PSU inventory (SMBIOS type 39); fans and inlet/exhaust
 temperatures (hwmon, else the BMC). From the BMC over Redfish (read every 10
 minutes in the background): the device inventory, with the part and serial
 numbers of cards, controllers and the storage battery that the host knows

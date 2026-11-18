@@ -404,6 +404,7 @@ func diffFirmware(a, b *model.Snapshot, at time.Time) []Change {
 		cmp("BIOS", strings.TrimSpace(a.System.BIOSVersion+" "+a.System.BIOSDate), strings.TrimSpace(b.System.BIOSVersion+" "+b.System.BIOSDate))
 		cmp("BMC", a.System.BMCFirmware, b.System.BMCFirmware)
 		cmp("kernel", a.System.Kernel, b.System.Kernel)
+		cmp("os", a.System.OS, b.System.OS)
 	}
 	if a.CPU != nil && b.CPU != nil {
 		cmp("CPU microcode", a.CPU.Microcode, b.CPU.Microcode)
