@@ -313,6 +313,10 @@ func (c *Collector) smartAll(ctx context.Context, env *collector.Env, out *model
 			if d.TempCelsius == nil {
 				d.TempCelsius = info.TempC
 			}
+			// the drive's own specified maximum beats the generic default
+			if mx := info.TempMaxC; mx != nil && (d.TempThreshold == nil || d.TempThreshold.UpperCrit == nil) {
+				d.TempThreshold = &model.Thresholds{UpperWarn: model.F(*mx - 5), UpperCrit: model.F(*mx), Origin: "drive spec"}
+			}
 		}()
 	}
 	wg.Wait()

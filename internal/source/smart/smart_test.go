@@ -123,7 +123,8 @@ func TestSmartctlATADeviceStatistics(t *testing.T) {
 	    {"number": 5, "name": "Temperature Statistics", "table": [
 	      {"offset": 8, "name": "Current Temperature", "size": 1, "value": 23, "flags": {"valid": true}},
 	      {"offset": 32, "name": "Lowest Temperature", "size": 1, "value": -2, "flags": {"valid": true}},
-	      {"offset": 48, "name": "Lowest Average Short Term Temperature", "size": 1, "flags": {"valid": false}}
+	      {"offset": 48, "name": "Lowest Average Short Term Temperature", "size": 1, "flags": {"valid": false}},
+	      {"offset": 88, "name": "Specified Maximum Operating Temperature", "size": 1, "value": 60, "flags": {"valid": true}}
 	    ]},
 	    {"number": 6, "name": "Transport Statistics", "table": [
 	      {"offset": 24, "name": "Number of Interface CRC Errors", "size": 4, "value": 3, "flags": {"valid": true}}
@@ -152,6 +153,9 @@ func TestSmartctlATADeviceStatistics(t *testing.T) {
 	eq("crc", s.CRCErrors, 3)
 	eq("error log", s.ErrorLogEntries, 0)
 	eq("power cycles", s.PowerCycles, 90)
+	if in.TempMaxC == nil || *in.TempMaxC != 60 {
+		t.Errorf("max temperature = %v, want 60", in.TempMaxC)
+	}
 	if s.AvailableSpare == nil || *s.AvailableSpare != 100 || s.AvailableSpareThr == nil || *s.AvailableSpareThr != 1 {
 		t.Errorf("spare = %v / %v, want 100 / 1 from attribute 180", s.AvailableSpare, s.AvailableSpareThr)
 	}

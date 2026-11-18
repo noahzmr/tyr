@@ -29,7 +29,7 @@ flowchart LR
 | CPU temperature (Intel) | coretemp's crit (TjMax) | 75 / 90 °C |
 | CPU temperature (AMD) | k10temp has none: Tjmax per family - Ryzen 7000 / 9000 desktop 95 °C; Ryzen 7040 / 8040, Ryzen AI 300, Ryzen AI Max 100 °C; warn 10 °C below | 75 / 90 °C for other models |
 | DIMM temperature | the sensor's own limits | 85 / 95 °C (JEDEC) |
-| Disk temperature | SMART / NVMe thresholds | HDD 55 / 65 °C, SSD and NVMe 70 / 80 °C |
+| Disk temperature | NVMe thresholds; the specified maximum operating temperature of SATA (Device Statistics, SCT) and the trip temperature of SAS drives as crit, warn 5 °C below | HDD 55 / 65 °C, SSD and NVMe 70 / 80 °C |
 | GPU / NPU temperature | the driver's slowdown / shutdown limits | 85 / 95 °C |
 | Inlet / exhaust | the BMC's thresholds | 40 / 45 °C |
 | Filesystem used, inodes used | - | 85 / 95 % |

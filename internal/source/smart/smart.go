@@ -26,7 +26,8 @@ type Info struct {
 	SizeBytes   uint64
 	RotationRPM *int
 	TempC       *float64
-	Protocol    string // ATA, SCSI, NVMe
+	TempMaxC    *float64 // the highest operating temperature the drive is specified for
+	Protocol    string   // ATA, SCSI, NVMe
 }
 
 func u(v uint64) *uint64   { return &v }
@@ -72,7 +73,9 @@ type ctlJSON struct {
 		Passed bool `json:"passed"`
 	} `json:"smart_status"`
 	Temperature *struct {
-		Current *float64 `json:"current"`
+		Current    *float64 `json:"current"`
+		OpLimitMax *float64 `json:"op_limit_max"` // ATA SCT status: recommended operating maximum
+		DriveTrip  *float64 `json:"drive_trip"`   // SCSI: the drive's trip temperature
 	} `json:"temperature"`
 	PowerOnTime *struct {
 		Hours uint64 `json:"hours"`
@@ -105,9 +108,6 @@ type ctlJSON struct {
 			Table  []struct {
 				Name  string      `json:"name"`
 				Value json.Number `json:"value"` // signed for temperatures; absent when not valid
-				Flags struct {
-					Valid bool `json:"valid"`
-				} `json:"flags"`
 			} `json:"table"`
 		} `json:"pages"`
 	} `json:"ata_device_statistics"`
@@ -193,8 +193,14 @@ func ParseSmartctl(data []byte) (*Info, error) {
 		s.Passed = &p
 	}
 	s.SelfTestFailed = j.Smartctl.ExitStatus&ctlBitSelfTestErrs != 0
-	if j.Temperature != nil && j.Temperature.Current != nil {
-		in.TempC = j.Temperature.Current
+	if t := j.Temperature; t != nil {
+		in.TempC = t.Current
+		for _, m := range []*float64{t.OpLimitMax, t.DriveTrip} {
+			if m != nil && *m > 0 {
+				in.TempMaxC = m
+				break
+			}
+		}
 	}
 	if j.PowerOnTime != nil {
 		s.PowerOnHours = u(j.PowerOnTime.Hours)
@@ -203,7 +209,7 @@ func ParseSmartctl(data []byte) (*Info, error) {
 	if j.ATAAttrs != nil {
 		parseATAAttrs(j, s)
 	}
-	parseDevStats(j, s)
+	parseDevStats(j, in)
 	if e := j.ATAErrorLog; e != nil {
 		switch {
 		case e.Extended != nil && e.Extended.Count != nil:
@@ -323,7 +329,8 @@ func writtenBytes(a ctlAttr, lbs uint64) *uint64 {
 
 // parseDevStats fills what the attribute table did not give from the ATA
 // Device Statistics log.
-func parseDevStats(j ctlJSON, s *model.SMART) {
+func parseDevStats(j ctlJSON, in *Info) {
+	s := &in.SMART
 	if j.DevStats == nil {
 		return
 	}
@@ -333,7 +340,11 @@ func parseDevStats(j ctlJSON, s *model.SMART) {
 	}
 	for _, p := range j.DevStats.Pages {
 		for _, e := range p.Table {
-			if !e.Flags.Valid || e.Value == "" {
+			// smartctl leaves the value out when the drive marks it invalid
+			if e.Name == "Specified Maximum Operating Temperature" {
+				if t, err := strconv.ParseFloat(string(e.Value), 64); err == nil && t > 0 {
+					in.TempMaxC = f(t)
+				}
 				continue
 			}
 			v, err := strconv.ParseUint(string(e.Value), 10, 64)
