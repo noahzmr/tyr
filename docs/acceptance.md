@@ -31,6 +31,30 @@ everything against the limits of the profile.
 The storage scan stops after its time and reports how far it got; a full pass
 of a large hard disk takes many hours.
 
+## On the screen
+
+On a terminal (and on the ISO's console) `tyr accept` shows a live view:
+
+- every finished step stays on the screen: ✓ passed, ▲ warning, ✖ failed,
+  ○ skipped, with its result, how long it took and, for the health checks,
+  the findings;
+- below, the running step: a spinner, a progress bar with elapsed and
+  remaining time, what it is doing, the live values of the stress monitor
+  (hottest CPU, load, clock, memory used, power draw, verified throughput,
+  disk reads), error counters that grew during the step (machine checks,
+  ECC, CRC, I/O errors), and the last log lines;
+- a header with the profile, the step and the total time against the
+  expected one.
+
+`q` (or Ctrl+C) asks before it stops the test; stopped, the run ends
+INCOMPLETE as before. At the end the verdict banner is printed below the
+steps. On the Linux console (`TERM=linux`, the ISO) the marks are ASCII
+(`+ ! x -`), because its font has no check marks.
+
+Without a terminal (a pipe, a log, a service) or with `--plain`, `tyr
+accept` prints plain lines instead, as before. Either way the plain lines
+go to `console.log` in the results directory, from the first line on.
+
 ## Verdict
 
 | Verdict | Exit code | Means |
@@ -106,7 +130,7 @@ CZ2D1234AB-20261117T090000Z/
 ├── accept.json      the same as data
 ├── before.json      snapshot before the load
 ├── after.json       snapshot after the load
-├── console.log      the console output (ISO)
+├── console.log      the plain output of the whole run (also behind the live view)
 ├── netbox.log       what was written to NetBox (when configured), netbox.json the outcome
 └── runs/            one result per stress test (.json and .md)
 ```

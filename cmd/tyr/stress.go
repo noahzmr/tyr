@@ -177,13 +177,15 @@ func worseExit(a, b int) int {
 }
 
 func stressOne(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufio.Reader, stdout, stderr io.Writer, yes bool) (int, string) {
-	code, line, _ := stressRun(ctx, env, cfg, in, stdout, stderr, yes)
+	code, line, _ := stressRun(ctx, env, cfg, in, stdout, stderr, yes, nil)
 	return code, line
 }
 
 // stressRun runs one stress test with progress on stdout; the result is nil
 // when the test did not start.
-func stressRun(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufio.Reader, stdout, stderr io.Writer, yes bool) (int, string, *stress.Result) {
+// obs, if set, sees every event of the run (the live view of tyr accept).
+func stressRun(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufio.Reader, stdout, stderr io.Writer, yes bool,
+	obs func(stress.Event, *stress.Run)) (int, string, *stress.Result) {
 	fmt.Fprintf(stdout, "\n== %s stress (%s), %s\n", cfg.Component, cfg.Engine, cfg.Duration)
 	fmt.Fprintln(stdout, "collecting baseline …")
 	plan, test, err := stress.Prepare(ctx, env, cfg)
@@ -223,6 +225,9 @@ func stressRun(ctx context.Context, env *stress.Env, cfg stress.Config, in *bufi
 	}()
 	lastLine := time.Now()
 	for e := range r.Events() {
+		if obs != nil {
+			obs(e, r)
+		}
 		switch e.Kind {
 		case stress.EvPhase:
 			fmt.Fprintf(stdout, "phase: %s\n", e.Phase)

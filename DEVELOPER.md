@@ -72,6 +72,7 @@ flowchart LR
 | `internal/model` | `Snapshot` and the shared types; the JSON schema |
 | `internal/stress` | test lifecycle, guard rules, engines, install planner, metric series, the isolated offline-core test |
 | `internal/accept` | the acceptance test: built-in profiles, limits files, the verdict from snapshots and stress results, its Markdown report |
+| `internal/acceptui` | the live view of `tyr accept` on a terminal: a Bubble Tea model fed by the running test (`Program.Send`): finished steps printed above, the running one with spinner, progress bar, live values, grown counters and log lines |
 | `internal/notify` | webhooks: `webhooks.json` plus `TYR_WEBHOOK_*`, the events, the body per format (JSON, Slack, Teams Adaptive Card, Discord, Google Chat), delivery with retry and HMAC signature |
 | `internal/settings` | where configuration files are read from and saved to: `/etc/tyr` for root, `~/.config/tyr` for a user |
 | `internal/netbox` | NetBox: `netbox.json` / `tags.json`, the rule language (`expr.go`: lexer, parser, evaluator), facts from a snapshot, the REST client (dry run), the sync and the journal entry |
@@ -153,6 +154,7 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 | Golden screens | `internal/tui/testdata/golden` | 22 screens × 80×24, 120×40, 160×50; dark, light and NO_COLOR must match |
 | Workload goldens | `internal/workload` | `make golden` only after changing a kernel; `make ll-table` only after changing the torture cases |
 | FFT paths | `TestKernelsExact` | the Go, AVX2 and AVX-512 butterflies must all give the exact residues; `go test ./internal/workload -bench LL` measures them |
+| Accept screen | `internal/acceptui` | the model fed with a message sequence: header, progress and times, values, counters (traffic counters left out), log lines, q/y stop, fits 80 columns; ASCII marks for `TERM=linux`. By hand in a pseudo terminal: `script -qec "tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc" /dev/null` |
 | Acceptance | `internal/accept` | profiles, limits files (merging, unknown fields rejected), the verdict rules, the report; a whole run without hardware: `tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with `{"durations":{"cpu":"3s","memory":"3s","storage":"3s"}}` in `short.json` |
 | Webhooks | `internal/notify` | the settings (environment, unknown fields), every format's body, retry on 5xx but not 4xx, token, headers and signature against a local receiver; the TUI dialog in `internal/tui/webhooks_test.go`. By hand: `TYR_WEBHOOK_URL=http://127.0.0.1:8080 tyr accept --fixtures testdata/fixtures/server-degraded --limits short.json --yes --out /tmp/acc` with any HTTP receiver |
 | NetBox | `internal/netbox` | the rule language, facts from the fixtures, the files; the sync against an in-memory fake NetBox (`sync_test.go`: new device, second run writes only the journal, failed → active, tag rules next to foreign tags, dry run, wrong token, NetBox before 4.2); the TUI dialog in `internal/tui/netbox_test.go` |

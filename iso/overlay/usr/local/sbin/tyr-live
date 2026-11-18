@@ -156,7 +156,6 @@ run_accept() {
 		echo "limits: /etc/tyr/accept.json (built into the ISO)"
 	fi
 	mkdir -p "$base"
-	local log=$base/console-$(date -u +%Y%m%dT%H%M%SZ).log
 	local cmd=(tyr accept --profile "$profile" --yes --out "$base" "${limits[@]}")
 	[[ -n $peer ]] && cmd+=(--peer "$peer" --token "$token")
 	if netbox_on; then
@@ -165,11 +164,11 @@ run_accept() {
 		cmd+=(--no-netbox)
 	fi
 	webhook_on || cmd+=(--no-webhook)
-	# script keeps a terminal for tyr (colours, banner) and logs the console
-	script -qfec "$(printf '%q ' "${cmd[@]}")" "$log"
+	# on the console tyr accept shows its live view; it writes console.log
+	# (the plain lines) into the results directory itself
+	"${cmd[@]}"
 	rc=$?
 	out=$(ls -1dt "$base"/*/ 2>/dev/null | head -1)
-	[[ -n $out ]] && mv "$log" "$out/console.log" 2>/dev/null
 	sync
 	return $rc
 }

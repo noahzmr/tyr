@@ -399,7 +399,8 @@ TUI only: `--refresh 5s`, `--mouse`. Report: `--section cpu,memory,…`,
 `--engine`, `--cpus`, `--mem-percent` (up to 100), `--mode read|file`,
 `--fft small|large|blend` (torture engine), `--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
 `--include-suspect-cores`. Accept: `--profile`, `--limits`, `--out`,
-`--peer`, `--token`, `--print-profile`, `--yes`. Core test: `--duration`, `--yes`, `--restore`.
+`--peer`, `--token`, `--print-profile`, `--yes`, `--plain` (plain lines instead
+of the live view on a terminal). Core test: `--duration`, `--yes`, `--restore`.
 Net peer: `--listen`, `--token`, `--idle`.
 
 ### Exit codes
