@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -94,16 +95,65 @@ type ctlJSON struct {
 		MediaErrors      uint64  `json:"media_errors"`
 		NumErrLogEntries uint64  `json:"num_err_log_entries"`
 	} `json:"nvme_smart_health_information_log"`
+	LogicalBlockSize uint64 `json:"logical_block_size"`
+	// ATA Device Statistics log (ACS-3, GP log 0x04), printed by -x: the
+	// standard place for written sectors and the endurance indicator when
+	// the attribute table leaves them out (vendor firmware often does).
+	DevStats *struct {
+		Pages []struct {
+			Number int `json:"number"`
+			Table  []struct {
+				Name  string      `json:"name"`
+				Value json.Number `json:"value"` // signed for temperatures; absent when not valid
+				Flags struct {
+					Valid bool `json:"valid"`
+				} `json:"flags"`
+			} `json:"table"`
+		} `json:"pages"`
+	} `json:"ata_device_statistics"`
+	ATAErrorLog *struct {
+		Extended *struct {
+			Count *uint64 `json:"count"`
+		} `json:"extended"`
+		Summary *struct {
+			Count *uint64 `json:"count"`
+		} `json:"summary"`
+	} `json:"ata_smart_error_log"`
 	ScsiGrownDefects *uint64 `json:"scsi_grown_defect_list"`
 	ScsiErrors       *struct {
-		Read struct {
-			Uncorrected uint64 `json:"total_uncorrected_errors"`
-		} `json:"read"`
-		Write struct {
-			Uncorrected uint64 `json:"total_uncorrected_errors"`
-		} `json:"write"`
+		Read  scsiErrCounters `json:"read"`
+		Write scsiErrCounters `json:"write"`
 	} `json:"scsi_error_counter_log"`
 	ScsiEndurance *float64 `json:"scsi_percentage_used_endurance_indicator"`
+	ScsiStartStop *struct {
+		Cycles *uint64 `json:"accumulated_start_stop_cycles"`
+	} `json:"scsi_start_stop_cycle_counter"`
+}
+
+type scsiErrCounters struct {
+	Uncorrected uint64 `json:"total_uncorrected_errors"`
+	GB          any    `json:"gigabytes_processed"` // "1234.567" (a string in most smartctl versions)
+}
+
+// bytes is the data volume the counter log has processed, in bytes.
+func (c scsiErrCounters) bytes() *uint64 {
+	var gb float64
+	switch v := c.GB.(type) {
+	case string:
+		x, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err != nil {
+			return nil
+		}
+		gb = x
+	case float64:
+		gb = v
+	default:
+		return nil
+	}
+	if gb <= 0 {
+		return nil
+	}
+	return u(uint64(gb * 1e9))
 }
 
 // smartctl exit status bits (see smartctl(8) "RETURN VALUES").
@@ -151,36 +201,19 @@ func ParseSmartctl(data []byte) (*Info, error) {
 	}
 	s.PowerCycles = j.PowerCycleCount
 	if j.ATAAttrs != nil {
-		wearSet := false
-		for _, a := range j.ATAAttrs.Table {
-			raw := a.Raw.Value
-			s.Attributes = append(s.Attributes, model.SMARTAttr{ID: a.ID, Name: a.Name, Value: a.Value, Worst: a.Worst,
-				Thresh: a.Thresh, Raw: raw, RawString: strings.TrimSpace(a.Raw.String), WhenFailed: a.WhenFailed})
-			switch a.ID {
-			case 5:
-				s.Reallocated = u(raw & 0xffffffff) // some vendors pack extra data in high bytes
-			case 187:
-				s.ReportedUncorrect = u(raw & 0xffffffff)
-			case 197:
-				s.Pending = u(raw & 0xffffffff)
-			case 198:
-				s.OfflineUncorrect = u(raw & 0xffffffff)
-			case 199:
-				s.CRCErrors = u(raw & 0xffffffff)
-			case 231, 233, 177, 202, 169:
-				// normalized value counts down from 100 (remaining life)
-				if !wearSet && a.Value > 0 && a.Value <= 100 {
-					s.WearPercentUsed = f(float64(100 - a.Value))
-					wearSet = true
-				}
-			}
-			if a.WhenFailed == "now" {
-				p := false
-				s.Passed = &p
-			}
+		parseATAAttrs(j, s)
+	}
+	parseDevStats(j, s)
+	if e := j.ATAErrorLog; e != nil {
+		switch {
+		case e.Extended != nil && e.Extended.Count != nil:
+			s.ErrorLogEntries = e.Extended.Count
+		case e.Summary != nil && e.Summary.Count != nil:
+			s.ErrorLogEntries = e.Summary.Count
 		}
 	}
 	if n := j.NVMe; n != nil {
+
 		s.NVMeCriticalWarn = u(n.CriticalWarning)
 		s.AvailableSpare, s.AvailableSpareThr = f(n.AvailableSpare), f(n.AvailableSpareTh)
 		s.WearPercentUsed = f(n.PercentageUsed)
@@ -194,11 +227,142 @@ func ParseSmartctl(data []byte) (*Info, error) {
 	s.GrownDefects = j.ScsiGrownDefects
 	if e := j.ScsiErrors; e != nil {
 		s.UncorrectedErrors = u(e.Read.Uncorrected + e.Write.Uncorrected)
+		if s.DataWrittenBytes == nil {
+			s.DataWrittenBytes = e.Write.bytes()
+		}
+		if s.DataReadBytes == nil {
+			s.DataReadBytes = e.Read.bytes()
+		}
+	}
+	if s.PowerCycles == nil && j.ScsiStartStop != nil {
+		s.PowerCycles = j.ScsiStartStop.Cycles
 	}
 	if j.ScsiEndurance != nil {
 		s.WearPercentUsed = j.ScsiEndurance
 	}
 	return in, nil
+}
+
+// wearAttrs count down from 100 (remaining life), most specific first; 173
+// (wear leveling / average erase count) is the last resort.
+var wearAttrs = []int{231, 233, 177, 202, 169, 173}
+
+func parseATAAttrs(j ctlJSON, s *model.SMART) {
+	byID := map[int]ctlAttr{}
+	for _, a := range j.ATAAttrs.Table {
+		raw := a.Raw.Value
+		byID[a.ID] = a
+		s.Attributes = append(s.Attributes, model.SMARTAttr{ID: a.ID, Name: a.Name, Value: a.Value, Worst: a.Worst,
+			Thresh: a.Thresh, Raw: raw, RawString: strings.TrimSpace(a.Raw.String), WhenFailed: a.WhenFailed})
+		switch a.ID {
+		case 5:
+			s.Reallocated = u(raw & 0xffffffff) // some vendors pack extra data in high bytes
+		case 187:
+			s.ReportedUncorrect = u(raw & 0xffffffff)
+		case 197:
+			s.Pending = u(raw & 0xffffffff)
+		case 198:
+			s.OfflineUncorrect = u(raw & 0xffffffff)
+		case 199:
+			s.CRCErrors = u(raw & 0xffffffff)
+		}
+		if a.WhenFailed == "now" {
+			p := false
+			s.Passed = &p
+		}
+	}
+	for _, id := range wearAttrs {
+		if a, ok := byID[id]; ok && a.Value > 0 && a.Value <= 100 {
+			s.WearPercentUsed = f(float64(100 - a.Value))
+			break
+		}
+	}
+	// reserved blocks left, normalized to 100 (Intel 170/232, Kioxia and
+	// others 180); the attribute's threshold is the drive's own limit
+	for _, id := range []int{232, 170, 180} {
+		if a, ok := byID[id]; ok && a.Value > 0 && a.Value <= 100 {
+			s.AvailableSpare = f(float64(a.Value))
+			if a.Thresh > 0 {
+				s.AvailableSpareThr = f(float64(a.Thresh))
+			}
+			break
+		}
+	}
+	for _, id := range []int{241, 246, 225} {
+		if a, ok := byID[id]; ok {
+			if b := writtenBytes(a, j.LogicalBlockSize); b != nil {
+				s.DataWrittenBytes = b
+				break
+			}
+		}
+	}
+	if a, ok := byID[242]; ok && strings.Contains(strings.ToLower(a.Name), "read") {
+		s.DataReadBytes = writtenBytes(a, j.LogicalBlockSize)
+	}
+}
+
+// writtenBytes converts a host-writes attribute by the unit its name gives.
+func writtenBytes(a ctlAttr, lbs uint64) *uint64 {
+	n, raw := strings.ToLower(a.Name), a.Raw.Value
+	if raw == 0 {
+		return nil
+	}
+	switch {
+	case strings.Contains(n, "32mib"):
+		return u(raw << 25)
+	case strings.Contains(n, "gib") || strings.Contains(n, "_gb"):
+		return u(raw << 30)
+	case strings.Contains(n, "lba") || strings.Contains(n, "sector"):
+		if lbs == 0 {
+			lbs = 512
+		}
+		return u(raw * lbs)
+	}
+	return nil
+}
+
+// parseDevStats fills what the attribute table did not give from the ATA
+// Device Statistics log.
+func parseDevStats(j ctlJSON, s *model.SMART) {
+	if j.DevStats == nil {
+		return
+	}
+	lbs := j.LogicalBlockSize
+	if lbs == 0 {
+		lbs = 512
+	}
+	for _, p := range j.DevStats.Pages {
+		for _, e := range p.Table {
+			if !e.Flags.Valid || e.Value == "" {
+				continue
+			}
+			v, err := strconv.ParseUint(string(e.Value), 10, 64)
+			if err != nil {
+				continue
+			}
+			set := func(dst **uint64, x uint64) {
+				if *dst == nil {
+					*dst = u(x)
+				}
+			}
+			switch e.Name {
+			case "Percentage Used Endurance Indicator":
+				s.WearPercentUsed = f(float64(v)) // the standard value beats a vendor attribute
+			case "Logical Sectors Written":
+				set(&s.DataWrittenBytes, v*lbs)
+			case "Logical Sectors Read":
+				set(&s.DataReadBytes, v*lbs)
+			case "Power-on Hours":
+				set(&s.PowerOnHours, v)
+			case "Lifetime Power-On Resets":
+				set(&s.PowerCycles, v)
+			case "Number of Reported Uncorrectable Errors":
+				set(&s.ReportedUncorrect, v)
+			case "Number of Interface CRC Errors":
+				set(&s.CRCErrors, v)
+			}
+		}
+	}
 }
 
 func firstNonEmpty(ss ...string) string {

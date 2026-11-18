@@ -6,11 +6,14 @@ Device     /dev/sdd                                                             
 Model      ST4000NM000A-2HZ100                                                               limits warn 55 · crit 65 (default)
 Serial     WJG0A004
 WWN        naa.5000c500e4a10004                                                  SMART health ───────────────────────────────────── via smartctl · read just now
-Firmware   SN04                                                                  Overall    ● PASSED
-Capacity   4 TB · 7200 rpm                                                       Self-test  no failure logged
-Interface  HDD over sata                                                         Power-on   19 832 h · 41 cycles
-Used by    md1 member
-Location   0000:00:17.0 · SATA port 4
+Firmware   SN04                                                                  Overall        ● PASSED
+Capacity   4 TB · 7200 rpm                                                       Self-test      no failure logged
+Interface  HDD over sata                                                         Power-on       19 832 h · 41 cycles
+Used by    md1 member                                                            Reallocated    0
+Location   0000:00:17.0 · SATA port 4                                            Pending        0
+                                                                                 Offline unc.   0
+                                                                                 Uncorrectable  0
+                                                                                 CRC errors     0
 
 SMART attributes ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 8 attributes
      ID Attribute                   Value  Worst  Thresh            Raw  Δ session
@@ -44,7 +47,4 @@ Counters since boot · growth this session ────────────�
    CRC errors                             0  unchanged
    offline uncorrectable                  0  unchanged
    pending sectors                        0  unchanged
-   reallocated sectors                    0  unchanged
-   reported uncorrectable                 0  unchanged
-
-↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help                   /realloc  match 1 of 4
+↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help                   /realloc  match 1 of 5

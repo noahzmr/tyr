@@ -93,3 +93,110 @@ func TestNVMeCLI(t *testing.T) {
 		t.Error("missing critical_warning must fail")
 	}
 }
+
+// An HPE-branded SATA SSD behind smartpqi: the firmware's attribute table
+// has no wear or host-writes attribute, the Device Statistics log has both.
+func TestSmartctlATADeviceStatistics(t *testing.T) {
+	in, err := ParseSmartctl([]byte(`{
+	  "smartctl": {"exit_status": 0},
+	  "device": {"protocol": "ATA"},
+	  "model_name": "VK000480GWEZC", "serial_number": "18311DBE479E", "firmware_version": "HPGG",
+	  "logical_block_size": 512,
+	  "smart_status": {"passed": true},
+	  "power_on_time": {"hours": 55078}, "power_cycle_count": 90,
+	  "ata_smart_attributes": {"table": [
+	    {"id": 5, "name": "Reallocated_Sector_Ct", "value": 100, "worst": 100, "thresh": 10, "raw": {"value": 0, "string": "0"}},
+	    {"id": 9, "name": "Power_On_Hours", "value": 100, "worst": 100, "thresh": 0, "raw": {"value": 55078, "string": "55078"}},
+	    {"id": 173, "name": "Unknown_Attribute", "value": 99, "worst": 99, "thresh": 10, "raw": {"value": 23, "string": "23"}},
+	    {"id": 180, "name": "Unused_Rsvd_Blk_Cnt_Tot", "value": 100, "worst": 100, "thresh": 1, "raw": {"value": 0, "string": "0"}}
+	  ]},
+	  "ata_smart_error_log": {"extended": {"revision": 1, "sectors": 1, "count": 0}},
+	  "ata_device_statistics": {"pages": [
+	    {"number": 1, "name": "General Statistics", "table": [
+	      {"offset": 8, "name": "Lifetime Power-On Resets", "size": 4, "value": 90, "flags": {"valid": true}},
+	      {"offset": 24, "name": "Logical Sectors Written", "size": 6, "value": 85937500000, "flags": {"valid": true}},
+	      {"offset": 40, "name": "Logical Sectors Read", "size": 6, "value": 39062500000, "flags": {"valid": true}}
+	    ]},
+	    {"number": 4, "name": "General Errors Statistics", "table": [
+	      {"offset": 8, "name": "Number of Reported Uncorrectable Errors", "size": 4, "value": 0, "flags": {"valid": true}}
+	    ]},
+	    {"number": 5, "name": "Temperature Statistics", "table": [
+	      {"offset": 8, "name": "Current Temperature", "size": 1, "value": 23, "flags": {"valid": true}},
+	      {"offset": 32, "name": "Lowest Temperature", "size": 1, "value": -2, "flags": {"valid": true}},
+	      {"offset": 48, "name": "Lowest Average Short Term Temperature", "size": 1, "flags": {"valid": false}}
+	    ]},
+	    {"number": 6, "name": "Transport Statistics", "table": [
+	      {"offset": 24, "name": "Number of Interface CRC Errors", "size": 4, "value": 3, "flags": {"valid": true}}
+	    ]},
+	    {"number": 7, "name": "Solid State Device Statistics", "table": [
+	      {"offset": 8, "name": "Percentage Used Endurance Indicator", "size": 1, "value": 2, "flags": {"valid": true}}
+	    ]}
+	  ]}
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := in.SMART
+	eq := func(name string, got *uint64, want uint64) {
+		t.Helper()
+		if got == nil || *got != want {
+			t.Errorf("%s = %v, want %d", name, got, want)
+		}
+	}
+	if s.WearPercentUsed == nil || *s.WearPercentUsed != 2 {
+		t.Errorf("wear = %v, want 2 (device statistics, not attribute 173)", s.WearPercentUsed)
+	}
+	eq("written", s.DataWrittenBytes, 85937500000*512)
+	eq("read", s.DataReadBytes, 39062500000*512)
+	eq("uncorrectable", s.ReportedUncorrect, 0)
+	eq("crc", s.CRCErrors, 3)
+	eq("error log", s.ErrorLogEntries, 0)
+	eq("power cycles", s.PowerCycles, 90)
+	if s.AvailableSpare == nil || *s.AvailableSpare != 100 || s.AvailableSpareThr == nil || *s.AvailableSpareThr != 1 {
+		t.Errorf("spare = %v / %v, want 100 / 1 from attribute 180", s.AvailableSpare, s.AvailableSpareThr)
+	}
+}
+
+// Without the statistics log, the vendor attributes are the fallback.
+func TestSmartctlATAWearFallback(t *testing.T) {
+	in, err := ParseSmartctl([]byte(`{
+	  "smartctl": {"exit_status": 0}, "device": {"protocol": "ATA"},
+	  "ata_smart_attributes": {"table": [
+	    {"id": 173, "name": "Wear_Leveling_Count", "value": 97, "worst": 97, "thresh": 10, "raw": {"value": 90}},
+	    {"id": 233, "name": "Media_Wearout_Indicator", "value": 95, "worst": 95, "thresh": 0, "raw": {"value": 0}},
+	    {"id": 241, "name": "Host_Writes_32MiB", "value": 100, "worst": 100, "thresh": 0, "raw": {"value": 1000}}
+	  ]}
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := in.SMART
+	if s.WearPercentUsed == nil || *s.WearPercentUsed != 5 {
+		t.Errorf("wear = %v, want 5 (233 before 173)", s.WearPercentUsed)
+	}
+	if s.DataWrittenBytes == nil || *s.DataWrittenBytes != 1000<<25 {
+		t.Errorf("written = %v, want %d", s.DataWrittenBytes, uint64(1000<<25))
+	}
+}
+
+func TestSmartctlSASWritten(t *testing.T) {
+	in, err := ParseSmartctl([]byte(`{
+	  "smartctl": {"exit_status": 0}, "device": {"protocol": "SCSI"},
+	  "scsi_percentage_used_endurance_indicator": 4,
+	  "scsi_start_stop_cycle_counter": {"accumulated_start_stop_cycles": 31},
+	  "scsi_error_counter_log": {
+	    "read": {"total_uncorrected_errors": 0, "gigabytes_processed": "1234.500"},
+	    "write": {"total_uncorrected_errors": 0, "gigabytes_processed": "800.000"}
+	  }
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := in.SMART
+	if s.DataWrittenBytes == nil || *s.DataWrittenBytes != 800e9 || s.DataReadBytes == nil || *s.DataReadBytes != 1234.5e9 {
+		t.Errorf("written/read = %v/%v", s.DataWrittenBytes, s.DataReadBytes)
+	}
+	if s.PowerCycles == nil || *s.PowerCycles != 31 || s.WearPercentUsed == nil || *s.WearPercentUsed != 4 {
+		t.Errorf("cycles/wear = %v/%v", s.PowerCycles, s.WearPercentUsed)
+	}
+}

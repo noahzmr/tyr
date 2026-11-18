@@ -207,7 +207,13 @@ BMC SEL memory events.
 
 Disks (SATA, SAS, NVMe) with SMART, wear and spare, I/O errors from the kernel
 log, md RAID (`/proc/mdstat`), MegaRAID / PERC controllers with virtual and
-physical drives and the battery, filesystems. The drives behind a RAID
+physical drives and the battery, filesystems. For SATA drives, wear, data
+written and the error counters come from the standard Device Statistics log
+(`smartctl -x`) first, then from the vendor attributes (wear from 231, 233,
+177, 202, 169 or 173; written from 241, 246 or 225). Vendor firmware such as
+HPE's often leaves those attributes out. SAS drives give wear and data
+written from their log pages. The SMART panel lists every counter the drive
+reports, not only on NVMe. The drives behind a RAID
 controller that no vendor tool reports (HPE Smart Array without ssacli, PERC
 without perccli) come from the BMC over Redfish: bay (`1I:1:3`), model,
 serial, size, endurance left, power-on hours, temperature, predicted failure

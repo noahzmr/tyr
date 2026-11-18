@@ -768,23 +768,28 @@ func (s *storageTab) diskPage(doc *doc, d model.Disk) string {
 		if m.NVMeCriticalWarn != nil && *m.NVMeCriticalWarn != 0 {
 			rows = append(rows, kvPair{"Critical", t.StatusText(model.StatusCrit, model.NVMeWarningText(*m.NVMeCriticalWarn))})
 		}
-		if len(m.Attributes) == 0 { // NVMe/SAS: the counters have no attribute table
-			for _, c := range []struct {
-				k string
-				v *uint64
-			}{{"Reallocated", m.Reallocated}, {"Pending", m.Pending}, {"Media errors", m.MediaErrors}, {"Error log", m.ErrorLogEntries},
-				{"Grown defects", m.GrownDefects}, {"Uncorrected", m.UncorrectedErrors}, {"Unsafe shutdn", m.UnsafeShutdowns}} {
-				if c.v != nil {
-					v := grouped(*c.v)
-					if *c.v > 0 && c.k != "Unsafe shutdn" && c.k != "Error log" {
-						v = t.StatusText(model.StatusWarn, v)
-					}
-					rows = append(rows, kvPair{c.k, v})
+		// the error counters, whichever the drive has (ATA attributes and
+		// device statistics, the NVMe health log, the SCSI logs)
+		for _, c := range []struct {
+			k string
+			v *uint64
+		}{{"Reallocated", m.Reallocated}, {"Pending", m.Pending}, {"Offline unc.", m.OfflineUncorrect}, {"Uncorrectable", m.ReportedUncorrect},
+			{"CRC errors", m.CRCErrors}, {"Media errors", m.MediaErrors}, {"Error log", m.ErrorLogEntries},
+			{"Grown defects", m.GrownDefects}, {"Uncorrected", m.UncorrectedErrors}, {"Unsafe shutdn", m.UnsafeShutdowns}} {
+			if c.v != nil {
+				v := grouped(*c.v)
+				if *c.v > 0 && c.k != "Unsafe shutdn" && c.k != "Error log" {
+					v = t.StatusText(model.StatusWarn, v)
 				}
+				rows = append(rows, kvPair{c.k, v})
 			}
 		}
 		if m.DataWrittenBytes != nil {
-			rows = append(rows, kvPair{"Written", bytesSI(*m.DataWrittenBytes)})
+			wr := bytesSI(*m.DataWrittenBytes)
+			if m.DataReadBytes != nil {
+				wr += t.Dim.Render(" · read " + bytesSI(*m.DataReadBytes))
+			}
+			rows = append(rows, kvPair{"Written", wr})
 		}
 		right = append(right, kvBlock(t, rows, ""))
 	}

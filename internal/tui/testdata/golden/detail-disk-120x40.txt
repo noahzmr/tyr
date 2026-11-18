@@ -6,11 +6,14 @@ Device     /dev/sdd                                          Temperature ━━�
 Model      ST4000NM000A-2HZ100                                           limits warn 55 · crit 65 (default)
 Serial     WJG0A004
 WWN        naa.5000c500e4a10004                              SMART health ───────────────── via smartctl · read just now
-Firmware   SN04                                              Overall    ● PASSED
-Capacity   4 TB · 7200 rpm                                   Self-test  no failure logged
-Interface  HDD over sata                                     Power-on   19 832 h · 41 cycles
-Used by    md1 member
-Location   0000:00:17.0 · SATA port 4
+Firmware   SN04                                              Overall        ● PASSED
+Capacity   4 TB · 7200 rpm                                   Self-test      no failure logged
+Interface  HDD over sata                                     Power-on       19 832 h · 41 cycles
+Used by    md1 member                                        Reallocated    0
+Location   0000:00:17.0 · SATA port 4                        Pending        0
+                                                             Offline unc.   0
+                                                             Uncorrectable  0
+                                                             CRC errors     0
 
 SMART attributes ────────────────────────────────────────────────────────────────────────────────────────── 8 attributes
      ID Attribute                   Value  Worst  Thresh            Raw  Δ session
@@ -34,7 +37,4 @@ moment come from a monitoring agent (smartd, HPE amsd) the controller rejects. O
 alone, not caused by Tyr - is a finding.
 Kernel I/O errors are reads or writes the disk could not complete: check SMART (pending and reallocated sectors), the
 cable or backplane (CRC errors), and journalctl -k for the disk.
-
-Kernel log last 3 lines naming sdd · newest last · journalctl -k -b | grep -w sdd ──────────────────────────────────────
- 2026-11-15 12:00:00 ata4.00: exception Emask 0x0 SAct 0x40000 SErr 0x0 action 0x0
 ↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  n N next/prev match  esc back  q quit  ? help

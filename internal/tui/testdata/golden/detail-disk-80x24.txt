@@ -17,8 +17,8 @@ Temperature ━━━━━━─────╎──┃─ 36°C
             limits warn 55 · crit 65 (default)
 
 SMART health ────────────────────────────────────── via smartctl · read just now
-Overall    ● PASSED
-Self-test  no failure logged
-Power-on   19 832 h · 41 cycles
-
+Overall        ● PASSED
+Self-test      no failure logged
+Power-on       19 832 h · 41 cycles
+Reallocated    0
 ↑↓ pgup pgdn scroll  g G top/end  / search  S stress this  c copy serial  ? help
