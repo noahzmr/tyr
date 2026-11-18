@@ -12,8 +12,10 @@ import (
 )
 
 // TestMain keeps every test away from the desktop: no clipboard tool is
-// ever run, the environment looks like a plain terminal.
+// ever run, the environment looks like a plain terminal. Times render in
+// UTC, so the golden screens are the same on every machine and in CI.
 func TestMain(m *testing.M) {
+	time.Local = time.UTC
 	getenv = func(string) string { return "" }
 	runTool = func(clipboardTool, string) error { return errors.New("no clipboard tools in tests") }
 	os.Exit(m.Run())

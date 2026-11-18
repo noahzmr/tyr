@@ -9,14 +9,14 @@ Modules ────────────────────────
  ✖ Power    CRIT      2 PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no A…
  ✖ Network  CRIT      9 bond0 degraded: ens1f1 down (1/2 members up)
  ✖ GPU/NPU  CRIT      6 GPU1 ca:00.0: 2 uncorrectable ECC errors
- ✖ Events   CRIT      5 System Event Log 2026-11-15 10:00: PS2 Status: Power S…
+ ✖ Events   CRIT      5 System Event Log 2026-11-15 09:00: PS2 Status: Power S…
  ▲ System   WARN      1 1 of 2 boots in the last 30 days ended without a clean…
 Findings 26 ✖ · 27 ▲ ─────────────────────────────────── worst first · 1–8 of 53
  ✖ CPU      1 core offline (cpu7); taken offline at runtime - back onl…        ┃
  ✖ CPU      cpu7 is offline, but cpu39 - the other thread of the same …        │
  ✖ CPU      4 of 5 program crashes (invalid opcode, segfault) ran on c…        │
  ✖ CPU      machine checks in earlier boots, crash records or the BMC …        │
- ✖ CPU      the kernel crashed on cpu7 (2026-11-07 09:48): Fatal machi…        │
+ ✖ CPU      the kernel crashed on cpu7 (2026-11-07 08:48): Fatal machi…        │
  ✖ Memory   1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorr…        │
  ✖ Memory   4 kB of memory poisoned by the kernel (HardwareCorrupted)          │
  ✖ Memory   1 uncorrectable ECC error on P2-DIMMB1                             │

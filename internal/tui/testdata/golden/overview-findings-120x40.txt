@@ -12,29 +12,29 @@
 │ ✖ Network        CRIT · 9 │ │ ✖ GPU/NPU        CRIT · 6 │ │ ✖ Events         CRIT · 5 │ │ ▲ System         WARN · 1 │
 │ 2/4 up · bond0 1/2        │ │ 1/2 GPUs OK, max 92°C     │ │ System Event Log 6 · BMC… │ │ Debian GNU/Linux 12 (boo… │
 │ ▸ bond0 degraded: ens1f1  │ │ ▸ GPU1 ca:00.0: 2         │ │ ▸ System Event Log        │ │ ▸ 1 of 2 boots in the     │
-│   down (1/2 members up)   │ │   uncorrectable ECC erro… │ │   2026-11-15 10:00: PS2 … │ │   last 30 days ended wit… │
+│   down (1/2 members up)   │ │   uncorrectable ECC erro… │ │   2026-11-15 09:00: PS2 … │ │   last 30 days ended wit… │
 ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯ ╰───────────────────────────╯
 
 Findings 26 ✖ · 27 ▲ ────────────────────────────────────────────────────────────── i explain · worst first · 1–20 of 53
- ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot    10:00        ┃
-▌✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - stil… 10:00        ┃
- ✖ CPU      cpu39         4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (c… 10:00        ┃
- ✖ CPU      cpu7,cpu12,c… machine checks in earlier boots, crash records or the BMC log: cpu7 4× (core: … 10:00        ┃
- ✖ CPU      cpu7          the kernel crashed on cpu7 (2026-11-07 09:48): Fatal machine check              10:00        ┃
- ✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(… 10:00        ┃
- ✖ Memory   memory        4 kB of memory poisoned by the kernel (HardwareCorrupted)                       10:00        ┃
- ✖ Memory   P2-DIMMB1     1 uncorrectable ECC error on P2-DIMMB1                                          10:00        │
- ✖ Storage  sdd           sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd,… 10:00        │
- ✖ Storage  sdf           sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to … 10:00        │
- ✖ Storage  sdf           sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2 is FAILED            10:00        │
- ✖ Storage  md1           md1 (raid5) degraded: 3/4 devices, failed sdd1                                  10:00        │
- ✖ Storage  0/0           RAID virtual drive 0/0 (RAID5 archive) state Dgrd                               10:00        │
- ✖ Storage  252:2         RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed                    10:00        │
- ✖ Storage  /data         /data (xfs) is mounted read-only                                                10:00        │
- ✖ Storage  /data         /data 96% full                                                                  10:00        │
- ✖ Storage  session1      session1 to iqn.2024-01.net.example:backup.vol2 at 10.16.40.20:3260 via bond0.… 10:00        │
- ✖ Power    PSU2          PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no AC input: cable, PDU or b… 10:00        │
- ✖ Power    PSU Redundan… PSU Redundancy (N+m): Critical - one more failure and the server loses power    10:00        │
- ✖ Network  bond0         bond0 degraded: ens1f1 down (1/2 members up)                                    10:00        │
+ ✖ CPU      cpu7          1 core offline (cpu7); taken offline at runtime - back online after a reboot    09:00        ┃
+▌✖ CPU      cpu7          cpu7 is offline, but cpu39 - the other thread of the same physical core - stil… 09:00        ┃
+ ✖ CPU      cpu39         4 of 5 program crashes (invalid opcode, segfault) ran on core 7 of socket 0 (c… 09:00        ┃
+ ✖ CPU      cpu7,cpu12,c… machine checks in earlier boots, crash records or the BMC log: cpu7 4× (core: … 09:00        ┃
+ ✖ CPU      cpu7          the kernel crashed on cpu7 (2026-11-07 08:48): Fatal machine check              09:00        ┃
+ ✖ Memory   sel           1 memory event in BMC SEL, latest 2026-11-14 09:00: Uncorrectable ECC @DIMMB1(… 09:00        ┃
+ ✖ Memory   memory        4 kB of memory poisoned by the kernel (HardwareCorrupted)                       09:00        ┃
+ ✖ Memory   P2-DIMMB1     1 uncorrectable ECC error on P2-DIMMB1                                          09:00        │
+ ✖ Storage  sdd           sdd: 2 I/O errors in kernel log, last: 2026-11-15 12:00:00 I/O error, dev sdd,… 09:00        │
+ ✖ Storage  sdf           sdf (iSCSI 10.16.40.20:3260): 2 I/O errors in kernel log - reads or writes to … 09:00        │
+ ✖ Storage  sdf           sdf: iSCSI session1 to iqn.2024-01.net.example:backup.vol2 is FAILED            09:00        │
+ ✖ Storage  md1           md1 (raid5) degraded: 3/4 devices, failed sdd1                                  09:00        │
+ ✖ Storage  0/0           RAID virtual drive 0/0 (RAID5 archive) state Dgrd                               09:00        │
+ ✖ Storage  252:2         RAID physical drive 252:2 (ST2000NM0055-1V4104) state Failed                    09:00        │
+ ✖ Storage  /data         /data (xfs) is mounted read-only                                                09:00        │
+ ✖ Storage  /data         /data 96% full                                                                  09:00        │
+ ✖ Storage  session1      session1 to iqn.2024-01.net.example:backup.vol2 at 10.16.40.20:3260 via bond0.… 09:00        │
+ ✖ Power    PSU2          PSU2: S/N P1K22CL21123452 · Critical · input 0 V (no AC input: cable, PDU or b… 09:00        │
+ ✖ Power    PSU Redundan… PSU Redundancy (N+m): Critical - one more failure and the server loses power    09:00        │
+ ✖ Network  bond0         bond0 degraded: ens1f1 down (1/2 members up)                                    09:00        │
 
 ←→↑↓ move  enter open  n next problem  i explain  o order  e export  S stress this  q quit  ? help
