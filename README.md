@@ -168,6 +168,16 @@ guard that keeps it safe, and gives a verdict you can trust.
 - `tyr netbox`, after `tyr accept`, and by itself from a Tyr ISO built with
   NetBox settings ([docs/netbox.md](docs/netbox.md)).
 
+### Webhooks
+
+- Tests notify when they start, at once when a step fails or warns, and when
+  they finish with the verdict: generic JSON (token, HMAC signature), Slack /
+  Mattermost / Rocket.Chat, Microsoft Teams (Adaptive Card), Discord, Google
+  Chat.
+- Settings in the TUI (`W`), in `webhooks.json`, or from `TYR_WEBHOOK_*` in
+  the environment - also at ISO build time or on the kernel command line
+  ([docs/webhooks.md](docs/webhooks.md)).
+
 ### One static binary
 
 - CGO-free, no runtime dependencies: copy it to a host with `scp` and run it.
@@ -363,6 +373,7 @@ and cron work unchanged.
 | `tyr stress` | stress test: `--component cpu\|memory\|storage\|network\|full` |
 | `tyr accept` | acceptance test: health check, CPU / memory / disk load, second check, judged against limits: PASS, REMARKS, FAIL; `--profile quick\|burnin\|extended`, `--limits FILE` ([docs/acceptance.md](docs/acceptance.md)) |
 | `tyr netbox` | write this machine to NetBox: device, ports, inventory items, tags from rules, a journal entry; `--dry-run`, `--facts`, `--test`, `--from RESULTS` ([docs/netbox.md](docs/netbox.md)) |
+| `tyr notify` | the webhooks tests notify: list, `--test` (send a test or `--event fail` as an example), `--validate` ([docs/webhooks.md](docs/webhooks.md)) |
 | `tyr core-test CPU` | test an offline (suspect) CPU: online only for the test, isolated, offline again after; `--restore` cleans up after a kill |
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
@@ -501,6 +512,8 @@ tyr/
 │   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
 │   ├── accept/              acceptance test: profiles, limits, verdict, report
 │   ├── netbox/              NetBox sync: settings, tag rules (expressions over facts), REST client
+│   ├── notify/              webhook notifications: events, formats (JSON, Slack, Teams, Discord, Google Chat), delivery
+│   ├── settings/            where configuration files live (/etc/tyr, ~/.config/tyr)
 │   ├── workload/            self-checking compute kernels; the torture test's FFT (Go + AVX asm)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
 │   ├── tui/                 Bubble Tea TUI
@@ -539,6 +552,7 @@ git config core.hooksPath scripts/hooks
 | [docs/stress-tests.md](docs/stress-tests.md) | operators | engines, guard, verdicts, network peer |
 | [docs/acceptance.md](docs/acceptance.md) | operators | `tyr accept`, limits, verdict; building and booting the Tyr ISO |
 | [docs/netbox.md](docs/netbox.md) | operators | what Tyr writes to NetBox, settings, tag rules and facts, the ISO |
+| [docs/webhooks.md](docs/webhooks.md) | operators | notifications from tests: events, formats, settings, environment, the ISO |
 | [docs/reports.md](docs/reports.md) | operators | Markdown, Mermaid, history, clipboard |
 | [docs/tui.md](docs/tui.md) | users | every tab and key |
 | [docs/tools.md](docs/tools.md) | operators | external tools: which are needed, how to install them, official docs |

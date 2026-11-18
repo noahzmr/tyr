@@ -14,9 +14,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/noahzmr/tyr/internal/collector"
 	"github.com/noahzmr/tyr/internal/collector/all"
+	"github.com/noahzmr/tyr/internal/model"
 	"github.com/noahzmr/tyr/internal/netpeer"
 	"github.com/noahzmr/tyr/internal/netproto"
+	"github.com/noahzmr/tyr/internal/notify"
 	"github.com/noahzmr/tyr/internal/stress"
 )
 
@@ -50,6 +53,8 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.BoolVar(&f.suspect, "include-suspect-cores", false, "cpu: also load online CPUs whose other thread is offline (left out by default)")
 	fs.StringVar(&f.runDir, "run-dir", "", "where to write result files (default /var/lib/tyr/runs, else ./tyr-runs)")
 	fs.BoolVar(&f.simError, "sim-error", false, "fixtures mode: inject one verification error")
+	webhooks := fs.String("webhooks", notify.Path(), "webhook settings (JSON; TYR_WEBHOOK_URL and friends add one more)")
+	noWebhook := fs.Bool("no-webhook", false, "send no webhook notifications")
 	if err := fs.Parse(args); err != nil {
 		return 3
 	}
@@ -79,6 +84,24 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	in := bufio.NewReader(stdin)
 	worst := -1
 	var lines []string
+	nt := loadNotifier(*webhooks, *noWebhook, stdout)
+	var machine notify.Machine
+	var names []string
+	for _, c := range comps {
+		names = append(names, string(c))
+	}
+	event := func(kind string) notify.Event {
+		ev := notify.New(kind, "stress", machine)
+		ev.Profile = strings.Join(names, ", ")
+		return ev
+	}
+	if nt.Enabled() {
+		machine = notify.MachineOf(collector.Collect(ctx, cenv, all.Select([]model.ModuleID{model.ModSystem}), nil))
+		ev := event(notify.EvStarted)
+		ev.Duration = fmtDur(f.duration * time.Duration(len(comps)))
+		nt.Send(ev)
+	}
+	started := time.Now()
 	for _, comp := range comps {
 		cfg := stress.Config{Component: comp, Engine: f.engine, Duration: f.duration, CPUs: f.cpus, MemoryPercent: f.memPct,
 			StorageMode: f.mode, Target: f.target, SizeBytes: size, Token: f.token, Streams: f.streams, Reverse: f.reverse, SimError: f.simError,
@@ -100,6 +123,11 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		code, line := stressOne(ctx, env, cfg, in, stdout, stderr, f.yes)
 		lines = append(lines, line)
 		worst = worseExit(worst, code)
+		if kind := map[int]string{1: notify.EvStepWarning, 2: notify.EvStepFailed, 3: notify.EvStepFailed}[code]; kind != "" && len(comps) > 1 {
+			ev := event(kind)
+			ev.Step, ev.Status, ev.Summary = string(comp), map[int]string{1: "WARN", 2: "FAIL", 3: "ABORTED"}[code], line
+			nt.Send(ev)
+		}
 		env.Baseline = nil // fresh baseline per component
 	}
 	if len(lines) > 1 {
@@ -117,6 +145,24 @@ func runStress(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "%s: full hardware test (%s)\n", verdict, strings.Join(lines, "; "))
 	case len(lines) > 0:
 		fmt.Fprintln(stdout, lines[len(lines)-1])
+	}
+	if nt.Enabled() {
+		verdict := map[int]string{0: "PASS", 1: "WARN", 2: "FAIL", 3: "INCOMPLETE"}[worst]
+		ev := event(notify.FinishedEvent(verdict))
+		ev.Status, ev.Duration = verdict, fmtDur(time.Since(started))
+		for _, l := range lines {
+			switch {
+			case strings.HasPrefix(l, "FAIL") || strings.HasPrefix(l, "ABORTED"):
+				ev.Failures = append(ev.Failures, l)
+			case strings.HasPrefix(l, "WARN"):
+				ev.Remarks = append(ev.Remarks, l)
+			}
+		}
+		if len(lines) == 1 {
+			ev.Summary = lines[0]
+		}
+		nt.Send(ev)
+		nt.Wait(2 * time.Minute)
 	}
 	return worst
 }

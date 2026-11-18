@@ -7,7 +7,7 @@
  ✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
  ▲│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
  ▲│ pgup pgdn page          v         switch view   R         reports        │
- ●│ g G       top / end     /         search        N         NetBox         │
+ ●│ g G       top / end     /         search        N W       NetBox · web…  │
  ●│ enter     open / action t         CPU load ↔ t… A         alert refere…  │
  ●│ esc       back · close  a         empty DIMM s… s S F     stress tests   │
  ●│                         h         virtual NICs  q ctrl+c  quit · stop …  │

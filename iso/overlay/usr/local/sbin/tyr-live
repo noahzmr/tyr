@@ -6,11 +6,16 @@
 #   tyr.dhcp=1                                DHCP on all wired NICs without a peer
 #   tyr.wait=SECONDS                          countdown before the test (default 15)
 #   tyr.netbox=0                              do not write the result to NetBox
+#   tyr.webhook=URL                           notify a webhook (start, failed steps, verdict);
+#   tyr.webhook_format=json|slack|teams|discord|gchat  tyr.webhook_events=started,fail,…
+#   tyr.webhook_token=TOKEN                   tyr.webhook=0: no notifications at all
 # Results go to a partition labelled TYR-RESULTS (FAT, exFAT or ext4) when
 # one is present, else to /var/lib/tyr/accept (memory: lost at reboot). The
 # image itself has one (64 MB), so a stick written with dd keeps the results;
 # as a virtual CD it is read-only. accept.json on it overrides the limits,
-# netbox.json and tags.json the NetBox settings built into the ISO.
+# netbox.json and tags.json the NetBox settings built into the ISO,
+# webhooks.json the webhooks. TYR_WEBHOOK_* / TYR_NETBOX_* given to
+# `make iso` are in /etc/tyr/tyr.env.
 
 set -u
 export TERM=${TERM:-linux}
@@ -24,6 +29,22 @@ token=$(arg tyr.token)
 wait_s=$(arg tyr.wait)
 wait_s=${wait_s:-15}
 nb_off=$(arg tyr.netbox)
+wh=$(arg tyr.webhook)
+
+# the build's environment, then the kernel command line
+if [[ -f /etc/tyr/tyr.env ]]; then
+	set -a
+	# shellcheck disable=SC1091
+	. /etc/tyr/tyr.env
+	set +a
+fi
+if [[ -n $wh && $wh != 0 ]]; then
+	export TYR_WEBHOOK_URL=$wh
+	for k in format events token; do
+		v=$(arg "tyr.webhook_$k")
+		[[ -n $v ]] && export "TYR_WEBHOOK_${k^^}=$v"
+	done
+fi
 results=/mnt/results
 out=""
 
@@ -40,21 +61,33 @@ header() {
 	echo "${bold}Tyr live$off $(tyr version 2>/dev/null | cut -d' ' -f2)  ·  $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) $(cat /sys/class/dmi/id/product_name 2>/dev/null)${sn:+  ·  S/N $sn}"
 	echo "${dim}Alt+F2 shell · Alt+F3 live view (tyr) · Alt+F1 back here${ip:+ · $ip}$off"
 	if netbox_on; then
-		echo "${dim}NetBox: $(sed -n 's/.*"url": *"\([^"]*\)".*/\1/p' /etc/tyr/netbox.json | head -1) - the result is written to the device after the test$off"
+		local nb=${TYR_NETBOX_URL:-}
+		[[ -z $nb && -f /etc/tyr/netbox.json ]] && nb=$(sed -n 's/.*"url": *"\([^"]*\)".*/\1/p' /etc/tyr/netbox.json | head -1)
+		echo "${dim}NetBox: $nb - the result is written to the device after the test$off"
+	fi
+	if webhook_on; then
+		local hooks=""
+		[[ -f /etc/tyr/webhooks.json ]] && hooks=$(sed -n 's/.*"url": *"https\{0,1\}:\/\/\([^/"]*\).*/\1/p' /etc/tyr/webhooks.json | paste -sd, -)
+		[[ -n ${TYR_WEBHOOK_URL:-} ]] && hooks+="${hooks:+,}$(sed 's#^https\{0,1\}://\([^/]*\).*#\1#' <<<"$TYR_WEBHOOK_URL")"
+		echo "${dim}Webhooks: $hooks - notified when the test starts, a step fails or warns, and at the end$off"
 	fi
 	echo
 }
 
 # netbox_on: NetBox settings exist (ISO or stick) and tyr.netbox=0 is not set.
-netbox_on() { [[ $nb_off != 0 && -f /etc/tyr/netbox.json ]]; }
+netbox_on() { [[ $nb_off != 0 && ( -f /etc/tyr/netbox.json || -n ${TYR_NETBOX_URL:-} ) ]]; }
+
+# webhook_on: webhooks from the ISO, the stick, the build or the kernel
+# command line, and tyr.webhook=0 is not set.
+webhook_on() { [[ $wh != 0 && ( -f /etc/tyr/webhooks.json || -n ${TYR_WEBHOOK_URL:-} ) ]]; }
 
 # netbox_from_stick: netbox.json / tags.json on TYR-RESULTS replace the ISO's.
 netbox_from_stick() {
 	mountpoint -q "$results" || return 0
 	local f
-	for f in netbox.json tags.json; do
+	for f in netbox.json tags.json webhooks.json; do
 		if [[ -f $results/$f ]]; then
-			install -D -m 600 "$results/$f" "/etc/tyr/$f" && echo "NetBox: $f from the stick"
+			install -D -m 600 "$results/$f" "/etc/tyr/$f" && echo "settings: $f from the stick"
 		fi
 	done
 }
@@ -79,7 +112,7 @@ find_results() {
 }
 
 network() {
-	if [[ -n $peer || $(arg tyr.dhcp) == 1 ]] || netbox_on; then
+	if [[ -n $peer || $(arg tyr.dhcp) == 1 ]] || netbox_on || webhook_on; then
 		mkdir -p /run/systemd/network
 		printf '[Match]\nType=ether\nKind=!*\n\n[Network]\nDHCP=yes\n' >/run/systemd/network/10-tyr-dhcp.network
 		networkctl reload 2>/dev/null
@@ -131,6 +164,7 @@ run_accept() {
 	else
 		cmd+=(--no-netbox)
 	fi
+	webhook_on || cmd+=(--no-webhook)
 	# script keeps a terminal for tyr (colours, banner) and logs the console
 	script -qfec "$(printf '%q ' "${cmd[@]}")" "$log"
 	rc=$?

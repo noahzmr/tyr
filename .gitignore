@@ -16,4 +16,5 @@ dist/
 /iso/accept.json
 /iso/netbox.json
 /iso/tags.json
+/iso/webhooks.json
 /iso/ca/

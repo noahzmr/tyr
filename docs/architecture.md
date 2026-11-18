@@ -18,6 +18,7 @@ read that snapshot or its JSON.
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
 | Acceptance | `accept` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check |
+| Notifications | `notify` | webhook events (started, failed or warning step, verdict) in five formats, delivered in the background with retries |
 | NetBox | `netbox` | facts from a snapshot (and a verdict), tag rules over them, the sync to NetBox's REST API |
 | Consumers | `tui`, `cmd/tyr`, `stress`, `accept`, `netbox`, `report` | show, export, load, judge, report, write to NetBox |
 

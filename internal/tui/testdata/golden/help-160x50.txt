@@ -18,7 +18,7 @@ Serial    WJG0A004              │ tab ⇧tab   next / prev tab    i          e
 Firmware  SN04                  │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │
 Path      /dev/sdd · sata       │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
                                 │ pgup pgdn  page               v          switch view        R          reports               │(2.3 y)
-                                │ g G        top / end          /          search             N          NetBox                │
+                                │ g G        top / end          /          search             N W        NetBox · webhooks     │
 Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │──────────── n next · enter open
  ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │lags 0x80700 phys_seg 1 prio
                 class 0         │                               h          virtual NICs       q ctrl+c   quit · stop all       │

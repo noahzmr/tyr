@@ -209,7 +209,10 @@ cp company-ca.crt iso/ca/            # optional: NetBox with an internal CA
 make iso
 ```
 
-The build checks both files (`tyr netbox --validate`). After the test the ISO
+The build checks both files (`tyr netbox --validate`). Instead of a file,
+`TYR_NETBOX_URL` and `TYR_NETBOX_TOKEN` given to `make iso` go into
+`/etc/tyr/tyr.env` in the image (settings for new devices still need the
+file). After the test the ISO
 writes the result to the device by itself; DHCP is switched on for that
 (DNS through systemd-resolved). A `netbox.json` or `tags.json` on the
 `TYR-RESULTS` partition replaces the built-in one; `tyr.netbox=0` on the

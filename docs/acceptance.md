@@ -140,7 +140,8 @@ real servers.
    one (64 MB, FAT, partition 3): a stick written with dd keeps the results
    itself, and on your desktop it shows up as a second drive. An
    `accept.json` on it replaces the limits, a `netbox.json` / `tags.json`
-   the NetBox settings ([netbox.md](netbox.md)). Virtual media is read-only, so
+   the NetBox settings ([netbox.md](netbox.md)), a `webhooks.json` the
+   webhooks ([webhooks.md](webhooks.md)). Virtual media is read-only, so
    there you need a second stick with a `TYR-RESULTS` partition (FAT,
    exFAT or ext4); without one the results stay in memory until you plug
    one in and press `c`.
@@ -178,6 +179,7 @@ Kernel command line (`e` in the boot menu):
 | `tyr.dhcp=1` | DHCP on all wired NICs without a peer |
 | `tyr.wait=SECONDS` | the countdown before the test (default 15) |
 | `tyr.netbox=0` | do not write the result to NetBox (ISO built with NetBox settings) |
+| `tyr.webhook=URL` | notify a webhook: start, failed or warning steps, the verdict (`tyr.webhook_format=`, `tyr.webhook_events=`, `tyr.webhook_token=`); `tyr.webhook=0` turns notifications off ([webhooks.md](webhooks.md)) |
 
 The NICs are up without an address otherwise, so Tyr sees link, speed and
 LLDP neighbours.
@@ -209,6 +211,11 @@ binfmt once: `sudo apt install qemu-user-binfmt`.
   the tags and the result as a journal entry to NetBox; `iso/ca/*.crt` adds
   an internal CA. The token is in the image: keep such an ISO in-house. See
   [netbox.md](netbox.md#the-iso).
+- **Webhooks**: `iso/webhooks.json`, or `TYR_WEBHOOK_URL=… make iso` (every
+  `TYR_WEBHOOK_*` and `TYR_NETBOX_*` variable of the build goes into
+  `/etc/tyr/tyr.env` in the image): the test notifies when it starts, at
+  once when a step fails or warns, and at the end. See
+  [webhooks.md](webhooks.md#the-iso).
 - `MIRROR=http://…/debian make iso` uses another Debian mirror.
 
 What goes into the image: `iso/builder.sh` (packages), `iso/overlay/`

@@ -39,7 +39,14 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
 echo "== build environment"
 docker build --platform "linux/$arch" -t "tyr-iso-builder:$arch" iso
 
+# TYR_WEBHOOK_* and TYR_NETBOX_* from this shell go into the image
+# (/etc/tyr/tyr.env): `TYR_WEBHOOK_URL=https://… make iso`
+envs=()
+for v in $(compgen -e | grep -E '^TYR_(WEBHOOK|NETBOX)_' || true); do
+	envs+=(-e "$v")
+done
+
 echo "== image"
 docker run --rm --privileged --platform "linux/$arch" \
 	-e VERSION="$version" -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -e MIRROR="${MIRROR:-http://deb.debian.org/debian}" \
-	-v "$PWD:/src" -w /src "tyr-iso-builder:$arch" iso/builder.sh "$arch"
+	"${envs[@]}" -v "$PWD:/src" -w /src "tyr-iso-builder:$arch" iso/builder.sh "$arch"

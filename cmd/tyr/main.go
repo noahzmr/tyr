@@ -25,6 +25,7 @@ import (
 	"github.com/noahzmr/tyr/internal/collector/all"
 	"github.com/noahzmr/tyr/internal/fixture"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/notify"
 	"github.com/noahzmr/tyr/internal/report"
 	"github.com/noahzmr/tyr/internal/stress"
 	"github.com/noahzmr/tyr/internal/tui"
@@ -42,6 +43,8 @@ Usage:
   tyr netbox [flags]     write this machine to NetBox: device, interfaces, inventory
                          items, tags from rules, a journal entry (--dry-run, --facts,
                          --from RESULTS); settings with N in the TUI
+  tyr notify --test      send a test webhook notification (tests send started,
+                         failed/warning steps and the verdict); settings with W
   tyr core-test CPU      test an offline (suspect) CPU: online only for the test,
                          isolated, offline again after; --restore cleans up after a kill
   tyr check-native       compare Tyr's own SMBIOS, NIC and BMC readers with
@@ -81,6 +84,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runAccept(args, stdout, stderr)
 	case "netbox":
 		return runNetBox(args, stdout, stderr)
+	case "notify":
+		return runNotify(args, stdout, stderr)
 	case "core-test":
 		return runCoreTest(args, os.Stdin, stdout, stderr)
 	case "check-native":
@@ -180,6 +185,7 @@ func runTUI(args []string, stderr io.Writer) int {
 	mouse := fs.Bool("mouse", false, "enable mouse: click tabs, wheel scrolls (hold Shift to select text)")
 	var nb netboxFiles
 	nb.register(fs)
+	webhooks := fs.String("webhooks", notify.Path(), "webhook settings for test notifications (JSON; edit with W)")
 	if err := fs.Parse(args); err != nil {
 		return 3
 	}
@@ -195,7 +201,7 @@ func runTUI(args []string, stderr io.Writer) int {
 		fixture.EnableLive(env)
 	}
 	m := tui.New(env, all.Collectors(), all.Implemented, tui.Options{Refresh: *refresh, FixtureName: name, Mouse: *mouse,
-		NetBoxFile: nb.config, TagsFile: nb.tags})
+		NetBoxFile: nb.config, TagsFile: nb.tags, WebhooksFile: *webhooks})
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Fprintln(stderr, "tyr:", err)
 		return 3

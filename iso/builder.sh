@@ -64,6 +64,26 @@ elif [[ -f iso/tags.json ]]; then
 	echo "iso/tags.json without iso/netbox.json: tag rules need NetBox" >&2
 	exit 1
 fi
+# webhooks: iso/webhooks.json, and TYR_WEBHOOK_* / TYR_NETBOX_* from the
+# build environment into /etc/tyr/tyr.env (root-only), which tyr-live loads
+webhook_hook=()
+if [[ -f iso/webhooks.json ]]; then
+	echo "webhooks: iso/webhooks.json"
+	TYR_WEBHOOK_URL='' /src/dist/tyr-linux-"$arch" notify --validate --webhooks iso/webhooks.json
+	webhook_hook=(--customize-hook='install -m 600 iso/webhooks.json "$1/etc/tyr/webhooks.json"')
+fi
+envfile=$work/tyr.env
+: >"$envfile"
+for v in $(compgen -e | grep -E '^TYR_(WEBHOOK|NETBOX)_' || true); do
+	printf '%s=%q\n' "$v" "${!v}" >>"$envfile"
+	echo "environment: $v"
+done
+if [[ -s $envfile ]]; then
+	if [[ -n ${TYR_WEBHOOK_URL:-} ]]; then
+		/src/dist/tyr-linux-"$arch" notify --validate --webhooks /nonexistent/webhooks.json
+	fi
+	webhook_hook+=(--customize-hook="install -m 600 '$envfile' \"\$1/etc/tyr/tyr.env\"")
+fi
 # an internal CA (NetBox with a company certificate): iso/ca/*.crt
 ca_hook=()
 cas=(iso/ca/*.crt)
@@ -86,7 +106,7 @@ mmdebstrap --mode=root --variant=minbase --architectures="$arch" \
 	--customize-hook='sync-in iso/overlay /' \
 	--customize-hook="install -m 755 dist/tyr-linux-$arch \"\$1/usr/local/bin/tyr\"" \
 	--customize-hook='mkdir -p "$1/etc/tyr" && chmod 700 "$1/etc/tyr"' \
-	"${limits_hook[@]}" "${netbox_hook[@]}" "${ca_hook[@]}" "${vendor_hook[@]}" \
+	"${limits_hook[@]}" "${netbox_hook[@]}" "${webhook_hook[@]}" "${ca_hook[@]}" "${vendor_hook[@]}" \
 	--customize-hook='chroot "$1" sh -e /usr/local/sbin/tyr-live-setup' \
 	--customize-hook='chroot "$1" update-initramfs -u -k all' \
 	trixie "$work/rootfs" "deb $mirror trixie main non-free-firmware" \

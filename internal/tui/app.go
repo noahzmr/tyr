@@ -26,12 +26,13 @@ import (
 
 // Options configure the TUI.
 type Options struct {
-	Refresh     time.Duration // live refresh interval (default 5s)
-	FixtureName string        // non-empty in --fixtures mode (shown in header)
-	ExportDir   string        // where `e` writes snapshots (default ".")
-	Mouse       bool          // enable mouse (click tabs, wheel scrolls); disables terminal text selection
-	NetBoxFile  string        // NetBox settings (N); "" = netbox.Paths
-	TagsFile    string        // tag rules for NetBox (N); "" = netbox.Paths
+	Refresh      time.Duration // live refresh interval (default 5s)
+	FixtureName  string        // non-empty in --fixtures mode (shown in header)
+	ExportDir    string        // where `e` writes snapshots (default ".")
+	Mouse        bool          // enable mouse (click tabs, wheel scrolls); disables terminal text selection
+	NetBoxFile   string        // NetBox settings (N); "" = netbox.Paths
+	TagsFile     string        // tag rules for NetBox (N); "" = netbox.Paths
+	WebhooksFile string        // webhooks (W); "" = notify.Path
 }
 
 // tab is one tab's sub-model.
@@ -81,13 +82,14 @@ type Model struct {
 	dark     bool                 // terminal background (BackgroundColorMsg)
 	profile  colorprofile.Profile // colour depth (ColorProfileMsg)
 	sess     *session
-	page     *detailPage   // full-screen component page (enter), nil when closed
-	showHelp bool          // help overlay
-	reports  *reportDialog // R: generate a report, nil when closed
-	nb       *netboxDialog // N: NetBox settings, tag rules, write, nil when closed
-	blurred  bool          // terminal window not focused: refresh slower
-	lastAt   time.Time     // when the last snapshot arrived
-	tabXs    []int         // right edge of each rendered tab (mouse hit test)
+	page     *detailPage    // full-screen component page (enter), nil when closed
+	showHelp bool           // help overlay
+	reports  *reportDialog  // R: generate a report, nil when closed
+	nb       *netboxDialog  // N: NetBox settings, tag rules, write, nil when closed
+	wh       *webhookDialog // W: webhooks for test notifications, nil when closed
+	blurred  bool           // terminal window not focused: refresh slower
+	lastAt   time.Time      // when the last snapshot arrived
+	tabXs    []int          // right edge of each rendered tab (mouse hit test)
 
 	snap       *model.Snapshot
 	collecting bool
@@ -299,6 +301,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.netboxChoices(msg)
 		return m, nil
 
+	case webhookTestMsg:
+		m.webhookTested(msg)
+		return m, nil
+
 	case tea.PasteMsg:
 		return m, m.paste(msg.Content)
 
@@ -387,6 +393,7 @@ var (
 	keyReport   = key.NewBinding(key.WithKeys("R", "shift+r"), key.WithHelp("R", "reports"))
 	keyAlerts   = key.NewBinding(key.WithKeys("A", "shift+a"), key.WithHelp("A", "alert reference"))
 	keyNetBox   = key.NewBinding(key.WithKeys("N", "shift+n"), key.WithHelp("N", "NetBox"))
+	keyWebhooks = key.NewBinding(key.WithKeys("W", "shift+w"), key.WithHelp("W", "webhooks"))
 	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
 
@@ -433,6 +440,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	}
 	if m.nb != nil {
 		return m.updateNetBox(msg)
+	}
+	if m.wh != nil {
+		return m.updateWebhooks(msg)
 	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
@@ -483,6 +493,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	case key.Matches(msg, keyNetBox):
 		m.openNetBox()
+		return nil
+	case key.Matches(msg, keyWebhooks):
+		m.openWebhooks()
 		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
@@ -710,6 +723,9 @@ func (m *Model) render() string {
 	}
 	if m.nb != nil {
 		return m.netboxView(b.String())
+	}
+	if m.wh != nil {
+		return m.webhooksView(b.String())
 	}
 	if m.showHelp {
 		return m.helpOverlay(b.String())

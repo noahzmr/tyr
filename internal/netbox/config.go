@@ -18,10 +18,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/noahzmr/tyr/internal/settings"
 )
 
 // SystemDir holds the configuration for root (and the live ISO).
-const SystemDir = "/etc/tyr"
+const SystemDir = settings.SystemDir
 
 // Config is netbox.json.
 type Config struct {
@@ -133,43 +135,7 @@ func Paths(dir string) (netbox, tags string) {
 	if dir != "" {
 		return filepath.Join(dir, "netbox.json"), filepath.Join(dir, "tags.json")
 	}
-	pick := func(name string) string {
-		if os.Geteuid() != 0 {
-			if u := userDir(); u != "" {
-				p := filepath.Join(u, name)
-				if _, err := os.Stat(p); err == nil {
-					return p
-				}
-				if !writable(SystemDir) {
-					if _, err := os.Stat(filepath.Join(SystemDir, name)); err != nil {
-						return p // nothing system-wide to read: save to the user's
-					}
-				}
-			}
-		}
-		return filepath.Join(SystemDir, name)
-	}
-	return pick("netbox.json"), pick("tags.json")
-}
-
-func userDir() string {
-	if d := os.Getenv("XDG_CONFIG_HOME"); d != "" {
-		return filepath.Join(d, "tyr")
-	}
-	if h, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(h, ".config", "tyr")
-	}
-	return ""
-}
-
-func writable(dir string) bool {
-	f, err := os.CreateTemp(dir, ".tyr-w-*")
-	if err != nil {
-		return false
-	}
-	f.Close()
-	os.Remove(f.Name())
-	return true
+	return settings.File("netbox.json"), settings.File("tags.json")
 }
 
 // LoadConfig reads netbox.json onto the defaults (a missing file is not

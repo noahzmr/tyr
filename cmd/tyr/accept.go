@@ -19,6 +19,7 @@ import (
 	"github.com/noahzmr/tyr/internal/collector"
 	"github.com/noahzmr/tyr/internal/collector/all"
 	"github.com/noahzmr/tyr/internal/model"
+	"github.com/noahzmr/tyr/internal/notify"
 	"github.com/noahzmr/tyr/internal/report"
 	"github.com/noahzmr/tyr/internal/stress"
 )
@@ -41,6 +42,8 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 	nbFiles.register(fs)
 	toNetBox := fs.Bool("netbox", false, "write the result to NetBox at the end (default: when after_accept is set in the NetBox settings)")
 	noNetBox := fs.Bool("no-netbox", false, "do not write to NetBox")
+	webhooks := fs.String("webhooks", notify.Path(), "webhook settings (JSON; TYR_WEBHOOK_URL and friends add one more; edit with W in the TUI)")
+	noWebhook := fs.Bool("no-webhook", false, "send no webhook notifications")
 	if err := fs.Parse(args); err != nil {
 		return 3
 	}
@@ -121,6 +124,34 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintln(stdout, "results: "+dir)
 	saveJSON(filepath.Join(dir, "before.json"), before)
 
+	// webhooks: started now, a failed or warning step at once, the verdict at the end
+	nt := loadNotifier(*webhooks, *noWebhook, stdout)
+	machine := notify.MachineOf(before)
+	event := func(kind string) notify.Event {
+		ev := notify.New(kind, "acceptance", machine)
+		ev.Profile, ev.ResultsDir = p.Name, dir
+		return ev
+	}
+	stepEvent := func(st accept.Step) {
+		kind := ""
+		switch st.Verdict {
+		case "FAIL", "ABORTED", "NOT RUN", "CRIT":
+			kind = notify.EvStepFailed
+		case "WARN":
+			kind = notify.EvStepWarning
+		}
+		if kind != "" {
+			ev := event(kind)
+			ev.Step, ev.Status, ev.Summary = st.Name, st.Verdict, st.Summary
+			nt.Send(ev)
+		}
+	}
+	ev := event(notify.EvStarted)
+	ev.Duration = fmtDur(p.Total(*peer != ""))
+	ev.Summary = fmt.Sprintf("health check: %s, %s", before.Status, r.Steps[0].Summary)
+	nt.Send(ev)
+	stepEvent(r.Steps[0])
+
 	env := &stress.Env{Collector: cenv, Cols: all.Collectors(), RunDir: filepath.Join(dir, "runs")}
 	var runs []*stress.Result
 	for _, comp := range accept.Components {
@@ -171,6 +202,7 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 			}
 		}
 		r.Steps = append(r.Steps, step)
+		stepEvent(step)
 	}
 	if ctx.Err() != nil {
 		incomplete = append(incomplete, "interrupted")
@@ -188,6 +220,11 @@ func runAccept(args []string, stdout, stderr io.Writer) int {
 	if c.fixtures == "" || *toNetBox {
 		acceptNetBox(nbFiles, *toNetBox, *noNetBox, r, after, dir, stdout)
 	}
+	ev = event(notify.FinishedEvent(string(r.Verdict)))
+	ev.Status, ev.Failures, ev.Remarks = string(r.Verdict), r.Failures, r.Remarks
+	ev.Duration = fmtDur(r.EndedAt.Sub(r.StartedAt))
+	nt.Send(ev)
+	nt.Wait(2 * time.Minute)
 	return r.Verdict.ExitCode()
 }
 

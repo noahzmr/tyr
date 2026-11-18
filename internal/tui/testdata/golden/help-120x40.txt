@@ -13,7 +13,7 @@
  ● sde      │ ↑↓ jk      move               !          problems only      e          export JSON + .md     │          0
             │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
 sdd ────────│ pgup pgdn  page               v          switch view        R          reports               │l SMART page
-Model     ST│ g G        top / end          /          search             N          NetBox                │
+Model     ST│ g G        top / end          /          search             N W        NetBox · webhooks     │
 Serial    WJ│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │ce boot
 Firmware  SN│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │
 Path      /d│                               h          virtual NICs       q ctrl+c   quit · stop all       │
