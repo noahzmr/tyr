@@ -80,6 +80,9 @@ flowchart LR
 | `internal/workload` | deterministic compute kernels checked against golden values; the torture test's Lucas-Lehmer FFT (Go, plus AVX-512 / AVX2 FMA assembly in `fft_amd64.s`) checked against exact residues |
 | `internal/report` | Markdown reports, Mermaid charts, history, glamour rendering |
 | `internal/tui` | the Bubble Tea front end |
+| `internal/source/crypt` | dm-crypt mappings and the block device stack from sysfs, LUKS1/2 headers (cipher, key size), TCG Level 0 discovery (sed-opal ioctl, NVMe Security Receive) |
+| `internal/fsck` | filesystem check and repair: targets from udev and mountinfo, the ext superblock, plans with their blockers (processes, submounts, swap, loop, Longhorn), runs with streamed output and a log; tested against stand-in tools on `PATH` |
+| `internal/fsbrowse` | the file browser: one directory's entries (lstat), subtree totals counted in the background on one filesystem, fscrypt per directory |
 | `internal/hostfs`, `internal/execx` | read-only host access; tool execution without a shell, with deadlines |
 | `internal/fixture` | replays a recorded host for tests and `--fixtures` |
 

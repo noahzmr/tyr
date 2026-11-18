@@ -21,6 +21,8 @@ Tyr looks for tools in `PATH` and in `/usr/local/sbin`, `/usr/local/bin`,
 | `ipmitool` / `ipmiutil` | the BMC through `/dev/ipmi0`: sensors, event log, FRU, LAN | a fallback when the device cannot be used |
 | `nvme` (nvme-cli) | the NVMe health log through an ioctl | a fallback for SMART on NVMe drives |
 | `df` | `statfs` | used only in fixtures |
+| `cryptsetup`, `sedutil-cli`, `lsblk` | dm-crypt mappings and the block device stack from sysfs, the LUKS header, the drives' TCG discovery (sed-opal ioctl, NVMe Security Receive) | not used |
+| `du`, `ncdu` | the file browser (`B`) counts directories itself | not used |
 | `journalctl` | `/dev/kmsg` for this boot | part of systemd; Tyr uses it for earlier boots and the boot history, and on hosts with network storage or Kubernetes for iscsid's, multipathd's and the kubelet's (k3s, rke2) volume messages of the last 24 hours |
 
 `tyr check-native` (as root) compares the native readers with these tools on
@@ -37,11 +39,13 @@ a host and lists every difference.
 | `ip` | `iproute2` | which interface carries an iSCSI / NVMe-oF session (`ip route get <portal>`) | sessions without their interface |
 | `wg` | `wireguard-tools` | WireGuard peers: endpoint, last handshake, traffic (as root; keys other than public ones are never kept) | WireGuard interfaces without peer status |
 | `ipmitool` | `ipmitool` | BMC fallback, and `tyr check-native` | nothing while `/dev/ipmi0` works |
+| `e2fsck`, `xfs_repair` / `xfs_scrub`, `btrfs`, `fsck.vfat`, `fsck.exfat` | `e2fsprogs`, `xfsprogs`, `btrfs-progs`, `dosfstools`, `exfatprogs` | checking and repairing filesystems (`K`, `tyr fsck`); usually installed with the filesystem | that filesystem cannot be checked from Tyr |
+| `zfs` | `zfsutils-linux` / `zfs` | whether ZFS datasets are encrypted | ZFS filesystems without encryption state |
 | `wl-copy` / `xclip` / `xsel` | `wl-clipboard` / `xclip` / `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) on a desktop | copy works only through OSC 52 |
 
 | Distribution | Install |
 |---|---|
-| Debian, Ubuntu | `sudo apt-get install smartmontools rasdaemon lldpd ipmitool` |
+| Debian, Ubuntu | `sudo apt-get install smartmontools rasdaemon lldpd ipmitool` (filesystem tools: `e2fsprogs xfsprogs btrfs-progs dosfstools exfatprogs`) |
 | RHEL, Rocky, Alma, Fedora | `sudo dnf install smartmontools rasdaemon ipmitool`; `lldpd` comes from [EPEL](https://docs.fedoraproject.org/en-US/epel/) on RHEL and its rebuilds |
 | SUSE | `sudo zypper install smartmontools rasdaemon lldpd ipmitool` |
 

@@ -123,6 +123,7 @@ under load:
 | `fail_counters` | counter names (part of the name, e.g. `.ce`) whose growth fails the test |
 | `max_temp_c` | `cpu`, `disk`, `dimm`: highest temperature under load |
 | `min` | `memory_gb` (installed), `logical_cpus` (online), `disks` (physical, not USB) |
+| `require_encryption` | `true`: unencrypted filesystems, data disks and swap fail the test (`not_encrypted`, `swap_not_encrypted`; also `--require-encryption` or `TYR_REQUIRE_ENCRYPTION=1`). On the ISO nothing is mounted: a disk counts as encrypted when its data partitions are LUKS (not opened) or it is a self-encrypting drive with locking set up |
 
 Unknown fields are rejected, so a typo cannot silently weaken a limit.
 
@@ -200,7 +201,8 @@ arm64 image, rack servers with a BMC.
 
 The system runs from memory (`toram`): the virtual media can disconnect
 during a long run. It never writes to the server's disks: no automounting,
-no mdadm or LVM, the disk test only reads; the one partition it writes is
+no mdadm or LVM, the disk test only reads, filesystem checks (`K`, `tyr
+fsck`) only read and repairs are refused; the one partition it writes is
 `TYR-RESULTS`.
 
 Kernel command line (`e` in the boot menu):

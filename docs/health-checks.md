@@ -225,6 +225,60 @@ portal and state, and the kernel I/O errors on the path to the storage system.
 Their SMART belongs to the storage system and is not queried. NVMe over TCP,
 RDMA and FC namespaces are network volumes too.
 
+#### Encryption
+
+Every disk, filesystem, swap area, RAID logical drive and Longhorn volume
+shows whether its data is encrypted at rest, and by which layer:
+
+| Layer | Read from | Counts as encrypted |
+|---|---|---|
+| dm-crypt (LUKS1/2, plain, BitLocker) | `/sys/block/dm-*/dm/uuid` and the stack in `slaves/` / `holders/`; cipher and key size from the LUKS header (root) - key slots are never read or kept | yes |
+| a LUKS partition not opened | udev's `ID_FS_TYPE=crypto_LUKS` (the live ISO, an unused data disk) | yes ("not opened") |
+| self-encrypting drive (TCG Opal / Enterprise / Pyrite / Ruby) | the drive's Level 0 discovery: the kernel's sed-opal ioctl, else NVMe Security Receive (root; read-only, no password) | only with **locking set up**: a drive that encrypts without locking hands its data to anyone who has it |
+| ATA security | smartctl's `ata_security` | shown, not counted: a password, not encryption |
+| RAID controller | HPE Smart Array Secure Encryption (Redfish: `EncryptionEnabled`, `LogicalDriveEncryption`, `EncryptedDrive`), Redfish `EncryptionAbility` / `EncryptionStatus`, storcli's `SED` column | when every logical drive of the controller reports it |
+| ZFS | `zfs get encryption,keystatus` | yes |
+| fscrypt | per directory, in the file browser (`B`) | - |
+
+A disk counts as encrypted when every partition with data on it (EFI and
+`/boot` left out) ends in an encryption layer, through md, LVM and
+multipath; "partly" names the partitions that do not. Without root the
+self-encrypting drive state is unknown and says so.
+
+Unencrypted storage is **no finding by default**. With `--require-encryption`,
+`TYR_REQUIRE_ENCRYPTION=1` or `"require_encryption": true` in an acceptance
+profile, every unencrypted filesystem (not `/boot`, `/boot/efi`), every data
+disk with nothing mounted (the live ISO) and every unencrypted swap area is a
+warning, and the acceptance test fails on it.
+
+#### Filesystem errors, check and repair
+
+ext4 counts its errors in the superblock (`/sys/fs/ext4/<dev>/errors_count`,
+with the first and last error's time), btrfs per device
+(`/sys/fs/btrfs/<fsid>/devinfo/*/error_stats`: read, write, flush, checksum,
+generation). Any count above zero is an `fs_errors` warning; the Filesystems
+view marks it `err`.
+
+`K` in the TUI and `tyr fsck` check or repair a filesystem:
+
+| Filesystem | Check (reads only) | Repair (writes) |
+|---|---|---|
+| ext2/3/4 | `e2fsck -f -n` | `e2fsck -f -y` |
+| xfs | mounted: `xfs_scrub -n` (online); else `xfs_repair -n` | `xfs_repair` - never `-L`: a dirty log is replayed by mounting once |
+| btrfs | mounted: `btrfs scrub -r` (online); else `btrfs check --readonly` | mounted: `btrfs scrub` (fixes from a second copy); never `btrfs check --repair` |
+| vfat, exfat | `fsck.vfat -n`, `fsck.exfat -n` | `fsck.vfat -a`, `fsck.exfat -y` |
+
+A filesystem that must be unmounted for it is unmounted after a `y` (check)
+or the typed device path (repair), and mounted again where it was, with its
+options and bind mounts. First Tyr lists what stands in the way: processes
+with files open below it (like `fuser -m`), filesystems mounted below it,
+swap files, loop devices, the root filesystem (boot once with
+`fsck.mode=force fsck.repair=yes` instead), a Longhorn volume in use (scale
+the workload down, attach the volume in maintenance mode, then check
+`/dev/longhorn/<volume>`). A repair cannot be interrupted, and when it fails
+the filesystem stays unmounted. The live ISO only checks. Every run is
+logged to `/var/lib/tyr/fsck/`.
+
 #### Network storage: iSCSI, NVMe-oF, Longhorn
 
 Beyond the volumes, Tyr looks at every **session** (`/sys/class/iscsi_session`,
@@ -294,6 +348,8 @@ fresh, and the storage stress test reads it every 30 s.
 | `raid_vd`, `raid_pd`, `raid_battery` | ▲ / ✖ | a degraded logical drive; a failed, predictive-failure or (BMC) worn-out drive: 90 % of its endurance used is a warning, 100 % critical; the cache battery |
 | `fs_read_only` | ✖ | a filesystem was remounted read-only |
 | `fs_full` | ▲ / ✖ | 85 / 95 % space or inodes |
+| `fs_errors` | ▲ | the filesystem recorded errors (ext4 error count, btrfs device errors): check it with `K` |
+| `not_encrypted`, `swap_not_encrypted` | ▲ | only when encryption is required: a filesystem, data disk or swap area without encryption at rest |
 
 #### SCSI command errors (`ioerr_cnt`)
 
@@ -500,4 +556,7 @@ crash records (pstore), the full journal of earlier boots (members of the
 `adm` or `systemd-journal` group can read it too), and the config file with
 the Redfish credentials. On a Longhorn node the replicas' metadata and the
 pods' logs in `/var/log/pods` are root-only; sessions, volumes and node checks
-work without. The offline-core test always needs root.
+work without. The self-encrypting drive state, LUKS ciphers and the ext
+superblock (last check, error count of an unmounted filesystem) need root;
+which layers encrypt what does not. Checking and repairing filesystems needs
+root. The offline-core test always needs root.

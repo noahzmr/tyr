@@ -11,11 +11,12 @@ read that snapshot or its JSON.
 | Layer | Packages | Job |
 |---|---|---|
 | Host access | `hostfs`, `execx` | read-only `/proc`, `/sys`, `/dev`; tools without a shell, with deadlines |
-| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo` | read and parse one kind of data; SMBIOS (`/sys/firmware/dmi/tables`), NICs (`SIOCETHTOOL`) and the BMC (`/dev/ipmi0`) natively, their tools only as fallback |
+| Sources | `source/sysfs`, `dmi`, `smart`, `ipmi`, `redfish`, `raid`, `pci`, `gpu`, `kernellog`, `netinfo`, `crypt` | read and parse one kind of data; SMBIOS (`/sys/firmware/dmi/tables`), NICs (`SIOCETHTOOL`) and the BMC (`/dev/ipmi0`) natively, their tools only as fallback |
 | Collectors | `collector/system`, `cpu`, `memory`, `storage`, `power`, `network`, `accel`, `events` | combine sources into a section with findings |
 | Checks | `check` | thresholds → `OK` / `WARN` / `CRIT` / `UNKNOWN` |
 | Workloads | `workload` | the verified compute kernels of the core and CPU tests; the torture test's Lucas-Lehmer FFT (AVX-512 / AVX2 FMA or Go) |
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
+| Filesystems | `fsck`, `fsbrowse` | check and repair plans with their blockers, streamed runs and logs; the file browser's directory reader and background counter. The only code that changes the host: `umount`, the check tool, `mount`, after a confirmation |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
 | Acceptance | `accept`, `acceptui` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check, run with one set of collectors; its live view on a terminal |
 | ISO | `isobuild` | the ISO with the current settings from the TUI, USB disks, writing and verifying a stick |
@@ -27,7 +28,7 @@ read that snapshot or its JSON.
 ```mermaid
 flowchart LR
     subgraph host["Host"]
-        sys["sysfs · hwmon · procfs · /dev/kmsg · /var/log/pods"]
+        sys["sysfs · hwmon · procfs · /dev/kmsg · /var/log/pods · /run/udev/data · LUKS headers · TCG discovery"]
         tools["smartctl · storcli · nvidia-smi · lldpctl · journalctl · ip · (fallbacks: dmidecode, ethtool, ipmitool)"]
         bmc["BMC: IPMI and Redfish (read-only)"]
     end
@@ -140,7 +141,11 @@ any of them back (see [reports.md](reports.md)).
   and - each after a confirmation - package installs started from the Stress
   tab and the offline-core test, which brings one CPU online in an isolated
   cpuset partition and puts everything back (a state file in `/run` makes
-  that recoverable after a kill).
+  that recoverable after a kill), and filesystem checks and repairs (`K`,
+  `tyr fsck`): unmount, the check tool, mount again; a repair only after the
+  device path is typed, never from the live system, never interruptible.
+  Reading drives' TCG discovery and LUKS headers changes nothing; key
+  material is never read. The file browser only reads.
 - **Local first.** Linux interfaces before tools, tools before the BMC. Where
   Tyr reads a kernel interface itself (SMBIOS, ethtool requests, the IPMI
   driver), the tool is only a fallback; native IPMI sends only the read-only

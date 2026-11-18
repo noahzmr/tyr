@@ -110,7 +110,7 @@ guard that keeps it safe, and gives a verdict you can trust.
 |---|---|
 | CPU | online cores, per-core temperature and clock, throttling, microcode, an optional per-core compute test; machine checks across boots (journal, pstore crash records, rasdaemon, BMC) by unit; program crashes per core; offline cores: since when, whether the core is fully out of service, whether that survives a reboot |
 | Memory | DIMMs per slot, ECC corrected / uncorrected (EDAC), poisoned pages, DIMM temperatures, memory the OS cannot see |
-| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, the drives behind HPE Smart Array and other controllers from the BMC (Redfish: bay, wear, power-on hours, status reasons), filesystems; iSCSI / FC / NVMe-oF volumes and every session with a timeline of the boot (decoded connection errors, recovery timeouts, read-only filesystems); on Longhorn nodes the volumes, data paths, replicas, node checks like `longhornctl check preflight` and the volume errors in the kubelet's and Longhorn's logs |
+| Storage | SMART (ATA, SCSI, NVMe), wear, reallocated and pending sectors, I/O errors with the kernel log lines naming each disk, where a disk is attached (controller, port, bay), SCSI errors Tyr or a monitoring agent caused kept apart, md RAID, MegaRAID/PERC, the drives behind HPE Smart Array and other controllers from the BMC (Redfish: bay, wear, power-on hours, status reasons), filesystems with their recorded errors; encryption at rest of every disk, filesystem and swap area (LUKS / dm-crypt, self-encrypting drives over TCG Opal, controller and ZFS encryption; a finding only when required); check and repair filesystems (`K`, `tyr fsck`) and browse the files read-only with sizes like ncdu (`B`); iSCSI / FC / NVMe-oF volumes and every session with a timeline of the boot (decoded connection errors, recovery timeouts, read-only filesystems); on Longhorn nodes the volumes, data paths, replicas, node checks like `longhornctl check preflight` and the volume errors in the kubelet's and Longhorn's logs |
 | Network | link, speed vs. port and partner, duplex, bonds, CRC and error counters, drops and losses with where and why (NIC ring, kernel, bond), transceiver optics, LLDP neighbours, BMC LAN; VPN interfaces (WireGuard, OpenVPN, Tailscale, ZeroTier, IPsec) with peers and last handshakes, the service journal and kernel lines |
 | GPU/NPU | PCIe link width and speed (not for NVLink-C2C GPUs such as GB10, whose PCIe link is a stub), temperatures (Blackwell: from the T.Limit margin), power, memory (shared with the system on GB10), ECC, retired/remapped rows, driver errors (Xid), processes holding GPU memory |
 | System | identity, BIOS, BMC, PSU inventory, fans (also HPE duty cycle) and chassis temperatures, boot history with crashes and resets; from the BMC (Redfish): part and serial numbers of cards, controllers and the storage battery, and the firmware inventory |
@@ -393,6 +393,7 @@ Delete the pod afterwards (`kubectl delete pod node-debugger-…`).
 | `tyr core-test CPU` | test an offline (suspect) CPU: online only for the test, isolated, offline again after; `--restore` cleans up after a kill |
 | `tyr history PATH…` | history from saved JSON: `--format markdown\|json`, `--host NAME` |
 | `tyr view PATH…` | show a `.md` file, one document's report, or the history of several in a pager |
+| `tyr fsck [DEV\|MOUNT]` | list filesystems, check one (`--repair` to repair): unmounts and mounts again when nothing uses it, repair asks for the device path, never from the live ISO ([docs/health-checks.md](docs/health-checks.md#filesystem-errors-check-and-repair)) |
 | `tyr net-peer` | far end of the network test, on a second host |
 | `tyr check-native` | compare Tyr's own SMBIOS, NIC and BMC readers with dmidecode, ethtool and ipmitool on this host (root); lists every difference |
 | `tyr version` | version, commit, build time |
@@ -546,7 +547,9 @@ tyr/
 │   │   ├── network/         ports, bonds, counters, losses, transceivers, LLDP
 │   │   ├── accel/           GPUs and NPUs
 │   │   └── events/          BMC event logs and kernel messages
-│   ├── source/              readers and parsers: sysfs, dmi, smart, ipmi, redfish, raid, pci, gpu, kernellog, netinfo
+│   ├── source/              readers and parsers: sysfs, dmi, smart, ipmi, redfish, raid, pci, gpu, kernellog, netinfo, crypt (dm-crypt, LUKS, TCG)
+│   ├── fsck/                filesystem check and repair: targets, plans, blockers, runs
+│   ├── fsbrowse/            the file browser's directory reader and background counter
 │   ├── check/               thresholds → OK / WARN / CRIT
 │   ├── explain/             the alert catalog: meaning, causes, commands
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
@@ -628,5 +631,9 @@ git config core.hooksPath scripts/hooks
 | **iSCSI session / IQN** | a connection to a storage target over TCP; targets and initiators are named by an IQN (`iqn.2019-10.io.longhorn:pvc-…`) |
 | **replacement_timeout** | how long the kernel holds I/O while an iSCSI path is down before it fails it (NVMe-oF: `ctrl_loss_tmo`) |
 | **NVMe-oF** | NVMe over a network (TCP, RDMA, FC); Longhorn's v2 data engine uses NVMe/TCP |
+| **LUKS / dm-crypt** | Linux disk encryption: dm-crypt encrypts a block device, LUKS is its on-disk header with the key slots |
+| **SED / TCG Opal** | a self-encrypting drive and the standard to control it; it protects data at rest only once locking is set up with a password |
+| **fsck** | a filesystem check (and repair): `e2fsck`, `xfs_repair`, `btrfs check` / `scrub` |
+| **Sparse file** | a file whose unwritten parts take no space on disk: its apparent size is larger than its size on disk |
 | **Longhorn** | Kubernetes block storage: each volume is an iSCSI target (v1 engine) on the node using it, its replicas are files in the nodes' data paths (`/var/lib/longhorn`) |
 | **multipathd** | the daemon that joins several paths to one device; it must not claim Longhorn's devices |
