@@ -12,7 +12,7 @@ DIST        := dist
 export CGO_ENABLED=0
 
 .PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross iso iso-arm64 diagrams clean \
-	release-notes release-snapshot publish publish-retry release-notes-update
+	release-notes release-snapshot release-prepare publish publish-retry release-notes-update
 
 PREFIX  ?= /usr/local
 ARCHIFY ?= $(HOME)/src/archify
@@ -88,16 +88,20 @@ cross:
 	done
 	@cd $(DIST) && sha256sum $(BINARY)-linux-* > SHA256SUMS && cat SHA256SUMS
 
-# Releases (DEVELOPER.md "Releasing"): BUMP=patch|minor|major or RELEASE=vX.Y.Z;
-# the first release is v1.0.0. publish needs GITHUB_TOKEN.
+# Releases (DEVELOPER.md "Releasing"): release-prepare BUMP=patch|minor|major
+# (or RELEASE=vX.Y.Z) pushes a release/vX.Y.Z branch for a pull request; after
+# it is merged, publish tags main and uploads (needs GITHUB_TOKEN).
 release-notes:
 	@scripts/release.sh notes $(or $(RELEASE),$(BUMP))
 
 release-snapshot:
 	scripts/release.sh snapshot
 
+release-prepare:
+	scripts/release.sh prepare $(or $(RELEASE),$(BUMP))
+
 publish:
-	scripts/release.sh publish $(or $(RELEASE),$(BUMP))
+	scripts/release.sh publish
 
 publish-retry:
 	scripts/release.sh retry

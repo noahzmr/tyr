@@ -10,6 +10,10 @@
 //	relnotes -section v1.2.0             print that version's section as release notes
 //	relnotes -update-release v1.2.0      set the GitHub release's text to that section
 //	                                     (GITHUB_TOKEN)
+//	relnotes -missing v1.2.0             list commits since the last tag that the
+//	                                     section does not mention (landed after it
+//	                                     was prepared)
+//	relnotes -pending                    print the newest CHANGELOG version without a tag
 //
 // CHANGELOG.md is wrapped for reading in an editor; the release notes join
 // the wrapped lines, since GitHub shows a release's line breaks as they are.
@@ -44,7 +48,16 @@ func main() {
 	needHighlights := flag.Bool("require-highlights", false, "fail when the Unreleased section is empty")
 	sectionOf := flag.String("section", "", "print this version's CHANGELOG section as release notes")
 	update := flag.String("update-release", "", "set this version's GitHub release text to its CHANGELOG section")
+	missing := flag.String("missing", "", "list commits since the last tag that this version's section does not mention")
+	pending := flag.Bool("pending", false, "print the newest CHANGELOG version that has no tag yet")
 	flag.Parse()
+	if *missing != "" || *pending {
+		if err := checkCmd(*missing, *pending, *changelog, *prev); err != nil {
+			fmt.Fprintln(os.Stderr, "relnotes:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if *sectionOf != "" || *update != "" {
 		if err := sectionCmd(*sectionOf, *update, *changelog, *repo); err != nil {
 			fmt.Fprintln(os.Stderr, "relnotes:", err)
@@ -134,6 +147,60 @@ func sectionCmd(version, update, changelog, repo string) error {
 		repo = repoURL()
 	}
 	return UpdateRelease(repo, version, body, os.Getenv("GITHUB_TOKEN"))
+}
+
+func checkCmd(missing string, pending bool, changelog, prev string) error {
+	cl, err := os.ReadFile(changelog)
+	if err != nil {
+		return err
+	}
+	if pending {
+		v := Newest(string(cl))
+		if v == "" {
+			return errors.New("CHANGELOG.md has no version section: run make release-prepare first")
+		}
+		if _, err := git("rev-parse", "-q", "--verify", "refs/tags/"+v); err == nil {
+			return fmt.Errorf("the newest section, %s, is released already: run make release-prepare first", v)
+		}
+		fmt.Println(v)
+		return nil
+	}
+	sec, err := Section(string(cl), missing)
+	if err != nil {
+		return err
+	}
+	if prev == "" {
+		prev = lastTag()
+	}
+	commits, err := Commits(prev)
+	if err != nil {
+		return err
+	}
+	for _, c := range Missing(sec, commits) {
+		fmt.Printf("%s %s\n", c.Hash[:7], c.Subject)
+	}
+	return nil
+}
+
+var versionHeading = regexp.MustCompile(`(?m)^## \[(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]`)
+
+// Newest returns the version of the topmost section ("v1.2.0").
+func Newest(cl string) string {
+	if m := versionHeading.FindStringSubmatch(cl); m != nil {
+		return "v" + m[1]
+	}
+	return ""
+}
+
+// Missing lists the commits a section does not mention by short hash.
+func Missing(section string, commits []Commit) []Commit {
+	var out []Commit
+	for _, c := range commits {
+		if !strings.Contains(section, c.Hash[:7]) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // Section returns the body of a version's section in the changelog.
@@ -380,6 +447,7 @@ var areas = []struct {
 	{"Reports", []string{"reports", "report", "history"}},
 	{"NetBox", []string{"netbox"}},
 	{"Webhooks", []string{"notify", "webhooks"}},
+	{"Legal", []string{"legal", "license"}},
 	{"Documentation", []string{"docs", "readme"}},
 	{"Build and CI", []string{"ci", "hooks", "init", "build", "make", "release"}},
 }

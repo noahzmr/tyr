@@ -151,3 +151,18 @@ func TestUpdateRelease(t *testing.T) {
 		t.Error("no token")
 	}
 }
+
+func TestNewestAndMissing(t *testing.T) {
+	cl := "# Changelog\n\n## Unreleased\n\n## [1.1.0] - 2026-12-01\n\nx ([`aaaaaaa`](u))\n\n## [1.0.0] - 2026-11-18\n"
+	if v := Newest(cl); v != "v1.1.0" {
+		t.Errorf("newest %q", v)
+	}
+	if Newest("# Changelog\n\n## Unreleased\n") != "" {
+		t.Error("no version")
+	}
+	sec, _ := Section(cl, "v1.1.0")
+	got := Missing(sec, []Commit{{Hash: "aaaaaaa000", Subject: "in"}, {Hash: "bbbbbbb000", Subject: "late"}})
+	if len(got) != 1 || got[0].Subject != "late" {
+		t.Errorf("missing %+v", got)
+	}
+}
