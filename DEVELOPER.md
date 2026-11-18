@@ -143,6 +143,11 @@ mdir -i /tmp/stick.img ::/tyr     # the results after the run
    that every path gives the same results.
 6. **Commit messages, comments and files describe the work only** - no notes or
    trailers crediting the tool that helped write them (see §8).
+7. **License.** Tyr is MPL-2.0 ([LICENSE](LICENSE)). New source files start
+   with the header in [COPYRIGHT_HEADER.txt](COPYRIGHT_HEADER.txt); existing
+   files have none yet. A new Go module dependency is listed in
+   [NOTICE](NOTICE) with its licence, which must be compatible with the MPL
+   (MIT, BSD, Apache-2.0, MPL-2.0).
 
 ---
 

@@ -7,9 +7,10 @@ maintainers or users".
 
 ## Statement
 
-As of 2026-11-18, Tyr does **not yet** meet Level 1: 8 requirements are met,
-2 depend on account settings that could not be checked from outside, and 14
-are open. Most open items come from three causes:
+As of 2026-11-18, Tyr does **not yet** meet Level 1: 10 requirements are
+met, 2 depend on account settings that could not be checked from outside,
+and 12 are open (2 of them close with the next release). Most open items
+come from two causes:
 
 1. **The repository is private.** GitHub answers `404 Not Found` to
    unauthenticated requests for `noahzmr/tyr`, its branches and its releases.
@@ -17,10 +18,7 @@ are open. Most open items come from three causes:
    discussion (GV-02), and in practice private vulnerability reporting and
    free secret scanning (VM-02, BR-07), which GitHub offers for public
    repositories.
-2. **There is no license.** Four Legal requirements (LE-02, LE-03) fail
-   until an OSI-approved license is in the repository and in the release
-   archives.
-3. **Project documents are missing:** a security contact (`SECURITY.md`), the
+2. **Project documents are missing:** a security contact (`SECURITY.md`), the
    contribution process (`CONTRIBUTING.md`) and a guide for reporting defects.
 
 The build pipeline is in good shape: CI runs on `pull_request` only, with
@@ -47,10 +45,10 @@ read from outside; check it and record the date).
 | OSPS-DO-02.01 | A guide for reporting defects (after a release) | Gap | The README links "Report an issue" but does not say what a report needs. Add a bug report issue template and a short section: `tyr version`, the distribution and kernel, `tyr report --format json` (or the failing command's output), what was expected |
 | OSPS-GV-02.01 | Public mechanism for discussing changes and problems | Gap | GitHub Issues exist, but are not public while the repository is private. Make the repository public with Issues on (Discussions optional) |
 | OSPS-GV-03.01 | Documented contribution process (or "not accepted") | Gap | `DEVELOPER.md` explains build, tests and hooks, not how to contribute: no `CONTRIBUTING.md` (pull requests against `main`, the `area: summary` commit style, CI and attribution checks, review). Or state plainly that outside contributions are not accepted |
-| OSPS-LE-02.01 | Source code license is OSI / FSF approved | Gap | No license |
-| OSPS-LE-02.02 | Released assets' license is OSI / FSF approved | Gap | No license in `tyr_1.0.0_linux_*.tar.gz` |
-| OSPS-LE-03.01 | License in `LICENSE` / `COPYING` / `LICENSES/` | Gap | No `LICENSE` file |
-| OSPS-LE-03.02 | License included with the released assets | Gap | Add `LICENSE` to the archive files in `.goreleaser.yaml`; releases after that carry it |
+| OSPS-LE-02.01 | Source code license is OSI / FSF approved | Met | Mozilla Public License 2.0 (OSI-approved), the same as the owner's other projects; brand-free, third-party names and libraries in `NOTICE` |
+| OSPS-LE-02.02 | Released assets' license is OSI / FSF approved | Gap (next release) | The archives are MPL-2.0 from the next release on; v1.0.0 was published without a license |
+| OSPS-LE-03.01 | License in `LICENSE` / `COPYING` / `LICENSES/` | Met | `LICENSE` (plain MPL-2.0 text, recognised by license scanners) |
+| OSPS-LE-03.02 | License included with the released assets | Gap (next release) | `.goreleaser.yaml` puts `LICENSE` and `NOTICE` into every archive; the next release carries them |
 | OSPS-QA-01.01 | Repository publicly readable at a static URL | Gap | Private |
 | OSPS-QA-01.02 | Public record of every change: what, who, when | Gap | The Git history records author and date for every commit, but it is not public while the repository is private |
 | OSPS-QA-02.01 | Dependency list for direct language dependencies | Met | `go.mod` / `go.sum` (Go modules); release tooling is pinned by version in `scripts/release.sh` and the `Makefile` |
@@ -63,14 +61,12 @@ read from outside; check it and record the date).
 
 In this order; each step names the requirements it closes.
 
-1. **Choose and add a license** (LE-02.01, LE-03.01): an OSI-approved
-   license in `LICENSE`, and the same in the README. Apache-2.0 (with its
-   patent grant) and MIT are the common choices for a Go tool; GPL-3.0 if
-   changes must stay open. This is the maintainer's decision.
-2. **Ship the license with the releases** (LE-02.02, LE-03.02): add `LICENSE`
-   to `archives.files` in `.goreleaser.yaml`. v1.0.0 was released without
-   it; v1.0.1 or later will carry it. Alternatively re-publish v1.0.0's
-   assets with the license, or document that v1.0.0 predates it.
+1. ~~Choose and add a license~~ (LE-02.01, LE-03.01): done 2026-11-18,
+   MPL-2.0 with `NOTICE` and `COPYRIGHT_HEADER.txt`.
+2. **Ship the license with the releases** (LE-02.02, LE-03.02): `LICENSE`
+   and `NOTICE` are in `archives.files`; publish the next release (v1.0.1
+   or later). v1.0.0 stays as published, without a license; its CHANGELOG
+   entry says so.
 3. **Remove the committed binary** (QA-05.01): `git rm --cached
    tyr-linux-amd64`, add `/tyr-linux-*` to `.gitignore`, and a CI step that
    fails when an ELF or other executable file is tracked. The file stays in

@@ -33,6 +33,7 @@
 
   <p>
 
+[![License](https://img.shields.io/badge/License-MPL--2.0-FF7139?style=for-the-badge&logo=mozilla&logoColor=white)](./LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![Linux](https://img.shields.io/badge/Linux-amd64%20%7C%20arm64-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.kernel.org/)
 [![Pure Go](https://img.shields.io/badge/cgo-free-2EA44F?style=for-the-badge&logo=go&logoColor=white)](#build-instructions)
@@ -89,6 +90,7 @@ guard that keeps it safe, and gives a verdict you can trust.
 - [Development](#development)
 - [Further Documentation](#further-documentation)
 - [Glossary](#glossary)
+- [License](#license)
 
 ---
 
@@ -660,3 +662,13 @@ git config core.hooksPath scripts/hooks
 | **Sparse file** | a file whose unwritten parts take no space on disk: its apparent size is larger than its size on disk |
 | **Longhorn** | Kubernetes block storage: each volume is an iSCSI target (v1 engine) on the node using it, its replicas are files in the nodes' data paths (`/var/lib/longhorn`) |
 | **multipathd** | the daemon that joins several paths to one device; it must not claim Longhorn's devices |
+
+---
+
+## License
+
+Tyr is licensed under the [Mozilla Public License 2.0](LICENSE): use it,
+change it and pass it on; changes to Tyr's own files stay under the MPL.
+[NOTICE](NOTICE) lists the third-party names Tyr uses descriptively and the
+libraries it is built with, under their own licences. New source files
+carry the header in [COPYRIGHT_HEADER.txt](COPYRIGHT_HEADER.txt).

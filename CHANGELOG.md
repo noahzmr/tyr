@@ -13,6 +13,10 @@ area, generated from the Git history by `make publish`.
 <!-- Highlights and upgrade notes of the next release; `make publish` moves
 them into its section and adds the commits grouped by area. -->
 
+- **License**: Tyr is now licensed under the Mozilla Public License 2.0.
+  The archives carry `LICENSE` and `NOTICE` (third-party names and the
+  libraries Tyr is built with). v1.0.0 was published without a license.
+
 ## [1.0.0] - 2026-11-18
 
 The first stable release of Tyr: one static binary for Linux servers (amd64

@@ -29,6 +29,8 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     wrap_in_directory: true
     files:
+      - LICENSE
+      - NOTICE
       - README.md
       - CHANGELOG.md
       - docs/*.md

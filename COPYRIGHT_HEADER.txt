@@ -1,0 +1,105 @@
+================================================================================
+                       TYR - STANDARD COPYRIGHT HEADER
+================================================================================
+
+New source files contributed to Tyr carry the standard copyright header in
+the form appropriate for the file's language. This document defines the
+canonical header text and provides ready-to-paste forms for the languages
+used in this repository.
+
+  Project:    Tyr
+  Owner:      Noah Zeumer
+  Created:    2026-11-18
+  Updated:    2026-11-18
+  License:    MPL-2.0  (see LICENSE)
+  Notice:     see NOTICE for third-party names and software
+
+--------------------------------------------------------------------------------
+CANONICAL HEADER TEXT (language-neutral)
+--------------------------------------------------------------------------------
+
+Copyright (c) 2026 Noah Zeumer
+Project: Tyr
+Created: <YYYY-MM-DD>
+Updated: <YYYY-MM-DD>
+License: MPL-2.0
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+SPDX-License-Identifier: MPL-2.0
+
+--------------------------------------------------------------------------------
+GO  (.go, and Go assembly .s)
+--------------------------------------------------------------------------------
+
+/*
+Copyright (c) 2026 Noah Zeumer
+
+Project: Tyr
+Created: <YYYY-MM-DD>
+Updated: <YYYY-MM-DD>
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+SPDX-License-Identifier: MPL-2.0
+*/
+
+// Package <name> ...
+package <name>
+
+--------------------------------------------------------------------------------
+SHELL / PYTHON / YAML / Makefile  (.sh, .py, .yaml, .yml, Makefile)
+--------------------------------------------------------------------------------
+
+# Copyright (c) 2026 Noah Zeumer
+#
+# Project: Tyr
+# Created: <YYYY-MM-DD>
+# Updated: <YYYY-MM-DD>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+
+In a script, the header goes below the #! line.
+
+--------------------------------------------------------------------------------
+USAGE RULES
+--------------------------------------------------------------------------------
+
+1. Every NEW source file includes the header before its first
+   declaration, in the language-appropriate comment form above. In Go
+   the header block precedes the `// Package ...` doc comment.
+
+2. Files that existed before 2026-11-18 have no header yet. They are
+   covered by the LICENSE file all the same; adding headers to them is
+   a separate, deliberate change.
+
+3. The "Created" field is set once, when the file is first added to the
+   repository, and never changed. The "Updated" field is bumped on
+   substantive edits - typo fixes, formatting passes, and dependency
+   bumps do not require it.
+
+4. The SPDX-License-Identifier line is mandatory - automated tooling
+   relies on it.
+
+5. Do not remove copyright headers from contributed source files. This
+   is required by MPL-2.0 Section 3.4.
+
+6. Third-party files copied into the repository keep their original
+   headers. Do not replace an upstream header with this one.
+
+7. Generated files and test data carry no header: the recorded and
+   synthetic hosts under testdata/fixtures/, golden files (testdata/
+   golden/, *.golden), and the generated diagrams and images under
+   docs/. They are data, not source.
+
+================================================================================
+END OF COPYRIGHT_HEADER
+================================================================================

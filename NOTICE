@@ -1,0 +1,116 @@
+================================================================================
+                                TYR - NOTICE
+================================================================================
+
+Project:    Tyr
+Owner:      Noah Zeumer
+Repository: https://github.com/noahzmr/tyr
+Created:    2026-11-16
+Updated:    2026-11-18
+
+This product includes software developed by Noah Zeumer and the Tyr
+contributors. The source code is licensed under the Mozilla Public
+License, Version 2.0 - see the LICENSE file for full terms.
+
+This project asserts NO branding terms of its own. The name "Tyr" is
+taken from the Norse god of battle and keeper of law, and is not claimed
+as a mark. See section 2 below.
+
+--------------------------------------------------------------------------------
+1. WHAT THIS IS
+--------------------------------------------------------------------------------
+
+Tyr is a single static binary for Linux servers that inventories the
+hardware, checks its health, stresses it and judges whether a machine is
+fit for production; it reports to the terminal, Markdown, NetBox and
+webhooks, and comes with a live ISO for acceptance tests. It is an
+independent project.
+
+--------------------------------------------------------------------------------
+2. THIRD-PARTY NAMES AND TRADEMARKS
+--------------------------------------------------------------------------------
+
+This project is NOT affiliated with, endorsed by, or sponsored by any of
+the companies or projects named below. Their names are used descriptively,
+to identify the hardware, firmware and software Tyr reads or works with.
+
+  (a) "HPE", "ProLiant", "iLO" and "Smart Array" are the property of
+      Hewlett Packard Enterprise.
+
+  (b) "Dell", "iDRAC" and "PERC" are the property of Dell Inc.
+
+  (c) "Broadcom", "MegaRAID" and "StorCLI" are the property of Broadcom
+      Inc.
+
+  (d) "NVIDIA", "DGX", "Grace", "NVLink" and "nvidia-smi" are the property
+      of NVIDIA Corporation; "AMD", "Ryzen" and "EPYC" of Advanced Micro
+      Devices, Inc.; "Intel" and "Xeon" of Intel Corporation.
+
+  (e) "NetBox" is the property of NetBox Labs, Inc.; "Longhorn" and
+      "Kubernetes" are projects of the Cloud Native Computing Foundation /
+      The Linux Foundation.
+
+  (f) "Prime95", "mprime" and "GIMPS" are the property of Mersenne
+      Research, Inc. Tyr's own torture test works in the same way but
+      contains no Prime95 code.
+
+  (g) "Redfish" is a standard of the DMTF; "IPMI" a specification by
+      Intel, Hewlett Packard Enterprise, NEC and Dell; "OpenSSF" a
+      foundation of The Linux Foundation.
+
+  (h) Nothing in the LICENSE or this NOTICE grants any right to use the
+      marks above.
+
+--------------------------------------------------------------------------------
+3. THIRD-PARTY SOFTWARE
+--------------------------------------------------------------------------------
+
+The tyr binary is built with the Go toolchain and its standard library
+(BSD-3-Clause, Copyright The Go Authors) and links the following modules.
+Each remains under its own licence:
+
+  * MIT
+        charm.land/bubbles, charm.land/bubbletea, charm.land/glamour,
+        charm.land/lipgloss, github.com/charmbracelet/colorprofile,
+        github.com/charmbracelet/ultraviolet, github.com/charmbracelet/x
+        (ansi, term, termios, windows, exp/slice) - Copyright Charmbracelet,
+        Inc.; github.com/alecthomas/chroma; github.com/aymerick/douceur;
+        github.com/clipperhouse/displaywidth; github.com/clipperhouse/uax29;
+        github.com/dlclark/regexp2; github.com/lucasb-eyer/go-colorful;
+        github.com/mattn/go-runewidth; github.com/muesli/cancelreader;
+        github.com/rivo/uniseg; github.com/xo/terminfo;
+        github.com/yuin/goldmark; github.com/yuin/goldmark-emoji
+
+  * Apache-2.0
+        charm.land/tone - Copyright Charmbracelet, Inc.
+
+  * BSD-3-Clause
+        golang.org/x/net, golang.org/x/sync, golang.org/x/sys,
+        golang.org/x/text - Copyright The Go Authors;
+        github.com/gorilla/css - Copyright The Gorilla Authors;
+        github.com/microcosm-cc/bluemonday - Copyright David Kitchen
+
+The full list with versions is in go.mod and go.sum.
+
+This software also EXECUTES, when they are installed, but does not link
+against or redistribute: smartctl (smartmontools), nvme-cli, storcli /
+perccli, nvidia-smi, xrt-smi, stress-ng, memtester, iperf3, mprime,
+ethtool, ipmitool, dmidecode, lldpctl, ras-mc-ctl, journalctl, e2fsck,
+xfs_repair, xfs_scrub, btrfs, fsck.vfat, fsck.exfat, mount and umount.
+Each is under its own licence.
+
+The live ISO (iso/) is built by its user from Debian packages, each under
+its own licence. Vendor tools placed in iso/vendor/ are never part of this
+repository or its releases.
+
+--------------------------------------------------------------------------------
+4. ATTRIBUTION
+--------------------------------------------------------------------------------
+
+Per MPL-2.0 Section 3.4, copyright and licence notices in source files
+must be preserved in redistribution. New source files carry the header
+defined in COPYRIGHT_HEADER.txt.
+
+================================================================================
+END OF NOTICE
+================================================================================
