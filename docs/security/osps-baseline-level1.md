@@ -7,9 +7,8 @@ maintainers or users".
 
 ## Statement
 
-As of 2026-11-18, Tyr does **not yet** meet Level 1: 14 requirements are
-met, 1 needs a recorded review of a setting, and 9 are open (2 of them
-close with the next release). Most open items come from two causes:
+As of 2026-11-18, Tyr does **not yet** meet Level 1: 15 requirements are
+met and 9 are open (2 of them close with the next release). Most open items come from two causes:
 
 1. **The repository is private.** GitHub answers `404 Not Found` to
    unauthenticated requests for `noahzmr/tyr`, its branches and its releases.
@@ -32,7 +31,7 @@ read from outside; check it and record the date).
 | Control | Requirement (short) | Status | Evidence / what is missing |
 |---|---|---|---|
 | OSPS-AC-01.01 | MFA for sensitive actions on the repository | Met | Two-factor authentication is on for the owner's account (confirmed by the owner, 2026-11-18). Every collaborator added later needs it too: *Settings → Password and authentication* |
-| OSPS-AC-02.01 | New collaborators get manually assigned, least privileges | Verify | A personal-account repository has no default role: the owner adds each collaborator by invitation (*Settings → Collaborators*), which is the manual assignment. Keep the list to people who merge; contributions come as pull requests from forks and need no access. Record the review of the list here. Should finer roles (read, triage) be needed, move the repository to an organisation with base permission *No permission* |
+| OSPS-AC-02.01 | New collaborators get manually assigned, least privileges | Met | A personal-account repository has no default role: the owner adds each collaborator by invitation (*Settings → Collaborators*), which is the manual assignment. Collaborator list reviewed by the owner, 2026-11-18. Keep it to people who merge; contributions come as pull requests from forks and need no access. Should finer roles (read, triage) be needed, move the repository to an organisation with base permission *No permission* |
 | OSPS-AC-03.01 | Direct commits to the primary branch are prevented | Gap | Needs the branch ruleset on `main` (pull request required, `test` must pass, no bypass). The release flow is ready for it: `make release-prepare` goes through a pull request and `make publish` only pushes a tag |
 | OSPS-AC-03.02 | Deleting the primary branch needs explicit confirmation | Gap | Same ruleset: *Restrict deletions*, *Block force pushes* |
 | OSPS-BR-01.01 | CI sanitises untrusted metadata | Met | `.github/workflows/ci.yml`: triggers `push` (main) and `pull_request`; the pull request title and body reach the script only as environment variables (`PR_TITLE`, `PR_BODY`), never as `${{ }}` inside `run:` |
@@ -86,8 +85,9 @@ In this order; each step names the requirements it closes.
    before merging*, *Require status checks to pass* (the `test` job). The
    release flow already works with it (`make release-prepare`, then `make
    publish` after the merge; DEVELOPER.md "Releasing").
-8. **Review the collaborators** (AC-02.01): *Settings → Collaborators*;
-   record the date here. Two-factor authentication (AC-01.01) is confirmed.
+8. ~~Confirm the account settings~~ (AC-01.01, AC-02.01): two-factor
+   authentication and the collaborator list confirmed by the owner,
+   2026-11-18. Review the collaborators again when someone is added.
 9. **Check and record**: run the OSPS Baseline scanner (`pvtr` with the
    `osps-baseline` catalog, as other projects do) against `main`, update the
    statement and this table, and optionally publish a machine-readable
