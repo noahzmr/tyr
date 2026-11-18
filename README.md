@@ -619,6 +619,7 @@ git config core.hooksPath scripts/hooks
 | [CHANGELOG.md](CHANGELOG.md) | everyone | what changed in each version |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | contributors | reporting bugs, proposing changes, the rules for them |
 | [SECURITY.md](SECURITY.md) | everyone | reporting a vulnerability privately, security contacts, supported versions |
+| [security-insights.yml](security-insights.yml) | tools | machine-readable security facts for OpenSSF tooling (Security Insights 2.2) |
 | [docs/security/osps-baseline-level1.md](docs/security/osps-baseline-level1.md) | maintainers | OpenSSF Security Baseline Level 1: status per control and the plan to meet it |
 | [docs/README.md](docs/README.md) | everyone | index of the deep dives |
 | [docs/architecture.md](docs/architecture.md) | engineers | packages, data flow, refresh loop |

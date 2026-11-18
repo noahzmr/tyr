@@ -17,6 +17,32 @@ The build pipeline is in good shape: CI runs on `pull_request` only, with
 read-only permissions and no secrets, and passes untrusted pull request text
 through environment variables instead of into the script.
 
+## Scanner run
+
+2026-11-18, against `main`: **pvtr v0.24.1** with **pvtr-github-repo-scanner
+v0.33.2**, catalog `osps-baseline` (2026-08), applicability `maturity-1`,
+with the owner's fine-grained token.
+
+| Result | Requirements |
+|---|---|
+| Passed (21) | AC-01.01, AC-02.01, AC-03.02, BR-01.01, BR-01.03, BR-03.01, BR-03.02, BR-07.01, DO-02.01, GV-02.01, GV-03.01, LE-02.01, LE-02.02, LE-03.01, LE-03.02, QA-01.01, QA-01.02, QA-02.01, QA-05.01, QA-05.02, VM-02.01 |
+| Failed (2) | AC-03.01, DO-01.01 - see below |
+| Not applicable (1) | QA-04.01 (a single repository) |
+| Not run (1) | BR-01.02, retired in this catalog and only listed |
+
+- **DO-01.01** failed because the scanner reads the user guide from a
+  Security Insights file, which did not exist yet. `security-insights.yml`
+  now declares the quick start (README) and the detailed guide
+  (`docs/README.md`); the guides themselves were there all along.
+- **AC-03.01** is a limit of the scanner, not of the protection: it counts
+  a ruleset as protecting the default branch only when it has *Restrict
+  updates* or requires at least one approving review
+  (`BranchProtectionRestrictsPushes` in the scanner). The ruleset *protect
+  main* requires a pull request (with no approval, since a sole maintainer
+  cannot approve their own pull request), which blocks every direct push -
+  the requirement's "an enforcement mechanism MUST prevent the change". The
+  scanner itself rates this result at medium confidence.
+
 ## Per-control status
 
 Status: **Met**, **Gap** (open), **Verify** (a setting in GitHub that cannot be
@@ -81,7 +107,7 @@ In this order; each step names the requirements it closes.
 8. ~~Confirm the account settings~~ (AC-01.01, AC-02.01): two-factor
    authentication and the collaborator list confirmed by the owner,
    2026-11-18. Review the collaborators again when someone is added.
-9. **Check and record**: run the OSPS Baseline scanner (`pvtr` with the
+9. ~~Check and record~~ (done 2026-11-18, see "Scanner run"): run the OSPS Baseline scanner (`pvtr` with the
    `osps-baseline` catalog, as other projects do) against `main`, update the
    statement and this table, and optionally publish a machine-readable
    `security-insights.yml` that points to this document.
