@@ -40,9 +40,10 @@ checksum:
 snapshot:
   version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
 
-# the notes come from tools/relnotes (--release-notes)
+# The notes come from tools/relnotes through --release-notes; GoReleaser
+# then generates nothing. (changelog.disable would also drop that file.)
 changelog:
-  disable: true
+  use: git
 
 release:
   github:

@@ -5,6 +5,8 @@
 #   scripts/release.sh snapshot                build the archives into dist/release, publish nothing
 #   scripts/release.sh publish  [BUMP|vX.Y.Z]  check, write CHANGELOG.md, tag, push, publish
 #   scripts/release.sh retry                   publish the tag at HEAD again (after a failed upload)
+#   scripts/release.sh update-notes [vX.Y.Z]   set a published release's text from CHANGELOG.md
+#                                              (default: the latest tag; nothing is rebuilt)
 #
 # BUMP is patch, minor or major; the first release is v1.0.0. Publishing
 # needs GITHUB_TOKEN (a token allowed to create releases on the repository).
@@ -103,8 +105,11 @@ $untracked"
 	git tag -a "$v" -m "Tyr $v"
 	git push --atomic origin main "refs/tags/$v"
 	echo "== publishing $v"
+	[[ -s $notes ]] || die "the release notes are empty"
 	gr release --clean --release-notes "$notes" ||
 		die "the tag $v is pushed, but publishing failed: fix the cause and run make publish-retry"
+	# the text once more, straight from CHANGELOG.md: a release never stays without notes
+	"${RELNOTES[@]}" -update-release "$v"
 	echo "released $v: $REPO/releases/tag/$v"
 	;;
 
@@ -112,10 +117,16 @@ retry)
 	[[ -n ${GITHUB_TOKEN:-} ]] || die "GITHUB_TOKEN is not set"
 	v=$(git describe --tags --exact-match HEAD 2>/dev/null) || die "HEAD is not a release tag"
 	notes=dist/release-notes-$v.md
-	if [[ ! -f $notes ]]; then # rebuild the notes from the changelog section
-		awk -v h="## [${v#v}]" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' CHANGELOG.md | sed '1{/^$/d}' >"$notes"
-	fi
+	"${RELNOTES[@]}" -section "$v" >"$notes"
 	gr release --clean --release-notes "$notes"
+	"${RELNOTES[@]}" -update-release "$v"
+	;;
+
+update-notes)
+	[[ -n ${GITHUB_TOKEN:-} ]] || die "GITHUB_TOKEN is not set"
+	v=${want:-$(last_tag)}
+	[[ -n $v ]] || die "no release tag yet"
+	"${RELNOTES[@]}" -update-release "$v"
 	;;
 
 *)

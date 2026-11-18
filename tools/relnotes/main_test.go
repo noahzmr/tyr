@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -90,5 +93,61 @@ func TestNotesAndRelease(t *testing.T) {
 	}
 	if _, err := Release(out, "v1.1.0", "2026-11-18", n); err == nil {
 		t.Error("the same version twice")
+	}
+}
+
+func TestSectionAndUnwrap(t *testing.T) {
+	out, err := Release(cl, "v1.1.0", "2026-11-18", "First stable release, wrapped\nover two lines.\n\n- a list item that\n  goes on here\n- second\n\n### Changes\n\n#### Storage\n\n- x\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sec, err := Section(out, "v1.1.0")
+	if err != nil || strings.HasPrefix(sec, "## [") || !strings.HasPrefix(sec, "First stable release") {
+		t.Fatalf("section %v:\n%s", err, sec)
+	}
+	u := Unwrap(sec)
+	for _, want := range []string{"First stable release, wrapped over two lines.\n\n", "- a list item that goes on here\n- second\n",
+		"### Changes\n\n#### Storage\n\n- x"} {
+		if !strings.Contains(u, want) {
+			t.Errorf("unwrapped lacks %q:\n%s", want, u)
+		}
+	}
+	code := "Text\n```\nkeep\nthese\n```\n| a | b |\n| - | - |"
+	if Unwrap(code) != code {
+		t.Errorf("code and tables must stay:\n%s", Unwrap(code))
+	}
+	if _, err := Section(out, "v9.0.0"); err == nil {
+		t.Error("missing section")
+	}
+}
+
+func TestUpdateRelease(t *testing.T) {
+	var got map[string]string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer tok" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		switch {
+		case r.Method == "GET" && r.URL.Path == "/repos/noahzmr/tyr/releases/tags/v1.0.0":
+			w.Write([]byte(`{"id": 42, "html_url": "https://github.com/noahzmr/tyr/releases/tag/v1.0.0"}`))
+		case r.Method == "PATCH" && r.URL.Path == "/repos/noahzmr/tyr/releases/42":
+			json.NewDecoder(r.Body).Decode(&got)
+			w.Write([]byte(`{}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+	apiBase = srv.URL
+	defer func() { apiBase = "https://api.github.com" }()
+	if err := UpdateRelease("https://github.com/noahzmr/tyr", "v1.0.0", "Notes.\n", "tok"); err != nil || got["body"] != "Notes.\n" {
+		t.Fatalf("%v %v", err, got)
+	}
+	if err := UpdateRelease("https://github.com/noahzmr/tyr", "v2.0.0", "x", "tok"); err == nil {
+		t.Error("a missing release")
+	}
+	if err := UpdateRelease("https://github.com/noahzmr/tyr", "v1.0.0", "x", ""); err == nil {
+		t.Error("no token")
 	}
 }

@@ -7,13 +7,22 @@
 //	relnotes -version v1.2.0 -write -notes FILE
 //	                                     move Unreleased into a v1.2.0 section of
 //	                                     CHANGELOG.md and write the notes to FILE
+//	relnotes -section v1.2.0             print that version's section as release notes
+//	relnotes -update-release v1.2.0      set the GitHub release's text to that section
+//	                                     (GITHUB_TOKEN)
+//
+// CHANGELOG.md is wrapped for reading in an editor; the release notes join
+// the wrapped lines, since GitHub shows a release's line breaks as they are.
 package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
@@ -33,7 +42,16 @@ func main() {
 	date := flag.String("date", time.Now().UTC().Format("2006-01-02"), "the release date")
 	repo := flag.String("repo", "", "https URL of the repository for commit links (default: from origin)")
 	needHighlights := flag.Bool("require-highlights", false, "fail when the Unreleased section is empty")
+	sectionOf := flag.String("section", "", "print this version's CHANGELOG section as release notes")
+	update := flag.String("update-release", "", "set this version's GitHub release text to its CHANGELOG section")
 	flag.Parse()
+	if *sectionOf != "" || *update != "" {
+		if err := sectionCmd(*sectionOf, *update, *changelog, *repo); err != nil {
+			fmt.Fprintln(os.Stderr, "relnotes:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(*next, *version, *prev, *changelog, *write, *notes, *date, *repo, *needHighlights); err != nil {
 		fmt.Fprintln(os.Stderr, "relnotes:", err)
 		os.Exit(1)
@@ -89,9 +107,134 @@ func run(next, version, prev, changelog string, write bool, notesFile, date, rep
 		}
 	}
 	if notesFile != "" {
-		return os.WriteFile(notesFile, []byte(body), 0o644)
+		return os.WriteFile(notesFile, []byte(Unwrap(body)), 0o644)
 	}
-	fmt.Print(body)
+	fmt.Print(Unwrap(body))
+	return nil
+}
+
+func sectionCmd(version, update, changelog, repo string) error {
+	if update != "" {
+		version = update
+	}
+	cl, err := os.ReadFile(changelog)
+	if err != nil {
+		return err
+	}
+	body, err := Section(string(cl), version)
+	if err != nil {
+		return err
+	}
+	body = Unwrap(body)
+	if update == "" {
+		fmt.Print(body)
+		return nil
+	}
+	if repo == "" {
+		repo = repoURL()
+	}
+	return UpdateRelease(repo, version, body, os.Getenv("GITHUB_TOKEN"))
+}
+
+// Section returns the body of a version's section in the changelog.
+func Section(cl, version string) (string, error) {
+	head := "## [" + strings.TrimPrefix(version, "v") + "]"
+	i := strings.Index(cl, "\n"+head)
+	if i < 0 {
+		return "", fmt.Errorf("CHANGELOG.md has no section for %s", version)
+	}
+	body := cl[i+1:]
+	if nl := strings.IndexByte(body, '\n'); nl >= 0 {
+		body = body[nl+1:]
+	}
+	if j := strings.Index(body, "\n## "); j >= 0 {
+		body = body[:j+1]
+	}
+	return strings.TrimSpace(body) + "\n", nil
+}
+
+// Unwrap joins the lines a paragraph or list item was wrapped into, and
+// leaves headings, list markers, quotes, tables, comments and code alone.
+func Unwrap(md string) string {
+	var out []string
+	fence, joinable := false, false
+	for _, line := range strings.Split(md, "\n") {
+		t := strings.TrimSpace(line)
+		if strings.HasPrefix(t, "```") {
+			fence = !fence
+			out, joinable = append(out, line), false
+			continue
+		}
+		if fence {
+			out = append(out, line)
+			continue
+		}
+		block := t == "" || strings.HasPrefix(t, "#") || strings.HasPrefix(t, ">") || strings.HasPrefix(t, "|") ||
+			strings.HasPrefix(t, "<") || listItem.MatchString(t)
+		if joinable && !block {
+			out[len(out)-1] += " " + t
+			continue
+		}
+		out = append(out, line)
+		joinable = t != "" && !strings.HasPrefix(t, "#") && !strings.HasPrefix(t, "|") && !strings.HasPrefix(t, "<")
+	}
+	return strings.Join(out, "\n")
+}
+
+var listItem = regexp.MustCompile(`^([-*+]|\d+[.)])\s`)
+
+// apiBase is GitHub's API (tests point it at a fake).
+var apiBase = "https://api.github.com"
+
+// UpdateRelease replaces the text of a GitHub release.
+func UpdateRelease(repo, tag, body, token string) error {
+	if token == "" {
+		return errors.New("GITHUB_TOKEN is not set")
+	}
+	owner, name, ok := strings.Cut(strings.TrimPrefix(repo, "https://github.com/"), "/")
+	if !ok || strings.Contains(name, "/") {
+		return fmt.Errorf("%s is not a GitHub repository", repo)
+	}
+	api := apiBase + "/repos/" + owner + "/" + name
+	call := func(method, url string, in any, out any) error {
+		var rd io.Reader
+		if in != nil {
+			b, _ := json.Marshal(in)
+			rd = bytes.NewReader(b)
+		}
+		req, err := http.NewRequest(method, url, rd)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Accept", "application/vnd.github+json")
+		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+		req.Header.Set("User-Agent", "tyr-release")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+		if resp.StatusCode/100 != 2 {
+			return fmt.Errorf("%s %s: %s: %s", method, url, resp.Status, strings.TrimSpace(string(b)))
+		}
+		if out != nil {
+			return json.Unmarshal(b, out)
+		}
+		return nil
+	}
+	var rel struct {
+		ID      int64  `json:"id"`
+		HTMLURL string `json:"html_url"`
+	}
+	if err := call("GET", api+"/releases/tags/"+tag, nil, &rel); err != nil {
+		return err
+	}
+	if err := call("PATCH", fmt.Sprintf("%s/releases/%d", api, rel.ID), map[string]string{"body": body}, nil); err != nil {
+		return err
+	}
+	fmt.Println("updated the text of", rel.HTMLURL)
 	return nil
 }
 

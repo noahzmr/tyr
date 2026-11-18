@@ -12,7 +12,7 @@ DIST        := dist
 export CGO_ENABLED=0
 
 .PHONY: all build install uninstall run demo test test-short live lint fmt fixtures golden ll-table cross iso iso-arm64 diagrams clean \
-	release-notes release-snapshot publish publish-retry
+	release-notes release-snapshot publish publish-retry release-notes-update
 
 PREFIX  ?= /usr/local
 ARCHIFY ?= $(HOME)/src/archify
@@ -101,6 +101,11 @@ publish:
 
 publish-retry:
 	scripts/release.sh retry
+
+# Set a published release's text from its CHANGELOG.md section (RELEASE=vX.Y.Z,
+# default the latest tag); the archives stay as they are.
+release-notes-update:
+	scripts/release.sh update-notes $(RELEASE)
 
 # Bootable live ISO that runs `tyr accept` (docs/acceptance.md); needs Docker.
 iso:

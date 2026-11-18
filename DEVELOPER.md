@@ -38,7 +38,7 @@ CGO_ENABLED=0 go build -o tyr ./cmd/tyr     # static binary in the repo root
 | `make golden` | regenerate the workload golden table (only after changing a kernel) |
 | `make ll-table` | regenerate the torture test's residues (only after changing its cases; about a minute) |
 | `make diagrams` | re-render the archify diagrams and export their SVGs |
-| `make release-notes`, `make release-snapshot`, `make publish`, `make publish-retry` | releases: see [Releasing](#9-releasing) |
+| `make release-notes`, `make release-snapshot`, `make publish`, `make publish-retry`, `make release-notes-update` | releases: see [Releasing](#9-releasing) |
 
 `CGO_ENABLED=0` is exported by the Makefile; a plain `go build` links against
 the build host's C library because the `net` package then uses cgo.
@@ -320,6 +320,16 @@ release, grouped by their area (`storage: …` → Storage, `tui: …` → TUI;
    back. `YES=1` skips the question.
 5. If the upload fails after the push: fix the cause and `make publish-retry`
    (publishes the tag at `HEAD` again).
+6. To change the text of a published release - a typo, a forgotten upgrade
+   note - edit its section in `CHANGELOG.md` and run
+   `make release-notes-update RELEASE=vX.Y.Z` (default: the latest tag). It
+   only replaces the text; the archives and checksums stay as published.
+
+`CHANGELOG.md` is wrapped for reading in an editor. The release text joins
+the wrapped lines of paragraphs and list items (headings, tables and code
+stay as they are), because GitHub shows a release's line breaks as written.
+After the upload `make publish` sets the text once more from `CHANGELOG.md`,
+so a release never stays without notes.
 
 GoReleaser is pinned in `scripts/release.sh` and run with `go run` (it is not
 in `go.mod`); the first run compiles it and Go may download the newer
