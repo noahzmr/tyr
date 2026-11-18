@@ -7,16 +7,11 @@ maintainers or users".
 
 ## Statement
 
-As of 2026-11-18, Tyr meets 23 of the 24 Level 1 requirements. The
-repository is public, `main` is protected by an active ruleset, v1.0.1 ships
-with the MPL-2.0 license, and `SECURITY.md`, `CONTRIBUTING.md` and the bug
-report template are in place.
-
-Private vulnerability reporting is enabled, so the route `SECURITY.md`
-names works.
-
-Open: **BR-07.01** - confirm that GitHub secret scanning with push
-protection is on.
+As of 2026-11-18, Tyr meets **all 24** OpenSSF Security Baseline Level 1
+requirements. The repository is public, `main` is protected by an active
+ruleset, v1.0.1 ships with the MPL-2.0 license, private vulnerability
+reporting and push protection are on, and `SECURITY.md`, `CONTRIBUTING.md`
+and the bug report template are in place.
 
 The build pipeline is in good shape: CI runs on `pull_request` only, with
 read-only permissions and no secrets, and passes untrusted pull request text
@@ -37,7 +32,7 @@ read from outside; check it and record the date).
 | OSPS-BR-01.03 | CI on untrusted code has no privileged credentials | Met | `pull_request` (not `pull_request_target`): fork pull requests get no secrets; `permissions: contents: read`; the workflow uses no secrets. Releases are built locally (`make publish`), not in CI |
 | OSPS-BR-03.01 | Official project channels use encryption | Met | The only official channel is `https://github.com/noahzmr/tyr` (issues, releases); every project link in the documentation is `https` |
 | OSPS-BR-03.02 | Distribution channels are authenticated against tampering | Met | GitHub Releases over HTTPS with `SHA256SUMS`; the README's install steps download over `https` and check the sums (becomes reachable once the repository is public) |
-| OSPS-BR-07.01 | No unencrypted secrets stored in version control | Gap (partly) | In place: gitleaks checks the staged changes in the pre-commit hook and the whole history in CI (no findings in 82 commits); `.gitignore` keeps `iso/netbox.json`, `iso/webhooks.json`, `iso/ca/` and exports out; credentials are never written into snapshots. Missing: a check that cannot be skipped - the hook is per clone and CI finds a secret only after the push. GitHub push protection closes this: confirm it is on (*Settings → Advanced Security → Secret Protection, Push protection*) |
+| OSPS-BR-07.01 | No unencrypted secrets stored in version control | Met | GitHub secret scanning with push protection is on (confirmed by the owner, 2026-11-18): a push with a recognised secret is rejected. Also gitleaks in the pre-commit hook (staged changes) and in CI (the whole history; no findings), `.gitignore` for `iso/netbox.json`, `iso/webhooks.json`, `iso/ca/` and exports, and credentials never written into snapshots |
 | OSPS-DO-01.01 | User guides for all basic functionality (after a release) | Met | `README.md` (install, quick start, CLI reference, keys) and `docs/` (TUI, health checks, stress tests, acceptance and ISO, reports, NetBox, webhooks, tools) |
 | OSPS-DO-02.01 | A guide for reporting defects (after a release) | Met | `CONTRIBUTING.md` ("Reporting a bug") and the bug report template `.github/ISSUE_TEMPLATE/bug_report.yml` (version, system, command, what happened, `tyr report --format json`); the README's "Report an issue" opens it |
 | OSPS-GV-02.01 | Public mechanism for discussing changes and problems | Met | Public GitHub Issues with a bug report template, and pull requests |
@@ -74,7 +69,7 @@ In this order; each step names the requirements it closes.
    on. Before that: review the history for anything not meant to be public
    (hosts, addresses, customer names in fixtures or documentation examples,
    tokens) - the history becomes public with it.
-6. **Turn on GitHub's protections** (BR-07.01, VM-02.01): *Settings → Advanced
+6. ~~Turn on GitHub's protections~~ (done 2026-11-18) (BR-07.01, VM-02.01): *Settings → Advanced
    Security*: private vulnerability reporting, secret scanning, push
    protection, Dependabot alerts.
 7. ~~Protect `main`~~ (done 2026-11-18, ruleset *protect main*) (AC-03.01, AC-03.02): *Settings → Rules → Rulesets →
