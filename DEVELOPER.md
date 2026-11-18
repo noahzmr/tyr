@@ -38,6 +38,7 @@ CGO_ENABLED=0 go build -o tyr ./cmd/tyr     # static binary in the repo root
 | `make golden` | regenerate the workload golden table (only after changing a kernel) |
 | `make ll-table` | regenerate the torture test's residues (only after changing its cases; about a minute) |
 | `make diagrams` | re-render the archify diagrams and export their SVGs |
+| `make release-notes`, `make release-snapshot`, `make publish`, `make publish-retry` | releases: see [Releasing](#9-releasing) |
 
 `CGO_ENABLED=0` is exported by the Makefile; a plain `go build` links against
 the build host's C library because the `net` package then uses cgo.
@@ -283,9 +284,48 @@ sentences.
 
 ## 9. Releasing
 
-1. Tag `vX.Y.Z` on `main`.
-2. `make cross` - the version comes from `git describe`.
-3. Attach `dist/tyr-linux-amd64`, `dist/tyr-linux-arm64` and `dist/SHA256SUMS`
-   to the release.
-4. `make iso iso-arm64` and attach the ISOs and their `.sha256` files - only
-   when `iso/vendor/` is empty (vendor tools may not be redistributed).
+Versions follow [semantic versioning](https://semver.org), starting at
+v1.0.0: **major** for incompatible changes to the command line, the JSON
+snapshot schema or the configuration files, **minor** for new features,
+**patch** for fixes. Commit messages don't encode the kind of change, so you
+choose the next version.
+
+A release is the tag `vX.Y.Z` and a GitHub release with
+`tyr_X.Y.Z_linux_amd64.tar.gz`, `tyr_X.Y.Z_linux_arm64.tar.gz` (the static
+binary, README, CHANGELOG, docs) and `SHA256SUMS`. Its notes are the
+highlights written by hand in `CHANGELOG.md` plus the commits since the last
+release, grouped by their area (`storage: …` → Storage, `tui: …` → TUI;
+`tools/relnotes` holds the mapping).
+
+1. Write the highlights - what changed for users, upgrade notes - under
+   `## Unreleased` in `CHANGELOG.md`, and commit them.
+2. Preview: `make release-notes BUMP=minor`.
+3. Build the archives without publishing (optional): `make release-snapshot`
+   → `dist/release/`.
+4. Publish:
+
+   ```bash
+   export GITHUB_TOKEN=…        # fine-grained token: Contents read/write on noahzmr/tyr
+   make publish BUMP=minor      # or BUMP=patch|major, or RELEASE=v1.4.0
+   ```
+
+   `make publish` stops at the first problem, before anything is pushed: not
+   on `main`, uncommitted or untracked files, behind `origin/main`, the tag
+   exists, no highlights, gofmt / vet / staticcheck / the attribution check /
+   the tests fail, the archives do not build. Then it moves the highlights
+   into a `## [X.Y.Z] - date` section with the generated list, shows the
+   notes and asks you to type the version; only then it commits
+   `release: vX.Y.Z`, tags, pushes `main` and the tag together and publishes
+   the release with GoReleaser. Answering anything else puts `CHANGELOG.md`
+   back. `YES=1` skips the question.
+5. If the upload fails after the push: fix the cause and `make publish-retry`
+   (publishes the tag at `HEAD` again).
+
+GoReleaser is pinned in `scripts/release.sh` and run with `go run` (it is not
+in `go.mod`); the first run compiles it and Go may download the newer
+toolchain it needs. Set `GORELEASER=goreleaser` to use an installed one.
+Only GitHub is published to: a `GITLAB_TOKEN` in the environment is hidden
+from GoReleaser.
+
+The ISO is not part of a release. To attach one by hand: `make iso`, only
+when `iso/vendor/` is empty (vendor tools may not be redistributed).

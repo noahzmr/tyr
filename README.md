@@ -260,6 +260,22 @@ Virtual NIC) or `--redfish HOST`. See
 
 ## Quick Start
 
+From a [release](https://github.com/noahzmr/tyr/releases) (amd64 or arm64):
+
+```bash
+v=1.0.0 arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+curl -LO https://github.com/noahzmr/tyr/releases/download/v$v/tyr_${v}_linux_$arch.tar.gz
+curl -LO https://github.com/noahzmr/tyr/releases/download/v$v/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+tar xzf tyr_${v}_linux_$arch.tar.gz
+sudo install -m 755 tyr_${v}_linux_$arch/tyr /usr/local/bin/tyr
+sudo tyr
+```
+
+What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+
+From source:
+
 ```bash
 git clone https://github.com/noahzmr/tyr.git
 cd tyr
@@ -597,7 +613,8 @@ git config core.hooksPath scripts/hooks
 
 | Document | Audience | Summary |
 |---|---|---|
-| [DEVELOPER.md](DEVELOPER.md) | contributors | build, test, fixtures, goldens, diagrams, hooks |
+| [DEVELOPER.md](DEVELOPER.md) | contributors | build, test, fixtures, goldens, diagrams, hooks, releasing |
+| [CHANGELOG.md](CHANGELOG.md) | everyone | what changed in each version |
 | [docs/README.md](docs/README.md) | everyone | index of the deep dives |
 | [docs/architecture.md](docs/architecture.md) | engineers | packages, data flow, refresh loop |
 | [docs/health-checks.md](docs/health-checks.md) | operators | modules, sources, limits, findings |
