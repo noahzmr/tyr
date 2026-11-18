@@ -33,6 +33,7 @@ a host and lists every difference.
 | `smartctl` | `smartmontools` | SMART of SATA/SAS drives (and NVMe as fallback) | no SMART for SATA/SAS: reallocated and pending sectors, wear, CRC errors, power-on hours |
 | `ras-mc-ctl` | `rasdaemon` (enable the service) | machine checks rasdaemon kept across boots | the history comes from the journal and pstore only |
 | `lldpctl` | `lldpd` (enable the service) | the switch and port each NIC is connected to | no LLDP neighbours |
+| `docker`, `go` | Docker, Go | building the Tyr ISO (`make iso`, `I` in the TUI) | no ISO; everything else works |
 | `wg` | `wireguard-tools` | WireGuard peers: endpoint, last handshake, traffic (as root; keys other than public ones are never kept) | WireGuard interfaces without peer status |
 | `ipmitool` | `ipmitool` | BMC fallback, and `tyr check-native` | nothing while `/dev/ipmi0` works |
 | `wl-copy` / `xclip` / `xsel` | `wl-clipboard` / `xclip` / `xsel` | copying in terminals without OSC 52 (GNOME Terminal, Ptyxis) on a desktop | copy works only through OSC 52 |

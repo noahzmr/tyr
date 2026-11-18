@@ -98,7 +98,8 @@ guard that keeps it safe, and gives a verdict you can trust.
 
 - Every component with vendor, model, part number, serial and firmware: system,
   chassis, board, BMC, CPUs (PPIN), DIMMs, disks, RAID controllers and drives,
-  NICs (PCI VPD), transceivers, GPUs, NPUs, PSUs, FRUs.
+  NICs (PCI VPD), transceivers, GPUs, NPUs, PSUs, FRUs; the operating system
+  and kernel.
 - List view with search across all fields and category chips; topology tree with
   status rolled up into every branch and a fixed serial column.
 - `c` copies the selected serial.
@@ -161,8 +162,10 @@ guard that keeps it safe, and gives a verdict you can trust.
 ### NetBox
 
 - Writes the machine into NetBox: the device (by serial number, created when
-  missing), ports with MAC addresses, the BMC address as out-of-band IP, an
-  inventory item per component, and the test result as a journal entry.
+  missing), its operating system as the platform, ports with MAC addresses,
+  VPN interfaces with their addresses, the BMC address as out-of-band IP, an
+  inventory item per component, and the test result as a journal entry -
+  live in the TUI, with a dry run first if you like.
 - Tags from your own rules (`memory_gb >= 192 && nic_speed_max >= 10000`);
   none by default. Settings and rules in the TUI (`N`) or as JSON files.
 - `tyr netbox`, after `tyr accept`, and by itself from a Tyr ISO built with
@@ -391,18 +394,22 @@ and cron work unchanged.
 | `--no-ipmi`, `--no-dmidecode`, `--no-smart`, `--no-redfish` | off | skip a source (`--no-dmidecode` skips SMBIOS altogether) |
 | `--smart-interval` | 5m | reuse SMART data this long (`r` and stress snapshots always read fresh) |
 | `--redfish HOST` | | BMC address for Redfish when its host interface (iLO Virtual NIC) is off; credentials from `TYR_REDFISH_USER` / `TYR_REDFISH_PASSWORD` or `/etc/tyr/redfish.conf` |
-| `--nic-all` | off | include virtual interfaces |
+| `--nic-all` | off | include virtual interfaces (bridges, veth …; VPN tunnels are always shown) |
 | `--sel-all` | off | all SEL entries, not only warnings and errors |
 | `--timeout` | 10s | per collector |
 | `--fixtures DIR` | | run against a recorded host |
 
-TUI only: `--refresh 5s`, `--mouse`. Report: `--section cpu,memory,…`,
+TUI only: `--refresh 5s`, `--mouse`, `--netbox-config FILE`, `--tags FILE`,
+`--webhooks FILE`. Report: `--section cpu,memory,…`,
 `--inventory`, `--core-test`, `--charts mermaid|text`. Stress: `--duration`,
 `--engine`, `--cpus`, `--mem-percent` (up to 100), `--mode read|file`,
 `--fft small|large|blend` (torture engine), `--target`, `--size`, `--streams`, `--reverse`, `--run-dir`, `--yes`,
 `--include-suspect-cores`. Accept: `--profile`, `--limits`, `--out`,
 `--peer`, `--token`, `--print-profile`, `--yes`, `--plain` (plain lines instead
-of the live view on a terminal). Core test: `--duration`, `--yes`, `--restore`.
+of the live view on a terminal), `--netbox` / `--no-netbox`, `--webhooks FILE` /
+`--no-webhook`. Stress also takes `--webhooks` / `--no-webhook`. NetBox:
+`--netbox-config FILE`, `--tags FILE`, `--dry-run`, `--facts`, `--test`,
+`--validate`, `--from DIR|FILE`. Core test: `--duration`, `--yes`, `--restore`.
 Net peer: `--listen`, `--token`, `--idle`.
 
 ### Exit codes
@@ -413,6 +420,22 @@ Net peer: `--listen`, `--token`, `--idle`.
 | 1 | WARN | WARN | REMARKS |
 | 2 | CRIT | FAIL | FAIL |
 | 3 | UNKNOWN or error | aborted or not run | INCOMPLETE |
+
+`tyr netbox`: 0 written, 1 written with problems, 2 nothing written (no
+connection, token refused), 3 bad settings. `tyr notify --test`: 0 delivered,
+2 a webhook failed, 3 bad or no settings.
+
+### Environment
+
+| Variable | For |
+|---|---|
+| `TYR_REDFISH`, `TYR_REDFISH_USER`, `TYR_REDFISH_PASSWORD` | the BMC's Redfish service when its host interface is off |
+| `TYR_NETBOX_URL`, `TYR_NETBOX_TOKEN` | NetBox ([docs/netbox.md](docs/netbox.md)) |
+| `TYR_WEBHOOK_URL`, `_FORMAT`, `_EVENTS`, `_TOKEN`, `_SECRET`, `_INSECURE` | one more webhook ([docs/webhooks.md](docs/webhooks.md)) |
+| `TYR_SOURCE` | the source tree for building the ISO from the TUI (`I`) |
+
+Given to `make iso`, every `TYR_NETBOX_*` and `TYR_WEBHOOK_*` variable goes
+into the image ([docs/acceptance.md](docs/acceptance.md#build)).
 
 ---
 
@@ -425,6 +448,8 @@ Net peer: `--listen`, `--token`, `--idle`.
 | `↑↓` `jk` | move | `o` | worst first ↔ physical | `e` | export JSON + Markdown |
 | `←→` `hl` | move / regions | `v` | switch view | `c` | copy serial / report |
 | `pgup` `pgdn` | page | `/` | search | `R` | reports |
+| | | | | `N` `W` | NetBox, webhooks |
+| | | | | `I` | build the ISO, write a USB stick |
 | | | `i` | explain the selected alert | `A` | alert reference |
 | `g` `G` | top / end | `t` | CPU load ↔ temperature | `s` `S` `F` | Stress tab, stress this, full test |
 | `enter` | open | `a` | empty DIMM slots | `q` | quit |
@@ -454,9 +479,11 @@ second check - and judges the machine against a limits profile: **PASS**,
 **REMARKS**, **FAIL** or **INCOMPLETE**, with a report per machine. The Tyr
 ISO (`make iso`, `make iso-arm64`) is a Debian live system with Tyr and every
 tool it uses; booted from BMC virtual media or a USB stick it runs the 4-hour
-burn-in by itself and writes the results to a partition labelled
-`TYR-RESULTS` (a stick written with dd has its own). Built with NetBox
-settings it also writes the result to the device's journal in NetBox.
+burn-in by itself, shows each step live on the console, and writes the
+results to a partition labelled `TYR-RESULTS` (a stick written with dd has
+its own). Built with NetBox settings or webhooks it also writes the result
+to the device in NetBox and notifies on start, failed steps and the verdict.
+`I` in the TUI builds such an ISO and writes it to a USB stick.
 See [docs/acceptance.md](docs/acceptance.md) and [docs/netbox.md](docs/netbox.md).
 
 ---
@@ -514,6 +541,7 @@ tyr/
 │   ├── model/               Snapshot and the shared types (JSON schema 1.0)
 │   ├── stress/              lifecycle, guard, engines, install planner, series, offline-core test
 │   ├── accept/              acceptance test: profiles, limits, verdict, report
+│   ├── acceptui/            the live view of tyr accept (terminal and ISO console)
 │   ├── netbox/              NetBox sync: settings, tag rules (expressions over facts), REST client
 │   ├── notify/              webhook notifications: events, formats (JSON, Slack, Teams, Discord, Google Chat), delivery
 │   ├── isobuild/            the ISO with the current settings, USB disks, writing and verifying a stick

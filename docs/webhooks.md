@@ -49,6 +49,10 @@ The generic JSON:
 }
 ```
 
+Tyr never prints a webhook's URL: errors, `tyr notify` and the ISO's screen
+name it by scheme and host (`https://hooks.slack.com/…`), since the path of a
+chat webhook is its secret.
+
 Every request has `X-Tyr-Event: <event>`. With a `token` it carries
 `Authorization: Bearer <token>`; with a `secret`, `X-Tyr-Signature:
 sha256=<hex>`, the HMAC-SHA256 of the body with the secret, so the receiver

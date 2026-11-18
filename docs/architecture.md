@@ -17,7 +17,9 @@ read that snapshot or its JSON.
 | Workloads | `workload` | the verified compute kernels of the core and CPU tests; the torture test's Lucas-Lehmer FFT (AVX-512 / AVX2 FMA or Go) |
 | Explanations | `explain` | the alert catalog: meaning, usual causes, commands per finding code |
 | Model | `model` | `Snapshot`, sections, sensors, findings, inventory; JSON schema 1.0 |
-| Acceptance | `accept` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check |
+| Acceptance | `accept`, `acceptui` | profiles and limits; one verdict (PASS, REMARKS, FAIL, INCOMPLETE) over a health check, the stress tests and a second check, run with one set of collectors; its live view on a terminal |
+| ISO | `isobuild` | the ISO with the current settings from the TUI, USB disks, writing and verifying a stick |
+| Settings | `settings` | where configuration files live: `/etc/tyr` for root, `~/.config/tyr` for a user |
 | Notifications | `notify` | webhook events (started, failed or warning step, verdict) in five formats, delivered in the background with retries |
 | NetBox | `netbox` | facts from a snapshot (and a verdict), tag rules over them, the sync to NetBox's REST API |
 | Consumers | `tui`, `cmd/tyr`, `stress`, `accept`, `netbox`, `report` | show, export, load, judge, report, write to NetBox |

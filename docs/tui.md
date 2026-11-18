@@ -15,7 +15,7 @@ the keys that work here. `?` shows all keys and this tab's own.
 
 | Key | Tab | Views (`v`) | Shows |
 |---|---|---|---|
-| `1` | Overview | - | a card per module (from 150 columns with a sparkline: CPU load and temperature, memory in use, network traffic, power draw, GPU load), then all findings worst first - `n` or `↓` enters them, `enter` opens the component, `i` explains the alert; on the right the counters that grew this session (with readable names), what resolved, missing data sources |
+| `1` | Overview | - | a card per module (from 150 columns with a sparkline: CPU load and temperature, memory in use, network traffic, power draw, GPU load; the System card shows the operating system, the kernel and BIOS, fans and inlet temperature), then all findings worst first - `n` or `↓` enters them, `enter` opens the component, `i` explains the alert; on the right the counters that grew this session (with readable names), what resolved, missing data sources |
 | `2` | CPU | Grid · Cores · Details | every logical CPU by socket and thread (`t`: load ↔ temperature), per-core table, socket details and graphs; an offline CPU's page shows how and since when it went offline, the other thread of its core, program crashes on that core and its machine check history |
 | `3` | Memory | Table · Slot map | DIMMs with an inspector; slots per socket and channel (`a`: empty slots) |
 | `4` | Storage | Disks · RAID · Filesystems | disks with SMART, software and hardware RAID (also the drives behind HPE Smart Array from the BMC: bay, endurance, power-on hours, status reasons), filesystems |

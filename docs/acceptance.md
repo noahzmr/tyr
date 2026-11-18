@@ -74,7 +74,8 @@ The machine **fails** when
   supply or lost PSU redundancy, a failed fan,
 - a stress test fails: a wrong result, a guard stop, a new critical finding,
 - an error counter grew during the test: machine checks, uncorrectable ECC,
-  SMART, I/O and driver errors always; correctable ECC, CRC and link
+  SMART, I/O and driver errors always (not the commands Tyr's own SMART
+  queries cause, which some drives reject); correctable ECC, CRC and link
   failures by default (`fail_counters`),
 - a temperature under load passed a limit you set (`max_temp_c`),
 - the machine has less than a minimum you set (`min`).
@@ -146,9 +147,10 @@ CPU microcode and the firmware for common server NICs and controllers.
 amd64 boots with BIOS and UEFI, arm64 with UEFI. It starts through Debian's
 signed shim and GRUB, so Secure Boot can stay on.
 
-Tested so far: amd64 under UEFI in QEMU, from boot to the results on the
-stick. Not yet tested: Secure Boot switched on, BIOS boot, the arm64 image,
-real servers.
+Tested so far: amd64 under UEFI in QEMU (live view, results, webhooks and
+NetBox against test receivers) and on a Protectli FW4C from a stick written
+with the TUI (`I`). Not yet tested: Secure Boot switched on, BIOS boot, the
+arm64 image, rack servers with a BMC.
 
 ### Use
 
@@ -219,8 +221,10 @@ built in, and writes it to a USB stick. The dialog lists the USB disks
 before erasing the chosen one, unmounts its partitions, writes the image
 with progress, reads it back and compares. "Only build the ISO file" leaves
 it in `dist/` for BMC virtual media. Writing needs root (`sudo tyr`); the
-build then runs as the user who called sudo, with that user's Go and Docker.
-`TYR_SOURCE` names the source tree when Tyr does not find it.
+build then runs as the user who called sudo, with that user's Docker and
+Go (found in PATH, the login shell, `/usr/local/go`, `~/sdk/go*`,
+`/usr/lib/go`; the dialog shows which). `TYR_SOURCE` names the source tree
+when Tyr does not find it.
 
 ```bash
 make iso          # dist/tyr-live-<version>-amd64.iso

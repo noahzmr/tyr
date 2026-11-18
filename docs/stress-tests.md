@@ -34,7 +34,9 @@ sequenceDiagram
 ```
 
 1. **Plan.** Tyr takes a baseline snapshot and shows what will run: scope,
-   impact, warnings (offline CPUs, a hot package, swap already in use) and
+   impact, warnings (offline CPUs, a hot package, swap already in use, a busy
+   host - load above half the CPUs, though not within five minutes after an
+   earlier test of the same run, whose load the average still carries) and
    anything that blocks the run (no network peer, the host already past a
    guard point).
 2. **Load.** The engine runs for the chosen duration (30 s to 24 h per

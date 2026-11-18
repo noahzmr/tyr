@@ -163,7 +163,7 @@ go test ./internal/tui -run TestGoldenScreens -update   # rewrite golden screens
 | GPU tools | `internal/source/gpu/testdata` | `nvidia-smi -q -x` of a DGX Spark (GB10: C2C, no own memory, T.Limit, processes) |
 | Live collectors | `make live` | `TYR_LIVE=1`, read-only, this host |
 | Live clipboard | `TYR_CLIP_LIVE=1 go test ./internal/tui -run TestCopyLiveDesktop` | copies through `xclip`/`wl-copy` and restores the clipboard |
-| Screen dumps | `TYR_SHOW=server-degraded:4,6+enter:120x40 go test ./internal/tui -run TestDumpTabs -v` | prints screens; `TYR_STRESS=server-degraded:120x40` dumps a stress run |
+| Screen dumps | `TYR_SHOW=server-degraded:4,6+enter:120x40 go test ./internal/tui -run TestDumpTabs -v` | prints screens; `TYR_STRESS=server-degraded:120x40` dumps a stress run; `TYR_SHOW_ANSI=DIR` also writes them with colours; `TYR_SHOW_MD=1 go test ./internal/report -v` prints the generated report and history Markdown; `TYR_DUMP=1` prints the CPU collector's parsed data |
 
 Tests never touch the real clipboard: `TestMain` in `internal/tui` replaces the
 environment and the clipboard tool.
