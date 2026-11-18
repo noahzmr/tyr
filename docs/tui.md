@@ -85,6 +85,13 @@ Tab-specific: `t` (CPU), `a` (Memory), `h` (Network), `f` `s` `space`
 | 100-149 | standard: inspectors on the right, 2 × 2 graphs during a stress test |
 | 150 and more | wide: more columns, 3 × 2 graphs |
 
+The tab bar shows each tab as a chip when they fit with their full names,
+the active one in the accent colour; narrower, plain full names, then short
+names (Mem, Stor, Net), then digits with the status and count. Tables
+underline their header across the table and lay every other row on a faint
+background (true colour and 256 colours; 16 colours and NO_COLOR keep them
+plain).
+
 ## Themes
 
 Tyr follows the terminal: dark or light background, true colour, 256 or 16

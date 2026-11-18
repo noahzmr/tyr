@@ -861,7 +861,7 @@ var shortTabNames = map[string]string{"Memory": "Mem", "Storage": "Stor", "Netwo
 func (m *Model) tabBar() string {
 	t := m.theme
 	help := t.Sub.Render("? help")
-	build := func(gap int, short, digits bool) string {
+	build := func(gap int, short, digits, chips bool) string {
 		var parts []string
 		m.tabXs = m.tabXs[:0]
 		x := 0
@@ -911,14 +911,20 @@ func (m *Model) tabBar() string {
 				part = t.ActiveTab.Render(label)
 			case digits:
 				part = t.Sub.Render(digit) + mark
-			default:
-				nst := t.Tab
+			default: // a chip: digit, name and count on the tab background
+				ns := lipgloss.NewStyle().Foreground(t.Muted)
 				if unavailable {
-					nst = t.Sub
+					ns = t.Sub
 				}
-				part = t.Sub.Render(digit) + " " + nst.Render(name)
+				part = t.Sub.Render(digit) + " " + ns.Render(name)
 				if mark != "" {
 					part += " " + mark
+				}
+				if chips {
+					part = " " + part + " "
+					if !t.Basic {
+						part = withBg(part, t.TabBg)
+					}
 				}
 			}
 			if i > 0 {
@@ -931,12 +937,17 @@ func (m *Model) tabBar() string {
 		return strings.Join(parts, sep)
 	}
 	tiers := []struct {
-		gap           int
-		short, digits bool
-	}{{2, false, false}, {1, false, false}, {1, true, false}, {1, true, true}}
+		gap                  int
+		short, digits, chips bool
+	}{
+		{1, false, false, true},  // chips, full names
+		{1, false, false, false}, // plain, full names
+		{1, true, false, false},  // plain, short names (Mem, Stor, Net …)
+		{1, true, true, false},   // digit + glyph + count
+	}
 	var bar string
 	for _, tr := range tiers {
-		bar = build(tr.gap, tr.short, tr.digits)
+		bar = build(tr.gap, tr.short, tr.digits, tr.chips)
 		if w := lipgloss.Width(bar); w+lipgloss.Width(help)+2 <= m.width {
 			return bar + strings.Repeat(" ", m.width-w-lipgloss.Width(help)) + help
 		} else if w <= m.width && tr.digits {

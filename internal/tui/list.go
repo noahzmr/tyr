@@ -103,7 +103,14 @@ func renderList(t *Theme, cols []column, rows []row, sel, width, maxRows int) st
 	for i, c := range cols {
 		hdr.WriteString(padCell(c.name(), widths[i], c.right()) + " ")
 	}
-	lines := []string{t.TableHead.Render(truncate(strings.TrimRight(hdr.String(), " "), width))}
+	lineW := 3
+	for _, w := range widths {
+		lineW += w + 1
+	}
+	lineW = min(lineW, width-map[bool]int{true: 2, false: 0}[scroll])
+	// the header underlined across the table: a rule without a row of its own
+	head := truncate(strings.TrimRight(hdr.String(), " "), lineW)
+	lines := []string{t.TableHead.Render(padCell(head, lineW, false))}
 	start := 0
 	if scroll {
 		start = min(max(0, sel-body/2), len(rows)-body)
@@ -114,11 +121,6 @@ func renderList(t *Theme, cols []column, rows []row, sel, width, maxRows int) st
 		thumbA = start * body / len(rows)
 		thumbB = thumbA + size
 	}
-	lineW := 3
-	for _, w := range widths {
-		lineW += w + 1
-	}
-	lineW = min(lineW, width-map[bool]int{true: 2, false: 0}[scroll])
 	for i := start; i < min(len(rows), start+body); i++ {
 		r := rows[i]
 		var b strings.Builder
@@ -152,6 +154,9 @@ func renderList(t *Theme, cols []column, rows []row, sel, width, maxRows int) st
 			}
 		} else {
 			line = " " + glyph + " " + padCell(cells, lineW-3, false)
+			if i%2 == 1 && !t.Basic { // zebra: every other row on a faint background
+				line = withBg(line, t.ZebraBg)
+			}
 		}
 		if scroll {
 			k := i - start

@@ -36,6 +36,8 @@ const (
 	rNew      // NEW badge background
 	rUnkBg    // UNKNOWN badge background
 	rMatch    // search match background
+	rZebra    // every other table row
+	rTabBg    // an inactive tab's chip
 	rS1       // graph series
 	rS2
 	rS3
@@ -73,6 +75,8 @@ var tokens = [numRoles]token{
 	rInk:      {tone.Pepper, tone.Butter, lipgloss.Black, lipgloss.BrightWhite},
 	rSel:      {tone.Char, tone.Sash, nil, nil}, // 16 colours: reverse instead
 	rBar:      {tone.Char, tone.Sash, nil, nil},
+	rZebra:    {tone.Pepper, tone.Salt, nil, nil}, // 16 colours: no stripes
+	rTabBg:    {tone.BBQ, tone.Sash, nil, nil},
 	rNew:      {tone.Malibu, tone.Damson, lipgloss.Cyan, lipgloss.Cyan},
 	rUnkBg:    {tone.Iron, tone.Oyster, lipgloss.BrightBlack, lipgloss.BrightBlack},
 	rMatch:    {tone.Mustard, tone.Mustard, lipgloss.Yellow, lipgloss.Yellow},
@@ -99,6 +103,7 @@ type Theme struct {
 	Fg, Muted, Subtle, Border, Track  color.Color
 	Accent, AccentBg, OnAccent, Ink   color.Color
 	SelBg, BarBg, NewBg, UnkBg, Match color.Color
+	ZebraBg, TabBg                    color.Color
 	Series                            [4]color.Color
 
 	Title, Header, HeaderInfo, Dim, Sub, Bold, Footer, Message lipgloss.Style
@@ -139,6 +144,7 @@ func NewThemeFor(dark bool, p colorprofile.Profile) *Theme {
 	t.Fg, t.Muted, t.Subtle, t.Border, t.Track = c(rFg), c(rMuted), c(rSubtle), c(rBorder), c(rTrack)
 	t.Accent, t.AccentBg, t.OnAccent, t.Ink = c(rAccent), c(rAccentBg), c(rOnAccent), c(rInk)
 	t.SelBg, t.BarBg, t.NewBg, t.UnkBg, t.Match = c(rSel), c(rBar), c(rNew), c(rUnkBg), c(rMatch)
+	t.ZebraBg, t.TabBg = c(rZebra), c(rTabBg)
 	t.Series = [4]color.Color{c(rS1), c(rS2), c(rS3), c(rS4)}
 
 	t.Title = lipgloss.NewStyle().Bold(true).Foreground(t.OnAccent).Background(t.AccentBg)
@@ -150,7 +156,7 @@ func NewThemeFor(dark bool, p colorprofile.Profile) *Theme {
 	t.Footer = lipgloss.NewStyle().Foreground(t.Muted)
 	t.Message = lipgloss.NewStyle().Foreground(t.Accent)
 	t.Key = lipgloss.NewStyle().Bold(true).Foreground(t.Fg)
-	t.Tab = lipgloss.NewStyle().Foreground(t.Muted)
+	t.Tab = lipgloss.NewStyle().Foreground(t.Muted).Background(t.TabBg).Padding(0, 1)
 	t.ActiveTab = lipgloss.NewStyle().Bold(true).Foreground(t.OnAccent).Background(t.AccentBg).Padding(0, 1)
 	t.TabGap = lipgloss.NewStyle().Foreground(t.Border)
 	t.Card = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.Border).Padding(0, 1)
@@ -158,12 +164,13 @@ func NewThemeFor(dark bool, p colorprofile.Profile) *Theme {
 	t.Section = lipgloss.NewStyle().Bold(true).Foreground(t.Accent)
 	t.Selected = lipgloss.NewStyle().Bold(true).Background(t.SelBg)
 	t.Error = lipgloss.NewStyle().Foreground(t.Crit)
-	t.TableHead = lipgloss.NewStyle().Bold(true).Foreground(t.Muted)
+	t.TableHead = lipgloss.NewStyle().Bold(true).Foreground(t.Muted).Underline(true)
 	t.Rule = lipgloss.NewStyle().Foreground(t.Subtle)
 	t.NewBadge = lipgloss.NewStyle().Bold(true).Foreground(t.Ink).Background(t.NewBg)
 	if t.Basic {
 		// 16 colours / no colour: reverse video for pills and badges.
 		t.ActiveTab = lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, 1)
+		t.Tab = lipgloss.NewStyle().Padding(0, 1)
 		t.Title = lipgloss.NewStyle().Bold(true).Reverse(true)
 		t.Selected = lipgloss.NewStyle().Bold(true)
 		t.NewBadge = lipgloss.NewStyle().Bold(true).Reverse(true)
