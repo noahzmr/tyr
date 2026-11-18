@@ -1,16 +1,16 @@
  TYR  srv-degraded-01                              fixture  now  25/27   ✖ CRIT
-1✖52 2✖8 3✖9  4 Storage ✖12  5✖2 6✖9 7✖6 8✖5 9 0                          ? help
- ✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮ms
-  │ Navigation              Health                  Data · stress            │
+1✖╭─ Keys ──────────────────────────────────────────── tyr dev · ? to close ─╮lp
+ ✖│ Navigation              Health                  Data · stress            │ms
   │ 1–0       switch tab    n         next problem  r         refresh now    │
-▌✖│ tab ⇧tab  next / prev … i         explain alert p         pause / resu…  │
- ✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
- ▲│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
+  │ tab ⇧tab  next / prev … i         explain alert p         pause / resu…  │
+▌✖│ ↑↓ jk     move          !         problems only e         export JSON …  │
+ ✖│ ←→ hl     move / regio… o         worst ↔ phys… c         copy serial/…  │
  ▲│ pgup pgdn page          v         switch view   R         reports        │
- ●│ g G       top / end     /         search        N W       NetBox · web…  │
- ●│ enter     open / action t         CPU load ↔ t… A         alert refere…  │
- ●│ esc       back · close  a         empty DIMM s… s S F     stress tests   │
- ●│                         h         virtual NICs  q ctrl+c  quit · stop …  │
+ ▲│ g G       top / end     /         search        N W       NetBox · web…  │
+ ●│ enter     open / action t         CPU load ↔ t… I         ISO / USB st…  │
+ ●│ esc       back · close  a         empty DIMM s… A         alert refere…  │
+ ●│                         h         virtual NICs  s S F     stress tests   │
+ ●│                                                 q ctrl+c  quit · stop …  │
   │ This tab · Storage                                                       │
 sd│ v Disks · RAID · Filesystems · n next problem · enter opens the page     │ge
 Mo│ with SMART attributes, counters and / search · c copies the serial       │

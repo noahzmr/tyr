@@ -212,6 +212,16 @@ LLDP neighbours.
 
 Needs Docker; the first build downloads about 1 GB of Debian packages.
 
+**From the TUI** (`I`, from a checkout of the Tyr source): builds the ISO
+with the current NetBox settings and tag rules (`N`) and webhooks (`W`)
+built in, and writes it to a USB stick. The dialog lists the USB disks
+(vendor, model, size, serial; never the disk the system runs from), asks
+before erasing the chosen one, unmounts its partitions, writes the image
+with progress, reads it back and compares. "Only build the ISO file" leaves
+it in `dist/` for BMC virtual media. Writing needs root (`sudo tyr`); the
+build then runs as the user who called sudo, with that user's Go and Docker.
+`TYR_SOURCE` names the source tree when Tyr does not find it.
+
 ```bash
 make iso          # dist/tyr-live-<version>-amd64.iso
 make iso-arm64    # dist/tyr-live-<version>-arm64.iso

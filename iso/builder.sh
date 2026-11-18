@@ -29,6 +29,16 @@ amd64) pkgs+=(amd64-microcode intel-microcode memtest86+ firmware-amd-graphics) 
 arm64) pkgs+=() ;;
 esac
 
+# cfg NAME: the settings file to build in - from TYR_ISO_CONFIG (the TUI)
+# when it has one, else from iso/.
+cfg() {
+	if [[ -n ${TYR_ISO_CONFIG:-} && -f $TYR_ISO_CONFIG/$1 ]]; then
+		echo "$TYR_ISO_CONFIG/$1"
+	elif [[ -f iso/$1 ]]; then
+		echo "iso/$1"
+	fi
+}
+
 vendor_hook=()
 shopt -s nullglob
 debs=(iso/vendor/*.deb)
@@ -44,33 +54,33 @@ for r in "${rpms[@]}"; do
 done
 
 limits_hook=()
-if [[ -f iso/accept.json ]]; then
-	echo "limits: iso/accept.json"
-	/src/dist/tyr-linux-"$arch" accept --limits iso/accept.json --print-profile >/dev/null
-	limits_hook=(--customize-hook='cp iso/accept.json "$1/etc/tyr/accept.json"')
+if f=$(cfg accept.json) && [[ -n $f ]]; then
+	echo "limits: $f"
+	/src/dist/tyr-linux-"$arch" accept --limits "$f" --print-profile >/dev/null
+	limits_hook=(--customize-hook="install -m 644 '$f' \"\$1/etc/tyr/accept.json\"")
 fi
 
 # NetBox: settings and tag rules into /etc/tyr (root-only: the token);
 # after the test tyr-live writes the result to the device's journal.
 netbox_hook=()
-if [[ -f iso/netbox.json ]]; then
-	tags=iso/tags.json
-	[[ -f $tags ]] || tags=/nonexistent/tags.json
-	echo "netbox: iso/netbox.json (the token is in the image: keep this ISO in-house)"
-	/src/dist/tyr-linux-"$arch" netbox --validate --netbox-config iso/netbox.json --tags "$tags"
-	netbox_hook=(--customize-hook='install -m 600 iso/netbox.json "$1/etc/tyr/netbox.json"')
-	[[ -f iso/tags.json ]] && netbox_hook+=(--customize-hook='install -m 600 iso/tags.json "$1/etc/tyr/tags.json"')
-elif [[ -f iso/tags.json ]]; then
-	echo "iso/tags.json without iso/netbox.json: tag rules need NetBox" >&2
+nb=$(cfg netbox.json || true)
+tg=$(cfg tags.json || true)
+if [[ -n $nb ]]; then
+	echo "netbox: $nb (the token is in the image: keep this ISO in-house)"
+	/src/dist/tyr-linux-"$arch" netbox --validate --netbox-config "$nb" --tags "${tg:-/nonexistent/tags.json}"
+	netbox_hook=(--customize-hook="install -m 600 '$nb' \"\$1/etc/tyr/netbox.json\"")
+	[[ -n $tg ]] && netbox_hook+=(--customize-hook="install -m 600 '$tg' \"\$1/etc/tyr/tags.json\"")
+elif [[ -n $tg ]]; then
+	echo "$tg without netbox.json: tag rules need NetBox" >&2
 	exit 1
 fi
 # webhooks: iso/webhooks.json, and TYR_WEBHOOK_* / TYR_NETBOX_* from the
 # build environment into /etc/tyr/tyr.env (root-only), which tyr-live loads
 webhook_hook=()
-if [[ -f iso/webhooks.json ]]; then
-	echo "webhooks: iso/webhooks.json"
-	TYR_WEBHOOK_URL='' /src/dist/tyr-linux-"$arch" notify --validate --webhooks iso/webhooks.json
-	webhook_hook=(--customize-hook='install -m 600 iso/webhooks.json "$1/etc/tyr/webhooks.json"')
+if wh=$(cfg webhooks.json) && [[ -n $wh ]]; then
+	echo "webhooks: $wh"
+	TYR_WEBHOOK_URL='' /src/dist/tyr-linux-"$arch" notify --validate --webhooks "$wh"
+	webhook_hook=(--customize-hook="install -m 600 '$wh' \"\$1/etc/tyr/webhooks.json\"")
 fi
 envfile=$work/tyr.env
 : >"$envfile"

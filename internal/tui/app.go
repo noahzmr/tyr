@@ -87,6 +87,7 @@ type Model struct {
 	reports  *reportDialog  // R: generate a report, nil when closed
 	nb       *netboxDialog  // N: NetBox settings, tag rules, write, nil when closed
 	wh       *webhookDialog // W: webhooks for test notifications, nil when closed
+	iso      *isoDialog     // I: build the ISO, write a USB stick, nil when closed
 	blurred  bool           // terminal window not focused: refresh slower
 	lastAt   time.Time      // when the last snapshot arrived
 	tabXs    []int          // right edge of each rendered tab (mouse hit test)
@@ -266,7 +267,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.collect()
 
 	case spinner.TickMsg:
-		if m.snap != nil && !m.collecting && !m.syncing() {
+		if m.snap != nil && !m.collecting && !m.syncing() && !m.isoRunning() {
 			return m, nil
 		}
 		var cmd tea.Cmd
@@ -307,6 +308,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case webhookTestMsg:
 		m.webhookTested(msg)
 		return m, nil
+
+	case isoLineMsg, isoBuiltMsg, isoProgMsg, isoFinishMsg, isoDockerMsg:
+		return m, m.isoMsg(msg)
 
 	case tea.PasteMsg:
 		return m, m.paste(msg.Content)
@@ -397,6 +401,7 @@ var (
 	keyAlerts   = key.NewBinding(key.WithKeys("A", "shift+a"), key.WithHelp("A", "alert reference"))
 	keyNetBox   = key.NewBinding(key.WithKeys("N", "shift+n"), key.WithHelp("N", "NetBox"))
 	keyWebhooks = key.NewBinding(key.WithKeys("W", "shift+w"), key.WithHelp("W", "webhooks"))
+	keyISO      = key.NewBinding(key.WithKeys("I", "shift+i"), key.WithHelp("I", "ISO / USB stick"))
 	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
 
@@ -446,6 +451,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	}
 	if m.wh != nil {
 		return m.updateWebhooks(msg)
+	}
+	if m.iso != nil {
+		return m.updateISO(msg)
 	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
@@ -500,6 +508,8 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	case key.Matches(msg, keyWebhooks):
 		m.openWebhooks()
 		return nil
+	case key.Matches(msg, keyISO):
+		return m.openISO()
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
 	case key.Matches(msg, keyFullTest):
@@ -729,6 +739,9 @@ func (m *Model) render() string {
 	}
 	if m.wh != nil {
 		return m.webhooksView(b.String())
+	}
+	if m.iso != nil {
+		return m.isoView(b.String())
 	}
 	if m.showHelp {
 		return m.helpOverlay(b.String())

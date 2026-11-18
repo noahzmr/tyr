@@ -7,6 +7,9 @@
 # (Debian/Ubuntu: sudo apt install qemu-user-binfmt); on an arm64 host it
 # builds natively. Vendor tools: put their .deb/.rpm into iso/vendor/.
 # Limits: iso/accept.json (optional) becomes /etc/tyr/accept.json.
+# TYR_ISO_CONFIG=DIR takes accept.json, netbox.json, tags.json and
+# webhooks.json from DIR instead of iso/ (what the TUI's ISO dialog uses);
+# TYR_ISO_NAME names the build container (to stop it).
 set -euo pipefail
 
 arch=${1:-amd64}
@@ -39,6 +42,11 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
 echo "== build environment"
 docker build --platform "linux/$arch" -t "tyr-iso-builder:$arch" iso
 
+config=()
+if [[ -n ${TYR_ISO_CONFIG:-} ]]; then
+	config=(-v "$TYR_ISO_CONFIG:/config:ro" -e TYR_ISO_CONFIG=/config)
+fi
+
 # TYR_WEBHOOK_* and TYR_NETBOX_* from this shell go into the image
 # (/etc/tyr/tyr.env): `TYR_WEBHOOK_URL=https://… make iso`
 envs=()
@@ -47,6 +55,6 @@ for v in $(compgen -e | grep -E '^TYR_(WEBHOOK|NETBOX)_' || true); do
 done
 
 echo "== image"
-docker run --rm --privileged --platform "linux/$arch" \
-	-e VERSION="$version" -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -e MIRROR="${MIRROR:-http://deb.debian.org/debian}" \
-	"${envs[@]}" -v "$PWD:/src" -w /src "tyr-iso-builder:$arch" iso/builder.sh "$arch"
+docker run --rm --privileged --platform "linux/$arch" --name "${TYR_ISO_NAME:-tyr-iso-$arch-$$}" \
+	-e VERSION="$version" -e HOST_UID="${SUDO_UID:-$(id -u)}" -e HOST_GID="${SUDO_GID:-$(id -g)}" -e MIRROR="${MIRROR:-http://deb.debian.org/debian}" \
+	"${envs[@]}" "${config[@]}" -v "$PWD:/src" -w /src "tyr-iso-builder:$arch" iso/builder.sh "$arch"

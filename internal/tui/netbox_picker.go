@@ -308,6 +308,10 @@ func (m *Model) paste(text string) tea.Cmd {
 		m.nb.paste(text)
 	case m.wh != nil:
 		m.wh.paste(text)
+	case m.iso != nil:
+		if m.iso.editing {
+			m.iso.input.Insert(text)
+		}
 	case m.reports != nil:
 		if m.reports.editing {
 			m.reports.input.Insert(text)
@@ -371,6 +375,8 @@ func (m *Model) editingValue() (string, bool) {
 		return m.reports.input.Value(), true
 	case m.wh != nil && m.wh.typing:
 		return m.wh.input.Value(), true
+	case m.iso != nil && m.iso.editing:
+		return m.iso.input.Value(), true
 	}
 	return "", false
 }

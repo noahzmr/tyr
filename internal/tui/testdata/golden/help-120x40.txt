@@ -14,22 +14,22 @@
             │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
 sdd ────────│ pgup pgdn  page               v          switch view        R          reports               │l SMART page
 Model     ST│ g G        top / end          /          search             N W        NetBox · webhooks     │
-Serial    WJ│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │ce boot
-Firmware  SN│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │
-Path      /d│                               h          virtual NICs       q ctrl+c   quit · stop all       │
-            │                                                                                              │)
-            │ This tab · Storage                                                                           │
-Findings · S│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │· enter open
- ✖ sdd      │ counters and / search · c copies the serial                                                  │5160 op
-            │ ↑↓ move  enter open  v view  n next problem                                                  │
- ✖ sdf      │                                                                                              │stem
-            │ Status                                                                                       │ror, dev
-            │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ✖ sdf      │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ✖ md1      │                                                                                              │
- ✖ 0/0      │ Any key closes this window.                                                                  │
- ✖ 252:2    ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
- ✖ /data        /data (xfs) is mounted read-only
+Serial    WJ│ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │ce boot
+Firmware  SN│ esc        back · close       a          empty DIMM slots   A          alert reference       │
+Path      /d│                               h          virtual NICs       s S F      stress tests          │
+            │                                                             q ctrl+c   quit · stop all       │)
+            │                                                                                              │
+Findings · S│ This tab · Storage                                                                           │· enter open
+ ✖ sdd      │ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │5160 op
+            │ counters and / search · c copies the serial                                                  │
+ ✖ sdf      │ ↑↓ move  enter open  v view  n next problem                                                  │stem
+            │                                                                                              │ror, dev
+            │ Status                                                                                       │
+ ✖ sdf      │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ✖ md1      │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ✖ 0/0      │                                                                                              │
+ ✖ 252:2    │ Any key closes this window.                                                                  │
+ ✖ /data    ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
  ✖ /data        /data 96% full
  ▲ nvme1n1      nvme1n1: 93% of rated endurance used
  ▲ nvme1n1      nvme1n1: 3 media/data integrity errors

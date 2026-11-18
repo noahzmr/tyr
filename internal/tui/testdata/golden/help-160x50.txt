@@ -19,22 +19,22 @@ Firmware  SN04                  │ ↑↓ jk      move               !         
 Path      /dev/sdd · sata       │ ←→ hl      move / regions     o          worst ↔ physical   c          copy serial/report    │
                                 │ pgup pgdn  page               v          switch view        R          reports               │(2.3 y)
                                 │ g G        top / end          /          search             N W        NetBox · webhooks     │
-Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    A          alert reference       │──────────── n next · enter open
- ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   s S F      stress tests          │lags 0x80700 phys_seg 1 prio
-                class 0         │                               h          virtual NICs       q ctrl+c   quit · stop all       │
- ✖ sdf          sdf (iSCSI 10.16│                                                                                              │he session, the network path
-                and the target, │ This tab · Storage                                                                           │prio class 0
- ✖ sdf          sdf: iSCSI sessi│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
- ✖ md1          md1 (raid5) degr│ counters and / search · c copies the serial                                                  │
- ✖ 0/0          RAID virtual dri│ ↑↓ move  enter open  v view  n next problem                                                  │
- ✖ 252:2        RAID physical dr│                                                                                              │
- ✖ /data        /data (xfs) is m│ Status                                                                                       │
- ✖ /data        /data 96% full  │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
- ▲ nvme1n1      nvme1n1: 93% of │  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
- ▲ nvme1n1      nvme1n1: 3 media│                                                                                              │
- ▲ sdc          sdc: 8 pending s│ Any key closes this window.                                                                  │
- ▲ sdc          sdc: 24 realloca╰──────────────────────────────────────────────────────────────────────────────────────────────╯
-
+Findings · Storage 8 ✖ · 4 ▲ ───│ enter      open / action      t          CPU load ↔ temp    I          ISO / USB stick       │──────────── n next · enter open
+ ✖ sdd          sdd: 2 I/O error│ esc        back · close       a          empty DIMM slots   A          alert reference       │lags 0x80700 phys_seg 1 prio
+                class 0         │                               h          virtual NICs       s S F      stress tests          │
+ ✖ sdf          sdf (iSCSI 10.16│                                                             q ctrl+c   quit · stop all       │he session, the network path
+                and the target, │                                                                                              │prio class 0
+ ✖ sdf          sdf: iSCSI sessi│ This tab · Storage                                                                           │
+ ✖ md1          md1 (raid5) degr│ v Disks · RAID · Filesystems · n next problem · enter opens the page with SMART attributes,  │
+ ✖ 0/0          RAID virtual dri│ counters and / search · c copies the serial                                                  │
+ ✖ 252:2        RAID physical dr│ ↑↓ move  enter open  v view  n next problem                                                  │
+ ✖ /data        /data (xfs) is m│                                                                                              │
+ ✖ /data        /data 96% full  │ Status                                                                                       │
+ ▲ nvme1n1      nvme1n1: 93% of │ ● OK   ▲ WARN   ✖ CRIT   ? UNKNOWN   ○ unavailable (with reason)   · not applicable          │
+ ▲ nvme1n1      nvme1n1: 3 media│  NEW  appeared this session   ↑ +38 counter grew   ● resolved went away this session         │
+ ▲ sdc          sdc: 8 pending s│                                                                                              │
+ ▲ sdc          sdc: 24 realloca│ Any key closes this window.                                                                  │
+                                ╰──────────────────────────────────────────────────────────────────────────────────────────────╯
 
 
 

@@ -177,6 +177,8 @@ guard that keeps it safe, and gives a verdict you can trust.
 - Settings in the TUI (`W`), in `webhooks.json`, or from `TYR_WEBHOOK_*` in
   the environment - also at ISO build time or on the kernel command line
   ([docs/webhooks.md](docs/webhooks.md)).
+- `I` in the TUI builds the ISO with the current NetBox and webhook settings
+  and writes it to a USB stick you choose.
 
 ### One static binary
 
@@ -514,6 +516,7 @@ tyr/
 │   ├── accept/              acceptance test: profiles, limits, verdict, report
 │   ├── netbox/              NetBox sync: settings, tag rules (expressions over facts), REST client
 │   ├── notify/              webhook notifications: events, formats (JSON, Slack, Teams, Discord, Google Chat), delivery
+│   ├── isobuild/            the ISO with the current settings, USB disks, writing and verifying a stick
 │   ├── settings/            where configuration files live (/etc/tyr, ~/.config/tyr)
 │   ├── workload/            self-checking compute kernels; the torture test's FFT (Go + AVX asm)
 │   ├── report/              Markdown, Mermaid, history, glamour rendering
