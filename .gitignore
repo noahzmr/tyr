@@ -1,7 +1,8 @@
 tyr-runs/
 dist/
-# build output
+# build output (never commit binaries: scripts/check-binaries.sh)
 /tyr
+/tyr-linux-*
 /genfixture
 # exports the TUI writes into the working directory (e, R → Save)
 /tyr-snapshot-*.json

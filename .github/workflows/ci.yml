@@ -37,6 +37,14 @@ jobs:
       - name: No tooling attribution in the tracked files
         run: sh scripts/check-attribution.sh tree
 
+      # No executables or packaged binaries in version control
+      # (OSPS-QA-05.01), and no secrets anywhere in the history (OSPS-BR-07.01).
+      - name: No binaries in the tree
+        run: sh scripts/check-binaries.sh tree
+
+      - name: No secrets in the history
+        run: go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner .
+
       - name: Format, vet, staticcheck
         run: |
           test -z "$(gofmt -l .)" || { gofmt -l .; echo "gofmt needed"; exit 1; }

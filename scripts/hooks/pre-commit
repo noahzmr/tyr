@@ -1,6 +1,9 @@
 #!/bin/sh
 # 1. Rejects staged changes and new file names with tooling attribution.
 # 2. Rejects staged Go files that are not gofmt-formatted.
+# 3. Rejects staged executables and packaged binaries (scripts/check-binaries.sh).
+# 4. Rejects staged secrets: tokens, keys, passwords (gitleaks; an installed
+#    gitleaks is used, else the pinned version through go run).
 #
 # Activate once per clone:  git config core.hooksPath scripts/hooks
 set -eu
@@ -39,4 +42,17 @@ if [ -n "$gofiles" ]; then
 		echo "$unformatted" >&2
 		exit 1
 	fi
+fi
+
+sh scripts/check-binaries.sh staged || exit 1
+
+if command -v gitleaks >/dev/null 2>&1; then
+	gl="gitleaks"
+else
+	gl="go run github.com/zricethezav/gitleaks/v8@v8.30.1"
+fi
+if ! $gl git --pre-commit --staged --redact --no-banner --log-level warn . >&2; then
+	echo "pre-commit: the staged changes contain what looks like a secret (above)." >&2
+	echo "Remove it; a false positive goes into .gitleaksignore (its fingerprint)." >&2
+	exit 1
 fi
