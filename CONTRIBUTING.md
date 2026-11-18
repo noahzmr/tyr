@@ -17,8 +17,8 @@ for what makes a report useful:
   (remove serial numbers, host names and addresses you do not want public),
   and the vendor and model of the part.
 
-Security problems are not reported in public issues; see `SECURITY.md` once
-it exists, until then contact the maintainer privately.
+Security problems are not reported in public issues: see
+[SECURITY.md](SECURITY.md) - they go to a private GitHub security advisory.
 
 ## Proposing a change
 
