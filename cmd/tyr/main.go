@@ -49,6 +49,9 @@ Usage:
                          isolated, offline again after; --restore cleans up after a kill
   tyr check-native       compare Tyr's own SMBIOS, NIC and BMC readers with
                          dmidecode, ethtool and ipmitool on this host (as root)
+  tyr fsck [DEV|MOUNT]   list, check or (--repair) repair filesystems: unmounts and
+                         mounts again when nothing uses them; repair asks for the
+                         device path and never runs from the live ISO
   tyr net-peer [flags]   far end for the network stress test (run on another host)
   tyr history PATH...    history of hosts from saved JSON (snapshots, stress results)
   tyr view PATH...       show a report in the terminal: a .md file, one JSON document,
@@ -90,6 +93,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runCoreTest(args, os.Stdin, stdout, stderr)
 	case "check-native":
 		return runCheckNative(stdout, stderr)
+	case "fsck":
+		return runFsck(args, stdout, stderr)
 	case stress.WorkerArg:
 		if len(args) != 1 {
 			return 3

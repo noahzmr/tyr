@@ -15,12 +15,14 @@ mkdir -p "$work/staging/live" "$work/staging/boot/grub" "$work/staging/.disk"
 
 # what the live system needs: kernel, live-boot, Tyr's tools, firmware for
 # server NICs and controllers. No mdadm, no LVM: nothing may assemble or
-# touch the server's disks.
+# touch the server's disks. The filesystem tools are there for read-only
+# checks (tyr fsck refuses to repair from the live system).
 pkgs=(
 	"linux-image-$arch" live-boot systemd-sysv systemd-timesyncd udev kmod
 	util-linux bsdextrautils procps iproute2 kbd console-setup less vim-tiny bash-completion systemd-resolved
 	pciutils usbutils ethtool dmidecode smartmontools nvme-cli sg3-utils ipmitool rasdaemon lldpd
 	stress-ng memtester iperf3 exfatprogs dosfstools openssh-client ca-certificates
+	e2fsprogs xfsprogs btrfs-progs
 	firmware-linux-free firmware-misc-nonfree firmware-bnx2 firmware-bnx2x firmware-qlogic
 	firmware-realtek firmware-netxen firmware-myricom firmware-cavium firmware-intel-misc
 )

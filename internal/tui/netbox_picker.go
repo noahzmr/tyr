@@ -312,6 +312,10 @@ func (m *Model) paste(text string) tea.Cmd {
 		if m.iso.editing {
 			m.iso.input.Insert(text)
 		}
+	case m.fsck != nil:
+		if m.fsck.plan != nil && m.fsck.run == nil {
+			m.fsck.input.Insert(text)
+		}
 	case m.reports != nil:
 		if m.reports.editing {
 			m.reports.input.Insert(text)
@@ -377,6 +381,8 @@ func (m *Model) editingValue() (string, bool) {
 		return m.wh.input.Value(), true
 	case m.iso != nil && m.iso.editing:
 		return m.iso.input.Value(), true
+	case m.fsck != nil && m.fsck.plan != nil && m.fsck.run == nil && m.fsck.input.Focused():
+		return m.fsck.input.Value(), true
 	}
 	return "", false
 }

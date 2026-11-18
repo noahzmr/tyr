@@ -88,6 +88,7 @@ type Model struct {
 	nb       *netboxDialog  // N: NetBox settings, tag rules, write, nil when closed
 	wh       *webhookDialog // W: webhooks for test notifications, nil when closed
 	iso      *isoDialog     // I: build the ISO, write a USB stick, nil when closed
+	fsck     *fsckDialog    // K: check or repair a filesystem, nil when closed
 	blurred  bool           // terminal window not focused: refresh slower
 	lastAt   time.Time      // when the last snapshot arrived
 	tabXs    []int          // right edge of each rendered tab (mouse hit test)
@@ -312,6 +313,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case isoLineMsg, isoBuiltMsg, isoProgMsg, isoFinishMsg, isoDockerMsg:
 		return m, m.isoMsg(msg)
 
+	case fsckLineMsg, fsckDoneMsg:
+		return m, m.fsckMsg(msg)
+
 	case tea.PasteMsg:
 		return m, m.paste(msg.Content)
 
@@ -402,6 +406,7 @@ var (
 	keyNetBox   = key.NewBinding(key.WithKeys("N", "shift+n"), key.WithHelp("N", "NetBox"))
 	keyWebhooks = key.NewBinding(key.WithKeys("W", "shift+w"), key.WithHelp("W", "webhooks"))
 	keyISO      = key.NewBinding(key.WithKeys("I", "shift+i"), key.WithHelp("I", "ISO / USB stick"))
+	keyFsck     = key.NewBinding(key.WithKeys("K", "shift+k"), key.WithHelp("K", "check filesystem"))
 	keyExplain  = key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "explain"))
 )
 
@@ -432,6 +437,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 			m.flash(txt)
 			return cmd
 		}
+		if m.fsckRunning() { // never leave a filesystem unmounted (or half repaired) behind
+			return m.updateFsck(msg)
+		}
 		return m.quit()
 	}
 	if msg.String() == "ctrl+v" {
@@ -454,6 +462,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	}
 	if m.iso != nil {
 		return m.updateISO(msg)
+	}
+	if m.fsck != nil {
+		return m.updateFsck(msg)
 	}
 	if m.page != nil {
 		if !m.page.capturing() && key.Matches(msg, k.Quit) {
@@ -510,6 +521,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	case key.Matches(msg, keyISO):
 		return m.openISO()
+	case key.Matches(msg, keyFsck):
+		m.openFsck(m.fsckSubject())
+		return nil
 	case key.Matches(msg, keyStressThis):
 		return m.startStress(true)
 	case key.Matches(msg, keyFullTest):
@@ -742,6 +756,9 @@ func (m *Model) render() string {
 	}
 	if m.iso != nil {
 		return m.isoView(b.String())
+	}
+	if m.fsck != nil {
+		return m.fsckView(b.String())
 	}
 	if m.showHelp {
 		return m.helpOverlay(b.String())
