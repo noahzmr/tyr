@@ -13,9 +13,32 @@ area, generated from the Git history by `make publish`.
 <!-- Highlights and upgrade notes of the next release; `make publish` moves
 them into its section and adds the commits grouped by area. -->
 
+## [1.0.1] - 2026-11-18
+
 - **License**: Tyr is now licensed under the Mozilla Public License 2.0.
   The archives carry `LICENSE` and `NOTICE` (third-party names and the
   libraries Tyr is built with). v1.0.0 was published without a license.
+
+### Changes
+
+#### Legal
+
+- License Tyr under the Mozilla Public License 2.0 ([`145c1e5`](https://github.com/noahzmr/tyr/commit/145c1e575f7d8b45be4a851d07c4879da58fe554))
+
+#### Documentation
+
+- OpenSSF Security Baseline Level 1 self-assessment and plan ([`c81a089`](https://github.com/noahzmr/tyr/commit/c81a089abc2090c74e9bc4a2dbbc3922230642ec))
+- Contributing guide and a bug report template ([`89b9881`](https://github.com/noahzmr/tyr/commit/89b98810fda96caa553b10541c7eded79f903974))
+- Release flow through a pull request; Baseline status after the fixes ([`076c864`](https://github.com/noahzmr/tyr/commit/076c86428506d1ee536e7220a35ee3592e569ec0))
+- Baseline AC-02.01 confirmed (collaborator list reviewed) ([`39bfb33`](https://github.com/noahzmr/tyr/commit/39bfb33d5fd37f8dac146d9ff70c3a9f36b79c2b))
+
+#### Build and CI
+
+- The notes reach the GitHub release, unwrapped ([`8a79db8`](https://github.com/noahzmr/tyr/commit/8a79db8e5291e472875b279785d93cfe5b597f1f))
+- No binaries or secrets in version control ([`f036c5d`](https://github.com/noahzmr/tyr/commit/f036c5d07b0b7ec459c4800eb1fdd27dd76db84f))
+- Release through a pull request, for a protected main ([`1b1fd8a`](https://github.com/noahzmr/tyr/commit/1b1fd8a9bbe6a78141d07aaf815306636b176452))
+
+All changes: [v1.0.0...v1.0.1](https://github.com/noahzmr/tyr/compare/v1.0.0...v1.0.1)
 
 ## [1.0.0] - 2026-11-18
 
