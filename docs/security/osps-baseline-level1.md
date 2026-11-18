@@ -12,9 +12,11 @@ repository is public, `main` is protected by an active ruleset, v1.0.1 ships
 with the MPL-2.0 license, and `SECURITY.md`, `CONTRIBUTING.md` and the bug
 report template are in place.
 
+Private vulnerability reporting is enabled, so the route `SECURITY.md`
+names works.
+
 Open: **BR-07.01** - confirm that GitHub secret scanning with push
-protection is on. Also enable **private vulnerability reporting**, which
-`SECURITY.md` sends reporters to (it is off as of 2026-11-18).
+protection is on.
 
 The build pipeline is in good shape: CI runs on `pull_request` only, with
 read-only permissions and no secrets, and passes untrusted pull request text
@@ -50,7 +52,7 @@ read from outside; check it and record the date).
 | OSPS-QA-04.01 | Multi-repository projects list their codebases | Met | Tyr is a single repository; the README's directory structure covers it |
 | OSPS-QA-05.01 | No generated executable artifacts in version control | Met | The committed `tyr-linux-amd64` is removed (2026-11-18) and `/tyr-linux-*` ignored; `scripts/check-binaries.sh` fails on executables and packaged binaries in the pre-commit hook and in CI. The old file remains in the Git history |
 | OSPS-QA-05.02 | No unreviewable binary artifacts in version control | Met | Apart from the binary above, the only non-text files are about 120 tiny sysfs fixture files (`uevent`, `vpd`, `cmdline`, about 1 KB in all), generated from source by `tools/genfixture`, and the documentation's screenshots and diagrams (`docs/images/`) |
-| OSPS-VM-02.01 | Security contacts in the documentation | Met | `SECURITY.md`: the maintainer as security contact, reporting through a private GitHub security advisory, what to include, supported versions, scope. The advisory form works once private vulnerability reporting is enabled (*Settings → Advanced Security*; off as of 2026-11-18); no email address is needed - the Baseline accepts the forge's own reporting tool |
+| OSPS-VM-02.01 | Security contacts in the documentation | Met | `SECURITY.md`: the maintainer as security contact, reporting through a private GitHub security advisory, what to include, supported versions, scope. Private vulnerability reporting is enabled (2026-11-18), so the advisory form is open to reporters; no email address is needed - the Baseline accepts the forge's own reporting tool |
 
 ## Plan to reach Level 1
 
