@@ -613,8 +613,9 @@ func TestSyncWithoutSerial(t *testing.T) {
 	fake.objs["dcim/devices"][fake.next] = obj{"id": float64(fake.next), "name": "other"}
 	other := fake.next
 	for _, i := range fake.objs["dcim/interfaces"] {
-		i["device"] = float64(other)
-		break
+		if i["name"] == "eno1" { // a port whose MAC is part of the identity
+			i["device"] = float64(other)
+		}
 	}
 	fake.mu.Unlock()
 	if _, err := Sync(ctx, cfg, Tags{}, Input{Snap: &snap}, true, nil); err == nil || !strings.Contains(err.Error(), "on 2 devices") {
@@ -637,5 +638,24 @@ func TestUnreachable(t *testing.T) {
 	}
 	if Unreachable(errors.New("no serial number")) || Unreachable(&APIError{Code: 403}) {
 		t.Error("data or answer errors counted as unreachable")
+	}
+}
+
+func TestItemsSkipUSB(t *testing.T) {
+	snap := &model.Snapshot{Storage: &model.Storage{Disks: []model.Disk{
+		{Name: "nvme0n1", Path: "/dev/nvme0n1", Kind: "nvme", SizeBytes: 1e12, Serial: "N1"},
+		{Name: "sda", Path: "/dev/sda", Kind: "usb", Interface: "usb", SizeBytes: 16e9, Serial: "STICK"},
+		{Name: "sdb", Path: "/dev/sdb", Kind: "ssd", Interface: "usb", SizeBytes: 0, Serial: "READER"},
+	}}}
+	snap.Inventory = model.BuildInventory(snap)
+	s := &syncer{cfg: Defaults(), in: Input{Snap: snap}}
+	var serials []string
+	for _, c := range s.items() {
+		if c.Category == "disk" {
+			serials = append(serials, c.Serial)
+		}
+	}
+	if strings.Join(serials, ",") != "N1" {
+		t.Errorf("disks written: %v", serials)
 	}
 }

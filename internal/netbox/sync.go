@@ -104,17 +104,7 @@ func (s *syncer) estimate() int {
 		}
 	}
 	if s.cfg.Inventory {
-		cats := s.cfg.Categories
-		if len(cats) == 0 {
-			cats = DefaultCategories
-		}
-		var comps []model.Component
-		for _, c := range inventory(s.in.Snap) {
-			if slices.Contains(cats, c.Category) && c.Detail != "empty socket" {
-				comps = append(comps, c)
-			}
-		}
-		n += len(mergeCards(comps))
+		n += len(s.items())
 	}
 	n += len(s.cfg.CustomFields)
 	if s.cfg.Platform != "" {
@@ -921,18 +911,35 @@ func trunc(s string, n int) string {
 	return string(r[:n-1]) + "…"
 }
 
-func (s *syncer) inventory() error {
+// items are the components written as inventory items: the configured
+// categories, without empty sockets, USB disks (sticks come and go, the
+// ISO's own included) and drives without a medium; the ports of a card
+// merged.
+func (s *syncer) items() []model.Component {
 	cats := s.cfg.Categories
 	if len(cats) == 0 {
 		cats = DefaultCategories
 	}
-	var comps []model.Component
-	for _, c := range inventory(s.in.Snap) {
-		if slices.Contains(cats, c.Category) && c.Detail != "empty socket" {
-			comps = append(comps, c)
+	skip := map[string]bool{}
+	if st := s.in.Snap.Storage; st != nil {
+		for _, d := range st.Disks {
+			if d.Kind == "usb" || d.Interface == "usb" || d.SizeBytes == 0 {
+				skip[d.Path] = true
+			}
 		}
 	}
-	comps = mergeCards(comps)
+	var comps []model.Component
+	for _, c := range inventory(s.in.Snap) {
+		if !slices.Contains(cats, c.Category) || c.Detail == "empty socket" || (c.Category == "disk" && skip[c.Location]) {
+			continue
+		}
+		comps = append(comps, c)
+	}
+	return mergeCards(comps)
+}
+
+func (s *syncer) inventory() error {
+	comps := s.items()
 	var existing []obj
 	if !s.newDevice() {
 		var err error
